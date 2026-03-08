@@ -61,7 +61,7 @@ Delete: Chuyển sang chế độ "Lưu trữ" (Soft Delete) để không làm m
 ## Use Case Diagram
 ![Use Case Diagram](usecase-diagram.png)
 
-## UI Design
+## UI Design (Wireframes)
 Figma Prototype:
 https://www.figma.com/design/zlUuhx879LFgHwYiWKJlU3/Untitled?node-id=0-1&t=I9brvVp6gYDYtARN-1
  
