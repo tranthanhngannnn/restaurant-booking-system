@@ -36,9 +36,15 @@ Response
 [
  {
   "id":1,
-  "name":"BBQ House",
+  "name":"Nhà hàng Hotpot",
   "location":"HCM",
-  "cuisine":"BBQ"
+  "cuisine":"Lẩu"
+ }
+{
+  "id":2,
+  "name":"Nhà hàng Grill House",
+  "location":"HCM",
+  "cuisine":"Nướng"
  }
 ]
 ```
