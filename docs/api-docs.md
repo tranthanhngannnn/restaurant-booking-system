@@ -46,9 +46,10 @@ Response
 Xem menu nhà hàng
 ```json
 GET /api/restaurants/{id}/menu
+```
 Example
 GET /api/restaurants/1/menu
-```
+
 Response
 ```json
 [
