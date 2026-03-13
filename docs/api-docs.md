@@ -62,7 +62,8 @@ Response
 [
  {
   "id":1,
-  "name":"Beef BBQ",
+  "name":"Nhà hàng Hotpot",
+  "food": "set - thịt nhỏ",
   "price":120000
  }
 ]
