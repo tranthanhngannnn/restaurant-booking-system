@@ -49,7 +49,7 @@ Response
 ]
 ```
 
-Xem menu nhà hàng
+## Xem menu nhà hàng
 
 GET /api/restaurants/{id}/menu
 
@@ -68,7 +68,7 @@ Response
 ]
 ```
 
-Đặt bàn
+## Đặt bàn
 
 POST /api/reservations
 
@@ -90,13 +90,13 @@ Response
 }
 ```
 
-3. Restaurant APIs
+## 3. Restaurant APIs
 
-Xem danh sách đặt bàn
+## Xem danh sách đặt bàn
 
 GET /api/restaurant/reservations
 
-Xác nhận đặt bàn
+## Xác nhận đặt bàn
 
 PUT /api/reservations/{id}/confirm
 
@@ -107,7 +107,7 @@ Response
 }
 ```
 
-Từ chối đặt bàn
+## Từ chối đặt bàn
 PUT /api/reservations/{id}/reject
 Response
 ```json
@@ -126,19 +126,19 @@ POST /api/menu
 }
 ```
 
-Cập nhật món
+## Cập nhật món
 PUT /api/menu/{id}
 
-Xóa món
+## Xóa món
 DELETE /api/menu/{id}
 
-4. Admin APIs
+## 4. Admin APIs
  
-Duyệt nhà hàng
+## Duyệt nhà hàng
 
 PUT /api/admin/restaurants/{id}/approve
 
-Quản lý nhà hàng
+## Quản lý nhà hàng
 
 GET /api/admin/restaurants
 
@@ -148,7 +148,7 @@ PUT /api/admin/restaurants/{id}
 
 DELETE /api/admin/restaurants/{id}
 
-Quản lý cuisine
+## Quản lý cuisine
 
 GET /api/admin/cuisines
 
@@ -156,16 +156,16 @@ POST /api/admin/cuisines
 
 DELETE /api/admin/cuisines/{id}
 
-5. Luồng hệ thống
+## 5. Luồng hệ thống
 Customer → tìm nhà hàng → xem menu → đặt bàn
 
 Restaurant → xác nhận hoặc từ chối đặt bàn
 
 Admin → duyệt nhà hàng → quản lý cuisine
 
-7. API đăng ký / đăng nhập
+## 7. API đăng ký / đăng nhập
 Nếu hệ thống có người dùng.
-Đăng ký
+## Đăng ký
 POST /api/register
 Request
 ```json
@@ -176,7 +176,7 @@ Request
 }
 ```
 
-Đăng nhập
+## Đăng nhập
 POST /api/login
 ```json
 {
@@ -192,31 +192,38 @@ Response
 }
 ```
 
-8. API xem chi tiết nhà hàng
+## 8. API xem chi tiết nhà hàng
 
 GET /api/restaurants/{id}
 Response
 ```json
 {
  "id":1,
- "name":"BBQ House",
+ "name":"Nhà Hàng Hotpot",
  "location":"HCM",
- "cuisine":"BBQ",
+ "cuisine":"Lẩu",
  "rating":4.5
+}
+{
+ "id":2,
+ "name":"Nhà Hàng Grill House",
+ "location":"HCM",
+ "cuisine":"Nướng",
+ "rating":4.6
 }
 ```
 
-9. API thêm nhà hàng (business user)
+## 9. API thêm nhà hàng (business user)
 POST /api/restaurants
 ```json
 {
- "name":"Seafood House",
+ "name":"Nhà Hàng Steamed Garden",
  "location":"HCM",
- "cuisine":"Seafood"
+ "cuisine":"Hấp"
 }
 ```
 
-10. API báo cáo (Admin)
+## 10. API báo cáo (Admin)
 
 GET /api/admin/reports
 Response
@@ -226,3 +233,10 @@ Response
  "total_reservations":150
 }
 ```
+## 11 Thêm sửa xóa bàn
+## Thêm bàn
+POST /api/reservations
+## Xóa bàn
+DELETE /api/reservations
+## Sửa bàn 
+Put /api/reservations/{id}
