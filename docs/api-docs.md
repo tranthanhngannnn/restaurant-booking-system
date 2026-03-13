@@ -27,7 +27,7 @@ GET /api/restaurants?location=hcm&cuisine=bbq
 
 Response
 
-```json
+```json```
 [
  {
   "id":1,
