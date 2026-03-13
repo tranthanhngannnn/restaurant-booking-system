@@ -46,7 +46,9 @@ Response
 Xem menu nhà hàng
 
 GET /api/restaurants/{id}/menu
+
 Example
+
 GET /api/restaurants/1/menu
 
 Response
@@ -61,7 +63,9 @@ Response
 ```
 
 Đặt bàn
+
 POST /api/reservations
+
 Request body
 ```json
 {
