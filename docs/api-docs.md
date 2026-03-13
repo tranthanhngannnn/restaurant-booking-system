@@ -81,11 +81,15 @@ Response
 ```
 
 3. Restaurant APIs
+
 Xem danh sách đặt bàn
+
 GET /api/restaurant/reservations
 
 Xác nhận đặt bàn
+
 PUT /api/reservations/{id}/confirm
+
 Response
 ```json
 {
@@ -119,18 +123,27 @@ Xóa món
 DELETE /api/menu/{id}
 
 4. Admin APIs
+ 
 Duyệt nhà hàng
+
 PUT /api/admin/restaurants/{id}/approve
 
 Quản lý nhà hàng
+
 GET /api/admin/restaurants
+
 POST /api/admin/restaurants
+
 PUT /api/admin/restaurants/{id}
+
 DELETE /api/admin/restaurants/{id}
 
 Quản lý cuisine
+
 GET /api/admin/cuisines
+
 POST /api/admin/cuisines
+
 DELETE /api/admin/cuisines/{id}
 
 5. Luồng hệ thống
@@ -191,7 +204,7 @@ POST /api/restaurants
 }
 ```
 
-11. API báo cáo (Admin)
+10. API báo cáo (Admin)
 GET /api/admin/reports
 Response
 ```json
