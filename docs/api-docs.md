@@ -152,10 +152,12 @@ DELETE /api/admin/cuisines/{id}
 
 5. Luồng hệ thống
 Customer → tìm nhà hàng → xem menu → đặt bàn
+
 Restaurant → xác nhận hoặc từ chối đặt bàn
+
 Admin → duyệt nhà hàng → quản lý cuisine
 
-6. API đăng ký / đăng nhập
+7. API đăng ký / đăng nhập
 Nếu hệ thống có người dùng.
 Đăng ký
 POST /api/register
@@ -185,7 +187,7 @@ Response
 ```
 
 8. API xem chi tiết nhà hàng
-Hiện bạn chỉ có tìm nhà hàng, nên nên thêm:
+
 GET /api/restaurants/{id}
 Response
 ```json
@@ -209,6 +211,7 @@ POST /api/restaurants
 ```
 
 10. API báo cáo (Admin)
+
 GET /api/admin/reports
 Response
 ```json
