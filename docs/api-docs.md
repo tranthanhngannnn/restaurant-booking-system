@@ -32,7 +32,7 @@ GET /api/restaurants?location=hcm&cuisine=bbq
 
 Response
 
-```json```
+
 [
  {
   "id":1,
@@ -54,6 +54,7 @@ Response
   "price":120000
  }
 ]
+
 Đặt bàn
 POST /api/reservations
 Request body
