@@ -77,7 +77,7 @@ Request body
 ```json
 {
  "restaurant_id":1,
- "date":"2026-04-01",
+ "date":"2026-03-11",
  "time":"18:00",
  "people":4
  "statue":"pending"
