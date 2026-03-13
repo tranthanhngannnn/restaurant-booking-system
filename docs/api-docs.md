@@ -21,11 +21,6 @@ Hệ thống có **3 vai trò chính**:
 
 GET /api/restaurants
 
-Query params
-
-location  
-cuisine  
-
 Example request
 
 GET /api/restaurants?location=hcm&cuisine=bbq
