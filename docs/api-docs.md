@@ -164,8 +164,7 @@ POST /api/register
 Request
 ```json
 {
- "name":"Nguyen Van A",
- "email":"a@gmail.com",
+ "name":"admin",
  "password":"123456"
 }
 ```
@@ -174,7 +173,7 @@ Request
 POST /api/login
 ```json
 {
- "email":"a@gmail.com",
+ "username":"admin",
  "password":"123456"
 }
 ```
