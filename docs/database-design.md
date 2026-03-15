@@ -1,6 +1,6 @@
 ## ERD
 
-![ERD](images/ERD.png)
+![ERD](ERD.png)
 
 ## Database design
 ```sql 
