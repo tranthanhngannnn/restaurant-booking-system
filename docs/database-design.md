@@ -8,7 +8,7 @@ use restaurant_booking;
 
 /*TABLE USER*/
 CREATE TABLE Users (
-    UserID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     Username VARCHAR(50) NOT NULL,
     Phone VARCHAR(11),
     Email VARCHAR (90),
@@ -18,14 +18,14 @@ CREATE TABLE Users (
 
 /*TABLE CUISINE*/
 create table Cuisine(
-CuisineID int AUTO_INCREMENT primary key,
+CuisineID int AUTO_INCREMENT primary key NOT NULL,
 CuisineName varchar(100) NOT NULL,
 Status varchar(50)
 );
 
 /*TABLE Restaurant*/
 CREATE TABLE Restaurant(
-RestaurantID INT AUTO_INCREMENT PRIMARY KEY,
+RestaurantID INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
 RestaurantName varchar(100) not null,
 Address varchar(200),
 Phone varchar(11),
@@ -42,7 +42,7 @@ FOREIGN KEY (CuisineID) REFERENCES Cuisine(CuisineID)
 
 /*TABLE RestaurantTables*/
 create table RestaurantTables(
-TableID int AUTO_INCREMENT primary key,
+TableID int AUTO_INCREMENT primary key NOT NULL,
 RestaurantID INT NOT NULL,
 TableNumber varchar(10) NOT NULL,
 Capacity INT NOT NULL,
@@ -54,7 +54,7 @@ FOREIGN KEY (RestaurantID) REFERENCES Restaurant(RestaurantID)
 
 /*TABLE Reservations*/
 create table Reservations(
-ReservationID int AUTO_INCREMENT PRIMARY KEY,
+ReservationID int AUTO_INCREMENT PRIMARY KEY NOT NULL,
 UserID varchar(100),
 CustomerName varchar(100) NOT NULL,
 phone varchar(11) NOT NULL,
@@ -72,13 +72,13 @@ FOREIGN KEY (TableID) REFERENCES RestaurantTables(TableID)
 
 /*TABLE CategoryFood*/
 create table CategoryFood(
-CategoryID int AUTO_INCREMENT primary key,
+CategoryID int AUTO_INCREMENT primary key NOT NULL,
 CategoryName varchar(100)
 );
 
 /*TABLE Food*/
 create table Food(
-FoodID varchar(8) primary key,
+FoodID varchar(8) primary key NOT NULL,
 FoodName varchar(100) NOT NULL,
 RestaurantID int,
 Price decimal(10,2) NOT NULL,
@@ -93,7 +93,7 @@ FOREIGN KEY (RestaurantID) REFERENCES Restaurant(RestaurantID)
 
 /*TABLE ORDER*/
 create table CustomerOrder(
-OrderID int AUTO_INCREMENT primary key,
+OrderID int AUTO_INCREMENT primary key NOT NULL,
 TableID int NOT NULL,
 RestaurantID int,
 TotalAmount decimal(10,2),
@@ -104,7 +104,7 @@ FOREIGN KEY (TableID) REFERENCES restauranttables(TableID)
 
 /*TABLE ORDER DETAIL*/
 create table OrderDetail(
-OrderDetailID int AUTO_INCREMENT primary key,
+OrderDetailID int AUTO_INCREMENT primary key NOT NULL,
 OrderID int,
 FoodID varchar(8),
 Quantity int,
@@ -116,7 +116,7 @@ FOREIGN KEY (FoodID) REFERENCES Food(FoodID)
 
 /*TABLE PAYMENTS*/
 CREATE TABLE Payments(
-PaymentID int AUTO_INCREMENT primary key,
+PaymentID int AUTO_INCREMENT primary key NOT NULL,
 ReservationID int NOT NULL,
 Amount DECIMAL(10,2), /*số tiền KH đã thanh toán*/
 Status VARCHAR(50),
@@ -129,7 +129,7 @@ FOREIGN KEY (ReservationID) REFERENCES Reservations(ReservationID)
 
 /*TABLE REVIEW*/
 CREATE TABLE Reviews(
-ReviewID int AUTO_INCREMENT primary key,
+ReviewID int AUTO_INCREMENT primary key NOT NULL,
 UserID INT NOT NULL,
 RestaurantID INT NOT NULL,
 Rating DECIMAL(2,1),
