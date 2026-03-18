@@ -16,6 +16,17 @@ CREATE TABLE Users (
     Role VARCHAR(50) NOT NULL
 );
 
+/*TABLE Token*/
+CREATE TABLE Tokens (
+    token_id INT PRIMARY KEY AUTO_INCREMENT,
+    UserID INT,
+    token VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    
+    FOREIGN KEY (UserID) REFERENCES users(UserID)
+);
+
 /*TABLE CUISINE*/
 create table Cuisine(
 CuisineID int AUTO_INCREMENT primary key NOT NULL,
