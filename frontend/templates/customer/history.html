@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 style="text-align:center;">📜 Lịch sử đặt bàn</h2>
+
+<div class="toolbar">
+    <input id="searchInput" placeholder="🔍 Tìm theo tên hoặc mã...">
+
+    <select id="statusFilter">
+        <option value="">Tất cả</option>
+        <option value="Pending">Pending</option>
+        <option value="Confirmed">Confirmed</option>
+        <option value="Cancelled">Cancelled</option>
+    </select>
+</div>
+
+
+<div id="historyContainer" class="history-grid"></div>
+<button class="btn btn-closehst" onclick="goHome()">❌ Đóng</button>
+
+<!-- REVIEW POPUP -->
+<div id="reviewBox" style="
+display:none;
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.3);
+z-index:9999;
+width:300px;
+">
+
+    <h3>⭐ Đánh giá</h3>
+
+    <input type="hidden" id="restaurantId">
+    <input type="hidden" id="reservationId">
+
+    <label>Rating:</label>
+    <input type="number" id="rating" min="1" max="5">
+
+    <label>Nhận xét:</label>
+    <textarea id="comment"></textarea>
+
+    <br><br>
+    <button onclick="submitReview()">Gửi</button>
+    <button onclick="closeReview()">Đóng</button>
+</div>
+
+<script>
+let bookings = []
+
+window.onload = () => {
+    loadHistory()
+
+    // SEARCH
+    document.getElementById("searchInput").addEventListener("keyup", function() {
+        const key = this.value.toLowerCase()
+
+        const filtered = bookings.filter(b =>
+            b.CustomerName.toLowerCase().includes(key) ||
+            String(b.ReservationID).includes(key)
+        )
+
+        renderTable(filtered)
+    })
+
+    // FILTER
+    document.getElementById("statusFilter").addEventListener("change", function() {
+        const status = this.value
+
+        if (!status) return renderTable(bookings)
+
+        const filtered = bookings.filter(b => b.Status === status)
+        renderTable(filtered)
+    })
+}
+
+function loadHistory() {
+    fetch("/api/v1/customer/history", {
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("DATA:", data) // 👈 thêm dòng này để debug
+
+        // 🔥 nếu API trả object thay vì array thì fix luôn
+        if (!Array.isArray(data)) {
+            data = data.data || []
+        }
+
+        bookings = data
+        renderTable(data)
+    })
+    .catch(err => {
+        console.error("Lỗi fetch history:", err)
+    })
+}
+
+
+function renderTable(data) {
+    let html = ""
+
+    if (data.length === 0) {
+        html = "<p>Không có dữ liệu</p>"
+    }
+
+    data.forEach(b => {
+        html += `
+            <div class="history-card ${b.Status}" onclick="handleClick('${b.Status}', ${b.RestaurantID})">
+
+                <div class="card-header">
+                    <h3>🍲 ${b.RestaurantName || "Nhà hàng"}</h3>
+                    <span class="status ${b.Status}">
+                        ${b.Status}
+                    </span>
+                </div>
+
+                <div class="card-body">
+                    <p>📅 ${b.BookingDate} - ${b.BookingTime}</p>
+                    <p>👤 ${b.GuestCount} người</p>
+                    <p>🪑 Bàn: ${b.TableNumber || "Chưa xếp"}</p>
+                </div>
+
+                <div class="card-footer">
+                    ${b.Status === "Confirmed"
+                        ? `<button onclick="event.stopPropagation(); openReview(${b.RestaurantID}, ${b.ReservationID}))">⭐ Đánh giá</button>`
+                        : ""
+                    }
+                </div>
+
+            </div>
+        `
+    })
+
+    document.getElementById("historyContainer").innerHTML = html
+}
+
+function goHome() {
+    window.location.href = `/`
+}
+// SEARCH
+document.getElementById("searchInput").addEventListener("keyup", function() {
+    const key = this.value.toLowerCase()
+
+    const filtered = bookings.filter(b =>
+        b.CustomerName.toLowerCase().includes(key) ||
+        String(b.ReservationID).includes(key)
+    )
+
+    renderTable(filtered)
+})
+
+// FILTER
+document.getElementById("statusFilter").addEventListener("change", function() {
+    const status = this.value
+
+    if (!status) return renderTable(bookings)
+
+    const filtered = bookings.filter(b => b.Status === status)
+    renderTable(filtered)
+})
+
+
+function handleClick(status, restaurantID) {
+    if (status === "Confirmed") {
+        openReview(restaurantID)
+    } else if (status === "Cancelled") {
+        alert("Đơn đã bị hủy")
+    } else {
+        alert("Chưa sử dụng dịch vụ")
+    }
+}
+
+
+function openReview(restaurantID, reservationID) {
+    document.getElementById("reviewBox").style.display = "block"
+    document.getElementById("restaurantId").value = restaurantID
+    document.getElementById("reservationId").value = reservationID
+}
+
+
+function closeReview() {
+    document.getElementById("reviewBox").style.display = "none"
+}
+
+
+function submitReview() {
+    const restaurantID = document.getElementById("restaurantId").value
+    const reservationID = document.getElementById("reservationId").value
+
+    fetch("/api/v1/customer/review", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({
+            RestaurantID: restaurantID,
+            ReservationID: reservationID, // 👈 QUAN TRỌNG
+            Rating: document.getElementById("rating").value,
+            Comment: document.getElementById("comment").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error)
+        if (data.message) closeReview()
+    })
+}
+</script>
+{% endblock %}
