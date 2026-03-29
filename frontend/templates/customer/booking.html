@@ -1,10 +1,258 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block content %}
+
+<h2>Đặt bàn</h2>
+<select id="restaurantSelect" onchange="changeRestaurant(this.value)">
+    <option value="">-- Chọn nhà hàng --</option>
+</select>
+
+<p>Giờ hoạt động: <span id="openTime"></span> - <span id="closeTime"></span></p>
+<input id="name" placeholder="Họ tên"><br>
+<input id="phone" placeholder="SĐT"><br>
+
+<input id="date" type="date">
+<input id="time" type="time"><br>
+
+<input id="people" type="number" placeholder="Số người"><br>
+
+<textarea id="note" placeholder="Ghi chú"></textarea><br>
+
+<button onclick="check()">Kiểm tra bàn</button>
+
+<h3>Bàn trống</h3>
+<div id="tables"></div>
+
+<!-- POPUP -->
+<div id="paymentBox" style="display:none; border:1px solid black; padding:20px;">
+    <h3>Thanh toán</h3>
+
+    <p>Mã đơn: <span id="resId"></span></p>
+    <p>Tên: <span id="cusName"></span></p>
+    <p>SĐT: <span id="cusPhone"></span></p>
+    <p>Ngày: <span id="cusDate"></span></p>
+    <p>Giờ: <span id="cusTime"></span></p>
+    <p>Số người: <span id="cusPeople"></span></p>
+
+    <p>Tiền cọc: <b id="depositText"></b></p>
+
+    <img id="qrImg" width="200">
+
+    <br><br>
+    <button onclick="confirmPayment()">Đã chuyển khoản</button>
+    <button onclick="closePayment()">Đóng</button>
+</div>
+<div id="successBox" style="
+    display:none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    text-align: center;
+">
+    <h3 style="color: green;"> Đặt bàn thành công!</h3>
+
+    <button onclick="goHome()" style="
+        margin-top: 15px;
+        padding: 10px 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    ">
+        Quay về trang chủ
+    </button>
+</div>
+<script>
+window.addEventListener("load", function() {
+
+    fetch("/api/v1/customer/restaurants")
+    .then(res => res.json())
+    .then(data => {
+        const select = document.getElementById("restaurantSelect")
+
+        data.forEach(r => {
+            const option = document.createElement("option")
+            option.value = r.RestaurantID
+            option.textContent = r.RestaurantName
+
+            if (restaurant_id && r.RestaurantID == restaurant_id) {
+                option.selected = true
+            }
+
+            select.appendChild(option)
+        })
+
+        if (restaurant_id) {
+            loadRestaurantInfo(restaurant_id)
+        }
+    })
+})
+
+let params = new URLSearchParams(window.location.search)
+let restaurant_id = params.get("restaurant_id") || params.get("id") //  sửa lại đúng keylet selectedTable = null
+let reservationId = null
+
+
+function changeRestaurant(id) {
+    restaurant_id = id
+    loadRestaurantInfo(id)
+}
+
+function loadRestaurantInfo(id) {
+    fetch(`/api/v1/customer/restaurant/${id}`)
+    .then(res => res.json())
+    .then(data => {
+
+        const open = data.Opentime.substring(0,5)
+        const close = data.Closetime.substring(0,5)
+
+        document.getElementById("time").min = open
+        document.getElementById("time").max = close
+
+        document.getElementById("openTime").innerText = open
+        document.getElementById("closeTime").innerText = close
+    })
+}
+function toMinutes(t) {
+    const [h, m] = t.split(":").map(Number)
+    return h * 60 + m
+}
+
+function check() {
+    const open = document.getElementById("time").min
+    const close = document.getElementById("time").max
+
+    const name = document.getElementById("name").value.trim()
+    const phone = document.getElementById("phone").value.trim()
+    const time = document.getElementById("time").value
+    const date = document.getElementById("date").value
+    const people = document.getElementById("people").value
+
+    // CHECK ĐẦY ĐỦ DỮ LIỆU
+    if (!name || !phone || !date || !time || !people) {
+        alert("Vui lòng nhập đầy đủ thông tin!")
+        return
+    }
+
+    if (!open || !close) {
+        alert("Vui lòng chọn nhà hàng trước!")
+        return
+    }
+
+    const timeVal = toMinutes(time)
+    const openVal = toMinutes(open)
+    const closeVal = toMinutes(close)
+
+    if (timeVal < openVal || timeVal > closeVal) {
+        alert(`Chỉ được đặt từ ${open} đến ${close}`)
+        return
+    }
+
+    // GỌI API + BẮT LỖI BACKEND
+    fetch(`/api/v1/customer/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`)
+    .then(async res => {
+        const data = await res.json()
+
+        if (!res.ok) {
+            alert(data.error || "Có lỗi xảy ra!")
+            return
+        }
+
+        let html = ""
+        data.forEach(t => {
+            html += `<button onclick="selectTable(${t.TableID})">
+                        Bàn ${t.TableID} (${t.Capacity})
+                     </button>`
+        })
+
+        document.getElementById("tables").innerHTML = html
+    })
+}
+
+
+function selectTable(table_id) {
+    selectedTable = table_id
+    createBooking()
+}
+
+function createBooking() {
+    const name = document.getElementById("name").value
+    const phone = document.getElementById("phone").value
+    const date = document.getElementById("date").value
+    const time = document.getElementById("time").value
+    const people = document.getElementById("people").value
+    const note = document.getElementById("note").value
+    bookingData = {name, phone, date, time, people}
+     if (!restaurant_id) {
+    alert("Vui lòng chọn nhà hàng")
+    return }
+    fetch("/api/v1/customer/book", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            user_id: 1,
+            name, phone,
+            restaurant_id,
+            table_id: selectedTable,
+            date, time, people, note
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        reservationId = data.reservation_id
+        bookingData.qr = data.qr   //  nhận QR từ backend
+        bookingData.deposit = data.deposit
+        openPayment()
+    })
+}
+
+function openPayment() {
+    paymentBox.style.display = "block"
+
+    document.getElementById("resId").innerText = reservationId
+    document.getElementById("cusName").innerText = bookingData.name
+    document.getElementById("cusPhone").innerText = bookingData.phone
+    document.getElementById("cusDate").innerText = bookingData.date
+    document.getElementById("cusTime").innerText = bookingData.time
+    document.getElementById("cusPeople").innerText = bookingData.people
+
+    depositText.innerText = bookingData.deposit + " VND"
+    document.getElementById("qrImg").src = bookingData.qr
+}
+
+function closePayment() {
+    paymentBox.style.display = "none"
+}
+
+function confirmPayment() {
+    fetch("/api/v1/customer/payment", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            reservation_id: reservationId,
+            amount: bookingData.deposit
+        })
+    })
+    .then(res => res.json())
+    .then(() => {
+        closePayment()   // đóng popup QR
+        showSuccess()    // hiện thông báo đẹp
+    })
+}
+
+function showSuccess() {
+    document.getElementById("successBox").style.display = "block"
+}
+
+function goHome() {
+    window.location.href = "/"
+}
+</script>
+
+{% endblock %}

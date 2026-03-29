@@ -1,15 +1,6 @@
-"""""
+
 from backend.core.extensions import ma
-
-class FoodSchema(ma.Schema):
-    class Meta:
-        fields = ("FoodID", "FoodName", "Price")
-
-foods_schema = FoodSchema(many=True)
-
-"""""
-from backend.core.extensions import ma
-from backend.models.menu import Food   # sửa đúng path model của bạn
+from backend.models.menu import Food
 
 class FoodSchema(ma.SQLAlchemyAutoSchema):
     class Meta:

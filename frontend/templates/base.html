@@ -1,3 +1,4 @@
+<!--
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,5 +7,67 @@
 </head>
 <body>
 
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Restaurant{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/customer.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>🍽️ Restaurant</h2>
+
+        <a href="/">🏠 Trang chủ</a>
+        <a href="/api/v1/customer/search-page">🔍 Tìm kiếm</a>
+        <a href="/api/v1/customer/booking-page">📅 Đặt bàn</a>
+        <a href="/api/v1/customer/history-page" id="historyMenu" style="display:none;">📜Lịch sử</a>
+        <hr>
+        <a href="#" onclick="logout()" id="logoutMenu" style="display:none;">🚪 Đăng xuất</a>
+    </div>
+
+    <div class="content">
+        <div class="header">
+            {% block header %}{% endblock %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </div>
+
+
+</div>
+<script>
+window.addEventListener("load", function() {
+    fetch("/api/v1/customer/me", {
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("LOGIN STATUS:", data) // 👈 debug
+
+        const logoutBtn = document.getElementById("logoutMenu")
+        const historyMenu = document.getElementById("historyMenu")
+
+        // chỉ xử lý sidebar ở base.html
+        if (data.logged_in) {
+            if (logoutBtn) logoutBtn.style.display = "block"
+            if (historyMenu) historyMenu.style.display = "block"
+        } else {
+            if (logoutBtn) logoutBtn.style.display = "none"
+            if (historyMenu) historyMenu.style.display = "none"
+        }
+    })
+}
+)
+</script>
 </body>
 </html>

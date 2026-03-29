@@ -2,9 +2,55 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Menu</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/customer.css') }}">
 </head>
 <body>
+<button class="btn-exit" onclick="goHome()"> Đóng</button>
+<h2>🍜 Menu nhà hàng</h2>
+
+<div id="menu"></div>
+
+<button onclick="goBooking()">👉 Đặt bàn</button>
+
+<script>
+const params = new URLSearchParams(window.location.search)
+const id = params.get("id")
+
+// kiểm tra id
+if (!id) {
+    document.getElementById("menu").innerHTML = "<p>Lỗi: không có nhà hàng</p>"
+} else {
+    fetch(`/api/v1/customer/menu/${id}`)
+    .then(res => res.json())
+    .then(data => {
+        let html = ""
+
+        if (data.length === 0) {
+            html = "<p>Chưa có món ăn</p>"
+        }
+
+        data.forEach(m => {
+            html += `
+            <div class="card">
+                <h3>${m.FoodName}</h3>
+                <p>💰 ${m.Price} VND</p>
+                <p>${m.Description || ""}</p>
+            </div>
+            `
+        })
+
+        document.getElementById("menu").innerHTML = html
+    })
+}
+
+function goBooking() {
+    window.location.href = `/api/v1/customer/booking-page?id=${id}`
+}
+function goHome() {
+    window.location.href = `/`
+}
+</script>
 
 </body>
 </html>

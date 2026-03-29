@@ -1,10 +1,159 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block header %}
+Tổng quan
+{% endblock %}
+{% block content %}
 
-</body>
-</html>
+<div style="text-align:right; margin-bottom:20px;" id="authBox">
+
+    <!-- CHƯA LOGIN -->
+   <div id="guestUI">
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+        <input id="username" placeholder="Username">
+        <input id="password" type="password" placeholder="Password">
+
+        <button onclick="login()">Đăng nhập</button>
+        <button onclick="showRegister()">Đăng ký</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none;">
+        <input id="reg_username" placeholder="Username">
+        <input id="reg_password" type="password" placeholder="Password">
+        <input id="reg_email" placeholder="Email">
+        <input id="reg_phone" placeholder="Số điện thoại">
+
+        <button onclick="register()">Tạo tài khoản</button>
+        <button onclick="showLogin()">Quay lại</button>
+    </div>
+   </div>
+</div>
+
+<div class="dashboard">
+    <div class="card">
+        <h3>🍽️ Nhà hàng</h3>
+        <p>Tìm kiếm và xem menu nhà hàng dễ dàng</p>
+        <a href="/api/v1/customer/search-page" class="btn">Tìm kiếm</a>
+    </div>
+
+    <div class="card">
+        <h3>📅 Đặt bàn</h3>
+        <p>Đặt bàn nhanh chóng chỉ trong vài bước</p>
+        <a href="/api/v1/customer/booking-page" class="btn">Đặt ngay</a>
+    </div>
+
+    <div class="card" id="historyCard" style="display:none;">
+        <h3>📜 Lịch sử</h3>
+        <p>Xem lại các lần đặt bàn trước đó</p>
+        <a href="/api/v1/customer/history-page" class="btn">Xem lịch sử</a>
+    </div>
+</div>
+
+<script>
+function login() {
+    fetch("/api/v1/customer/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || data.error)
+
+        if (data.message) {
+            location.reload()
+        }
+    })
+}
+
+
+
+function register() {
+    console.log("CLICK REGISTER")
+
+    const username = document.getElementById("reg_username")?.value
+    const password = document.getElementById("reg_password")?.value
+    const email = document.getElementById("reg_email")?.value
+    const phone = document.getElementById("reg_phone")?.value
+
+    console.log(username, password, email, phone)
+
+    if (!username || !password) {
+        alert("Nhập thiếu dữ liệu")
+        return
+    }
+
+    fetch("/api/v1/customer/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username, password, email, phone
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data)
+        alert(data.message || data.error)
+
+        if (data.message) {
+            login()
+        }
+    })
+    .catch(err => console.error("ERROR:", err))
+}
+
+
+function logout() {
+    fetch("/api/v1/customer/logout", {
+        method: "GET",
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message)
+        location.reload()
+    })
+}
+</script>
+<script>
+
+window.addEventListener("load", function() {
+    fetch("/api/v1/customer/me", {
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        console.log("HOME CHECK:", data)
+
+        const guestUI = document.getElementById("guestUI")
+        const historyCard = document.getElementById("historyCard")
+
+        if (data.logged_in) {
+            if (guestUI) guestUI.style.display = "none"
+            if (historyCard) historyCard.style.display = "block"
+        } else {
+            if (guestUI) guestUI.style.display = "block"
+            if (historyCard) historyCard.style.display = "none"
+        }
+    })
+})
+
+
+function showRegister() {
+    document.getElementById("loginForm").style.display = "none"
+    document.getElementById("registerForm").style.display = "block"
+}
+
+function showLogin() {
+    document.getElementById("loginForm").style.display = "block"
+    document.getElementById("registerForm").style.display = "none"
+}
+</script>
+{% endblock %}
