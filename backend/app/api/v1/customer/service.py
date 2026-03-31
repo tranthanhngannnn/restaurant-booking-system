@@ -1,4 +1,3 @@
-from backend.models.restaurant import Restaurant
 from backend.models.menu import Food
 from backend.models.table import Table
 from backend.models.booking import Reservation
@@ -6,8 +5,6 @@ from backend.core.extensions import db
 from datetime import datetime, timedelta
 from backend.models.payment import Payment
 from backend.models.restaurant import Restaurant
-from backend.schemas.booking_schema import bookings_schema
-
 
 # ================== SEARCH ==================
 def search_restaurant(address, cuisine):
@@ -53,6 +50,8 @@ def get_menu(restaurant_id):
 # ================== CHECK TABLE ==================
 def check_table(restaurant_id, date, time, people):
     people = int(people)
+    booking_date = datetime.strptime(date, "%Y-%m-%d").date()
+    booking_time = datetime.strptime(time, "%H:%M").time()
 
     tables = Table.query.filter_by(RestaurantID=restaurant_id).all()
     result = []
@@ -61,8 +60,8 @@ def check_table(restaurant_id, date, time, people):
         if t.Capacity >= people:
             exist = Reservation.query.filter(
                 Reservation.TableID == t.TableID,
-                Reservation.BookingDate == date,
-                Reservation.BookingTime == time,
+                Reservation.BookingDate == booking_date,
+                Reservation.BookingTime == booking_time,
                 Reservation.Status.in_(["Pending", "Confirmed"])
             ).first()
 
@@ -98,7 +97,7 @@ def create_booking(data):
     deposit = calculate_deposit(guest_count)
 
     reservation = Reservation(
-        UserID=str(data.get("user_id")),
+        UserID=data.get("user_id") if data.get("user_id") else None,
         CustomerName=data.get("name"),
         phone=data.get("phone"),
         RestaurantID=int(data.get("restaurant_id")),
@@ -147,7 +146,7 @@ def get_restaurant_by_id(restaurant_id):
 
 # ================== PAYMENT ==================
 def calculate_deposit(people):
-    return people * 50000  # 50k / người
+    return people * 50000  # 50k/người
 
 def confirm_payment(reservation_id, amount):
     booking = Reservation.query.get(reservation_id)
@@ -212,12 +211,11 @@ def get_history(user_id):
             "ReservationID": b.ReservationID,
             "CustomerName": b.CustomerName,
             "phone": b.phone,
-            "BookingDate": str(b.BookingDate),
-            "BookingTime": str(b.BookingTime),
+            "BookingDate": b.BookingDate.strftime("%Y-%m-%d"),
+            "BookingTime": b.BookingTime.strftime("%H:%M"),
             "GuestCount": b.GuestCount,
             "Status": b.Status,
-
-            # lấy từ JOIN
+            "RestaurantID": b.RestaurantID,
             "RestaurantName": b.restaurant.RestaurantName if b.restaurant else None,
             "TableNumber": b.table.TableNumber if b.table else None
         })

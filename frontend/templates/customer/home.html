@@ -1,159 +1,90 @@
-{% extends "base.html" %}
-{% block header %}
-Tổng quan
-{% endblock %}
-{% block content %}
 
-<div style="text-align:right; margin-bottom:20px;" id="authBox">
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang chủ</title>
 
-    <!-- CHƯA LOGIN -->
-   <div id="guestUI">
+    <link rel="stylesheet" href="../../static/css/customer.css">
+</head>
 
-    <!-- LOGIN -->
-    <div id="loginForm">
-        <input id="username" placeholder="Username">
-        <input id="password" type="password" placeholder="Password">
+<body>
 
-        <button onclick="login()">Đăng nhập</button>
-        <button onclick="showRegister()">Đăng ký</button>
+<div class="container">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>🍽️ Restaurant</h2>
+
+        <a href="home.html">🏠 Trang chủ</a>
+        <a href="search.html">🔍 Tìm kiếm</a>
+        <a href="booking.html">📅 Đặt bàn</a>
+        <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
+        <a href="#" onclick="logout()" id="logoutMenu" style="display:none;">🚪 Đăng xuất</a>
     </div>
 
-    <!-- REGISTER -->
-    <div id="registerForm" style="display:none;">
-        <input id="reg_username" placeholder="Username">
-        <input id="reg_password" type="password" placeholder="Password">
-        <input id="reg_email" placeholder="Email">
-        <input id="reg_phone" placeholder="Số điện thoại">
+    <!-- CONTENT -->
+    <div class="content">
 
-        <button onclick="register()">Tạo tài khoản</button>
-        <button onclick="showLogin()">Quay lại</button>
-    </div>
-   </div>
-</div>
+        <h2>Trang chủ</h2>
 
-<div class="dashboard">
-    <div class="card">
-        <h3>🍽️ Nhà hàng</h3>
-        <p>Tìm kiếm và xem menu nhà hàng dễ dàng</p>
-        <a href="/api/v1/customer/search-page" class="btn">Tìm kiếm</a>
-    </div>
+        <div class="dashboard">
 
-    <div class="card">
-        <h3>📅 Đặt bàn</h3>
-        <p>Đặt bàn nhanh chóng chỉ trong vài bước</p>
-        <a href="/api/v1/customer/booking-page" class="btn">Đặt ngay</a>
-    </div>
+            <div class="card">
+                <h3>🍽️ Nhà hàng</h3>
+                <p>Tìm kiếm và xem menu nhà hàng dễ dàng</p>
+                <a href="search.html" class="btn">Tìm kiếm</a>
+            </div>
 
-    <div class="card" id="historyCard" style="display:none;">
-        <h3>📜 Lịch sử</h3>
-        <p>Xem lại các lần đặt bàn trước đó</p>
-        <a href="/api/v1/customer/history-page" class="btn">Xem lịch sử</a>
+            <div class="card">
+                <h3>📅 Đặt bàn</h3>
+                <p>Đặt bàn nhanh chóng chỉ trong vài bước</p>
+                <a href="booking.html" class="btn">Đặt ngay</a>
+            </div>
+
+            <div class="card" id="historyCard" style="display:none;">
+                <h3>📜 Lịch sử</h3>
+                <p>Xem lại các lần đặt bàn trước đó</p>
+                <a href="history.html" class="btn">Xem lịch sử</a>
+            </div>
+
+        </div>
+
     </div>
 </div>
 
 <script>
-function login() {
-    fetch("/api/v1/customer/login", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify({
-            username: document.getElementById("username").value,
-            password: document.getElementById("password").value
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message || data.error)
+    const logoutMenu = document.getElementById("logoutMenu")
 
-        if (data.message) {
-            location.reload()
-        }
-    })
-}
+const API = "http://localhost:5000/api"
 
-
-
-function register() {
-    console.log("CLICK REGISTER")
-
-    const username = document.getElementById("reg_username")?.value
-    const password = document.getElementById("reg_password")?.value
-    const email = document.getElementById("reg_email")?.value
-    const phone = document.getElementById("reg_phone")?.value
-
-    console.log(username, password, email, phone)
-
-    if (!username || !password) {
-        alert("Nhập thiếu dữ liệu")
-        return
-    }
-
-    fetch("/api/v1/customer/register", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            username, password, email, phone
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log(data)
-        alert(data.message || data.error)
-
-        if (data.message) {
-            login()
-        }
-    })
-    .catch(err => console.error("ERROR:", err))
-}
-
-
+// LOGOUT
 function logout() {
-    fetch("/api/v1/customer/logout", {
-        method: "GET",
+    fetch(`${API}/logout`, {
         credentials: "include"
     })
-    .then(res => res.json())
-    .then(data => {
-        alert(data.message)
-        location.reload()
-    })
+    .then(() => location.reload())
 }
-</script>
-<script>
 
-window.addEventListener("load", function() {
-    fetch("/api/v1/customer/me", {
+// CHECK LOGIN
+window.onload = () => {
+    fetch(`${API}/me`, {
         credentials: "include"
     })
     .then(res => res.json())
     .then(data => {
-
-        console.log("HOME CHECK:", data)
-
-        const guestUI = document.getElementById("guestUI")
-        const historyCard = document.getElementById("historyCard")
 
         if (data.logged_in) {
-            if (guestUI) guestUI.style.display = "none"
-            if (historyCard) historyCard.style.display = "block"
-        } else {
-            if (guestUI) guestUI.style.display = "block"
-            if (historyCard) historyCard.style.display = "none"
+        guestUI.style.display = "none"
+
+        historyLink.style.display = "block"
+        historyCard.style.display = "block"
+        logoutMenu.style.display = "block"
         }
     })
-})
-
-
-function showRegister() {
-    document.getElementById("loginForm").style.display = "none"
-    document.getElementById("registerForm").style.display = "block"
 }
 
-function showLogin() {
-    document.getElementById("loginForm").style.display = "block"
-    document.getElementById("registerForm").style.display = "none"
-}
 </script>
-{% endblock %}
+
+</body>
+</html>

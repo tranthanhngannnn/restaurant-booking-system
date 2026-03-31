@@ -1,80 +1,108 @@
-{% extends "base.html" %}
 
-{% block content %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đặt bàn</title>
 
-<h2>Đặt bàn</h2>
-<select id="restaurantSelect" onchange="changeRestaurant(this.value)">
-    <option value="">-- Chọn nhà hàng --</option>
-</select>
+    <link rel="stylesheet" href="../../static/css/customer.css">
+</head>
 
-<p>Giờ hoạt động: <span id="openTime"></span> - <span id="closeTime"></span></p>
-<input id="name" placeholder="Họ tên"><br>
-<input id="phone" placeholder="SĐT"><br>
+<body>
 
-<input id="date" type="date">
-<input id="time" type="time"><br>
+<div class="container">
 
-<input id="people" type="number" placeholder="Số người"><br>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>🍽️ Restaurant</h2>
 
-<textarea id="note" placeholder="Ghi chú"></textarea><br>
+        <a href="home.html">🏠 Trang chủ</a>
+        <a href="search.html">🔍 Tìm kiếm</a>
+        <a href="booking.html">📅 Đặt bàn</a>
+        <a href="history.html" id="historyMenu" style="display:none;">📜 Lịch sử</a>
+    </div>
 
-<button onclick="check()">Kiểm tra bàn</button>
+    <div class="content">
 
-<h3>Bàn trống</h3>
-<div id="tables"></div>
+        <h2>Đặt bàn</h2>
 
-<!-- POPUP -->
-<div id="paymentBox" style="display:none; border:1px solid black; padding:20px;">
-    <h3>Thanh toán</h3>
+        <select id="restaurantSelect" onchange="changeRestaurant(this.value)">
+            <option value="">-- Chọn nhà hàng --</option>
+        </select>
 
-    <p>Mã đơn: <span id="resId"></span></p>
-    <p>Tên: <span id="cusName"></span></p>
-    <p>SĐT: <span id="cusPhone"></span></p>
-    <p>Ngày: <span id="cusDate"></span></p>
-    <p>Giờ: <span id="cusTime"></span></p>
-    <p>Số người: <span id="cusPeople"></span></p>
+        <p>Giờ hoạt động:
+            <span id="openTime"></span> -
+            <span id="closeTime"></span>
+        </p>
 
-    <p>Tiền cọc: <b id="depositText"></b></p>
+        <input id="nameInput" placeholder="Họ tên"><br>
+        <input id="phoneInput" placeholder="SĐT"><br>
 
-    <img id="qrImg" width="200">
+        <input id="dateInput" type="date">
+        <input id="timeInput" type="time"><br>
 
-    <br><br>
-    <button onclick="confirmPayment()">Đã chuyển khoản</button>
-    <button onclick="closePayment()">Đóng</button>
+        <input id="peopleInput" type="number" placeholder="Số người"><br>
+
+        <textarea id="noteInput" placeholder="Ghi chú"></textarea><br>
+
+        <button onclick="check()">Kiểm tra bàn</button>
+
+        <h3>Bàn trống</h3>
+        <div id="tables"></div>
+
+        <!-- PAYMENT -->
+        <div id="paymentBox" style="display:none; border:1px solid black; padding:20px;">
+            <h3>Thanh toán</h3>
+            <p>Mã đơn: <span id="resId"></span></p>
+            <p>Tên: <span id="cusName"></span></p>
+            <p>SĐT: <span id="cusPhone"></span></p>
+            <p>Ngày: <span id="cusDate"></span></p>
+            <p>Giờ: <span id="cusTime"></span></p>
+            <p>Số người: <span id="cusPeople"></span></p>
+            <p>Tiền cọc: <b id="depositText"></b></p>
+            <img id="qrImg" width="200">
+            <br><br>
+            <button onclick="confirmPayment()">Đã chuyển khoản</button>
+            <button onclick="closePayment()">Đóng</button>
+        </div>
+
+        <!-- SUCCESS -->
+        <div id="successBox" style="
+            display:none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            text-align: center;
+        ">
+            <h3 style="color: green;">Đặt bàn thành công!</h3>
+            <button onclick="goHome()">Quay về trang chủ</button>
+        </div>
+
+    </div>
 </div>
-<div id="successBox" style="
-    display:none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.3);
-    text-align: center;
-">
-    <h3 style="color: green;"> Đặt bàn thành công!</h3>
 
-    <button onclick="goHome()" style="
-        margin-top: 15px;
-        padding: 10px 20px;
-        background: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-    ">
-        Quay về trang chủ
-    </button>
-</div>
 <script>
-window.addEventListener("load", function() {
+const API = "http://localhost:5000/api"
 
-    fetch("/api/v1/customer/restaurants")
+let params = new URLSearchParams(window.location.search)
+let restaurant_id = params.get("restaurant_id") || params.get("id")
+
+let selectedTable = null
+let reservationId = null
+let bookingData = {}
+
+// LOAD
+window.onload = function() {
+
+    fetch(`${API}/restaurants`)
     .then(res => res.json())
     .then(data => {
-        const select = document.getElementById("restaurantSelect")
+        restaurantSelect.innerHTML = `<option value="">-- Chọn nhà hàng --</option>`
 
         data.forEach(r => {
             const option = document.createElement("option")
@@ -85,63 +113,67 @@ window.addEventListener("load", function() {
                 option.selected = true
             }
 
-            select.appendChild(option)
+            restaurantSelect.appendChild(option)
         })
 
         if (restaurant_id) {
             loadRestaurantInfo(restaurant_id)
         }
     })
-})
+}
 
-let params = new URLSearchParams(window.location.search)
-let restaurant_id = params.get("restaurant_id") || params.get("id") //  sửa lại đúng keylet selectedTable = null
-let reservationId = null
-
-
+// CHANGE RESTAURANT
 function changeRestaurant(id) {
     restaurant_id = id
     loadRestaurantInfo(id)
 }
 
+// LOAD INFO
 function loadRestaurantInfo(id) {
-    fetch(`/api/v1/customer/restaurant/${id}`)
+    fetch(`${API}/restaurant/${id}`)
     .then(res => res.json())
     .then(data => {
-
         const open = data.Opentime.substring(0,5)
         const close = data.Closetime.substring(0,5)
 
-        document.getElementById("time").min = open
-        document.getElementById("time").max = close
+        timeInput.min = open
+        timeInput.max = close
 
-        document.getElementById("openTime").innerText = open
-        document.getElementById("closeTime").innerText = close
+        openTime.innerText = open
+        closeTime.innerText = close
     })
 }
+
+// TIME HELPER
 function toMinutes(t) {
     const [h, m] = t.split(":").map(Number)
     return h * 60 + m
 }
 
+// CHECK TABLE
 function check() {
-    const open = document.getElementById("time").min
-    const close = document.getElementById("time").max
+    const name = nameInput.value.trim()
+    const phone = phoneInput.value.trim()
+    const date = dateInput.value
+    const time = timeInput.value
+    const people = peopleInput.value
 
-    const name = document.getElementById("name").value.trim()
-    const phone = document.getElementById("phone").value.trim()
-    const time = document.getElementById("time").value
-    const date = document.getElementById("date").value
-    const people = document.getElementById("people").value
+    const open = timeInput.min
+    const close = timeInput.max
 
-    // CHECK ĐẦY ĐỦ DỮ LIỆU
+    // VALIDATION
     if (!name || !phone || !date || !time || !people) {
         alert("Vui lòng nhập đầy đủ thông tin!")
         return
     }
 
+    if (!restaurant_id) {
+        alert("Vui lòng chọn nhà hàng!")
+        return
+    }
+
     if (!open || !close) {
-        alert("Vui lòng chọn nhà hàng trước!")
+        alert("Chưa load giờ nhà hàng!")
         return
     }
 
@@ -154,8 +186,8 @@ function check() {
         return
     }
 
-    // GỌI API + BẮT LỖI BACKEND
-    fetch(`/api/v1/customer/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`)
+    // CALL API
+    fetch(`${API}/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`)
     .then(async res => {
         const data = await res.json()
 
@@ -171,88 +203,92 @@ function check() {
                      </button>`
         })
 
-        document.getElementById("tables").innerHTML = html
+        tables.innerHTML = html
     })
 }
 
-
-function selectTable(table_id) {
-    selectedTable = table_id
+// SELECT TABLE
+function selectTable(id) {
+    selectedTable = id
     createBooking()
 }
 
+// CREATE BOOKING
 function createBooking() {
-    const name = document.getElementById("name").value
-    const phone = document.getElementById("phone").value
-    const date = document.getElementById("date").value
-    const time = document.getElementById("time").value
-    const people = document.getElementById("people").value
-    const note = document.getElementById("note").value
-    bookingData = {name, phone, date, time, people}
-     if (!restaurant_id) {
-    alert("Vui lòng chọn nhà hàng")
-    return }
-    fetch("/api/v1/customer/book", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            user_id: 1,
-            name, phone,
+
+    fetch(`${API}/book`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            credentials: "include",
+            body: JSON.stringify({
+            name: nameInput.value,
+            phone: phoneInput.value,
             restaurant_id,
             table_id: selectedTable,
-            date, time, people, note
+            date: dateInput.value,
+            time: timeInput.value,
+            people: peopleInput.value,
+            note: noteInput.value
         })
     })
     .then(res => res.json())
     .then(data => {
         reservationId = data.reservation_id
-        bookingData.qr = data.qr   //  nhận QR từ backend
-        bookingData.deposit = data.deposit
+        bookingData = data
         openPayment()
     })
 }
 
+// PAYMENT
 function openPayment() {
     paymentBox.style.display = "block"
 
-    document.getElementById("resId").innerText = reservationId
-    document.getElementById("cusName").innerText = bookingData.name
-    document.getElementById("cusPhone").innerText = bookingData.phone
-    document.getElementById("cusDate").innerText = bookingData.date
-    document.getElementById("cusTime").innerText = bookingData.time
-    document.getElementById("cusPeople").innerText = bookingData.people
+    resId.innerText = reservationId
+    cusName.innerText = nameInput.value
+    cusPhone.innerText = phoneInput.value
+    cusDate.innerText = dateInput.value
+    cusTime.innerText = timeInput.value
+    cusPeople.innerText = peopleInput.value
 
     depositText.innerText = bookingData.deposit + " VND"
-    document.getElementById("qrImg").src = bookingData.qr
+    qrImg.src = bookingData.qr
 }
 
 function closePayment() {
     paymentBox.style.display = "none"
 }
 
+// CONFIRM
 function confirmPayment() {
-    fetch("/api/v1/customer/payment", {
+    fetch(`${API}/payment`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
+        credentials: "include",
         body: JSON.stringify({
             reservation_id: reservationId,
             amount: bookingData.deposit
         })
     })
     .then(res => res.json())
-    .then(() => {
-        closePayment()   // đóng popup QR
-        showSuccess()    // hiện thông báo đẹp
+    .then(data => {
+        if (data.error) {
+            alert(data.error)
+            return
+        }
+        closePayment()
+        showSuccess()
     })
 }
 
+// SUCCESS
 function showSuccess() {
-    document.getElementById("successBox").style.display = "block"
+    successBox.style.display = "block"
 }
 
 function goHome() {
-    window.location.href = "/"
+    window.location.href = "home.html"
 }
 </script>
 
-{% endblock %}
+</body>
+</html>

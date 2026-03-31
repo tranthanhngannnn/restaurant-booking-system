@@ -1,100 +1,57 @@
-<!--<!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>Tìm kiếm nhà hàng</title>
--->
-    <!-- CSS -->
-<!--
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="stylesheet" href="../../static/css/customer.css">
 </head>
+
 <body>
 
-<h1>🔍 Tìm kiếm nhà hàng</h1>
+<div class="container">
 
-<div class="search-box">
-    <input id="address" type="text" placeholder="Nhập địa chỉ">
+    <div class="sidebar">
+        <h2>🍽️ Restaurant</h2>
 
-    <select id="cuisine">
-        <option value="">-- Chọn loại món --</option>
-        <option value="1">Việt</option>
-        <option value="2">Âu</option>
-    </select>
+        <a href="home.html">🏠 Trang chủ</a>
+        <a href="search.html">🔍 Tìm kiếm</a>
+        <a href="booking.html">📅 Đặt bàn</a>
+        <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
+    </div>
 
-    <button onclick="searchRestaurant()">Tìm kiếm</button>
+    <!-- CONTENT -->
+    <div class="content">
+
+        <h1>Tìm kiếm nhà hàng</h1>
+
+        <input id="address" placeholder="Tìm kiếm nhà hàng...">
+
+        <select id="cuisine">
+            <option value="">Loại hình ẩm thực</option>
+            <option value="1">Lẩu</option>
+            <option value="2">Nướng</option>
+            <option value="3">Hải sản</option>
+            <option value="4">Chay</option>
+            <option value="5">Hấp</option>
+        </select>
+
+        <button onclick="search()">Tìm kiếm</button>
+
+        <div id="result"></div>
+
+    </div>
 </div>
 
-<hr>
-
-<div id="result"></div>
--->
-<!--  JS viết trực tiếp -->
-<!--
 <script>
-async function searchRestaurant() {
-    const address = document.getElementById("address").value;
-    const cuisine = document.getElementById("cuisine").value;
+const API = "http://localhost:5000/api"
 
-    try {
-        const res = await fetch(`/api/v1/customer/search?address=${address}&cuisine=${cuisine}`);
-        const data = await res.json();
-
-        const resultDiv = document.getElementById("result");
-        resultDiv.innerHTML = "";
-
-        if (data.length === 0) {
-            resultDiv.innerHTML = "<p>Không tìm thấy nhà hàng</p>";
-            return;
-        }
-
-        data.forEach(r => {
-            resultDiv.innerHTML += `
-                <div style="border:1px solid #ccc; margin:10px; padding:10px">
-                    <h3>${r.Name}</h3>
-                    <p>📍 ${r.Address}</p>
-                </div>
-            `;
-        });
-
-    } catch (error) {
-        console.error(error);
-        alert("Lỗi gọi API (check database)");
-    }
-}
-</script>
-
-</body>
-</html>
--->
-{% extends "base.html" %}
-
-{% block header %}
-Tìm kiếm nhà hàng
-{% endblock %}
-
-{% block content %}
-
-<input id="address" placeholder="Tìm kiếm nhà hàng...">
-
-<select id="cuisine">
-    <option value="">Loại hình ẩm thực</option>
-    <option value="1">Lẩu</option>
-    <option value="2">Nướng</option>
-    <option value="3">Hải sản</option>
-    <option value="4">Chay</option>
-    <option value="5">Hấp</option>
-</select>
-
-<button onclick="search()">Tìm kiếm</button>
-
-<div id="result"></div>
-
-<script>
 function search() {
     const address = document.getElementById("address").value;
     const cuisine = document.getElementById("cuisine").value;
 
-    fetch(`/api/v1/customer/search?address=${encodeURIComponent(address)}&cuisine=${cuisine}`)
+    fetch(`${API}/search?address=${encodeURIComponent(address)}&cuisine=${cuisine}`)
         .then(res => res.json())
         .then(data => {
             let html = "";
@@ -105,24 +62,39 @@ function search() {
 
             data.forEach(r => {
                 html += `
-                    <div>
+                    <div style="border:1px solid #ccc; margin:10px; padding:10px">
                         <h3>${r.RestaurantName}</h3>
-                        <p>${r.Address}</p>
-                        <p>${r.Phone}</p>
+                        <p>📍 ${r.Address}</p>
+                        <p>📞 ${r.Phone}</p>
                         <p>${r.Available}</p>
+
                         <button onclick="goMenu(${r.RestaurantID})">
                             Xem chi tiết
+                        </button>
+
+                        <button onclick="goBooking(${r.RestaurantID})">
+                            Đặt bàn
                         </button>
                     </div>
                 `;
             });
 
             document.getElementById("result").innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Lỗi gọi API");
         });
 }
 
 function goMenu(id) {
-    window.location.href = `/api/v1/customer/menu-page?id=${id}`;
+    window.location.href = `menu.html?id=${id}`;
+}
+
+function goBooking(id) {
+    window.location.href = `booking.html?id=${id}`;
 }
 </script>
-{% endblock %}
+
+</body>
+</html>

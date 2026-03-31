@@ -1,27 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>Menu</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/customer.css') }}">
+    <link rel="stylesheet" href="../../static/css/customer.css">
 </head>
 <body>
-<button class="btn-exit" onclick="goHome()"> Đóng</button>
-<h2>🍜 Menu nhà hàng</h2>
+
+<button onclick="goHome()">Đóng</button>
+<h2>Menu nhà hàng</h2>
 
 <div id="menu"></div>
 
-<button onclick="goBooking()">👉 Đặt bàn</button>
+<button onclick="goBooking()">Đặt bàn</button>
 
 <script>
 const params = new URLSearchParams(window.location.search)
 const id = params.get("id")
 
-// kiểm tra id
 if (!id) {
     document.getElementById("menu").innerHTML = "<p>Lỗi: không có nhà hàng</p>"
 } else {
-    fetch(`/api/v1/customer/menu/${id}`)
+    fetch(`http://127.0.0.1:5000/api/menu/${id}`)
     .then(res => res.json())
     .then(data => {
         let html = ""
@@ -32,7 +32,7 @@ if (!id) {
 
         data.forEach(m => {
             html += `
-            <div class="card">
+            <div style="border:1px solid #ccc; margin:10px; padding:10px">
                 <h3>${m.FoodName}</h3>
                 <p>💰 ${m.Price} VND</p>
                 <p>${m.Description || ""}</p>
@@ -45,10 +45,11 @@ if (!id) {
 }
 
 function goBooking() {
-    window.location.href = `/api/v1/customer/booking-page?id=${id}`
+    window.location.href = `booking.html?id=${id}`
 }
+
 function goHome() {
-    window.location.href = `/`
+    window.location.href = `search.html`
 }
 </script>
 

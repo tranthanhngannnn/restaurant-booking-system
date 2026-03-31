@@ -1,34 +1,18 @@
-from flask import Blueprint, session, redirect,request, jsonify, render_template
+from flask import Blueprint, session, redirect,request, jsonify
+from flask import send_from_directory
 from .service import *
 from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
-customer_bp = Blueprint("customer", __name__)
 from backend.models.review import Review
 from backend.core.extensions import db
 from backend.models.user import User
 from backend.app.api.v1.customer.service import get_all_restaurants, get_restaurant_by_id
-from backend.models.booking import Reservation
+
+
 # HTML pages
-@customer_bp.route("/")
-def home():
-    return render_template("customer/home.html")
+customer_bp = Blueprint("customer", __name__, url_prefix="/api")
 
-@customer_bp.route("/search-page")
-def search_page():
-    return render_template("customer/search.html")
-
-@customer_bp.route("/menu-page")
-def menu_page():
-    restaurant_id = request.args.get("id")
-    return render_template("customer/menu.html", restaurant_id=restaurant_id)
-
-@customer_bp.route("/booking-page")
-def booking_page():
-    return render_template("customer/booking.html")
-
-@customer_bp.route("/history-page")
-def history_page():
-    return render_template("customer/history.html")
 
 # API
 @customer_bp.route("/register", methods=["POST"])
@@ -51,15 +35,23 @@ def register():
 
 @customer_bp.route("/login", methods=["POST"])
 def login():
-    data = request.json
+    data = request.get_json()
 
-    user = User.query.filter_by(
-        Username=data["username"],
-        Password=data["password"]
-    ).first()
+    print("DATA:", data)
 
-    if not user:
-        return jsonify({"error": "Sai tài khoản hoặc mật khẩu"})
+    if not data:
+        return jsonify({"error": "Không có dữ liệu"}), 400
+
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return jsonify({"error": "Thiếu username/password"}), 400
+
+    user = User.query.filter_by(Username=username).first()
+
+    if not user or not check_password_hash(user.Password, password):
+        return jsonify({"error": "Sai tài khoản mật khẩu"}), 400
 
     session["user_id"] = user.UserID
     return jsonify({"message": "Đăng nhập thành công"})
@@ -106,11 +98,9 @@ def check():
 
 @customer_bp.route("/book", methods=["POST"])
 def book():
-    if "user_id" not in session:
-        return jsonify({"error": "Chưa đăng nhập"}), 401
 
     data = request.json
-    data["user_id"] = session["user_id"]
+    data["user_id"] = session.get("user_id")  # có thể None
 
     restaurant_id = data.get("restaurant_id")
     time_str = data.get("time")
@@ -154,33 +144,13 @@ def payment():
     ))
 
 @customer_bp.route("/history")
-def get_history():
+def get_history_route():
     user_id = session.get("user_id")
-
-    print("USER_ID:", user_id)
 
     if not user_id:
         return jsonify([])
 
-    bookings = Reservation.query.filter_by(UserID=user_id).all()
-
-    result = []
-    for b in bookings:
-        result.append({
-            "ReservationID": b.ReservationID,
-            "CustomerName": b.CustomerName,
-            "BookingDate": str(b.BookingDate),
-            "BookingTime": str(b.BookingTime),
-            "GuestCount": b.GuestCount,
-            "Status": b.Status,
-            "RestaurantID": b.RestaurantID,
-            "RestaurantName": b.restaurant.RestaurantName if b.restaurant else "",
-            "TableNumber": b.table.TableNumber if b.table else ""
-        })
-
-    print("RESULT:", result)
-
-    return jsonify(result)
+    return jsonify(get_history(user_id))
 
 
 @customer_bp.route("/review", methods=["POST"])
@@ -211,3 +181,8 @@ def get_me():
     if "user_id" in session:
         return jsonify({"logged_in": True})
     return jsonify({"logged_in": False})
+
+#@customer_bp.route("/", defaults={"path": ""})
+#@customer_bp.route("/<path:path>")
+#def spa(path):
+#    return send_from_directory("frontend", "home.html")
