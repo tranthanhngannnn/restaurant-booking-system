@@ -2,24 +2,12 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', Arial;
-    background-color: #f6f8fb;
+    background: url('https://phongcachmoc.vn/upload/images/tin-tuc/20%20mau%20nha%20hang%20dep/update-07-2022/Thiet-ke-nha-hang-Topping-Beef-quan-1-goc-19-2.JPG') no-repeat center;
+    background-size: cover;
+    background-attachment: fixed;
 }
 
 /* ===== LAYOUT ===== */
-.container {
-    display: flex;
-}
-
-/* ===== SIDEBAR ===== */
-.sidebar {
-    width: 220px;
-    height: 100vh;
-    background: linear-gradient(180deg, #ff7a18, #ffb347);
-    padding: 20px;
-    color: white;
-    display: flex;
-    flex-direction: column;
-}
 
 .sidebar h2 {
     text-align: center;
@@ -41,45 +29,12 @@ body {
 }
 
 /* ===== CONTENT ===== */
-.content {
-    flex: 1;
-    padding: 30px;
-}
-
 .header {
     font-size: 24px;
     font-weight: bold;
     margin-bottom: 20px;
 }
 
-/* ===== DASHBOARD ===== */
-.dashboard {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 25px;
-}
-
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: 0.3s;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-}
-
-.card h3 {
-    color: #ff7a18;
-}
-
-.card p {
-    color: #666;
-}
-
-/* ===== BUTTON ===== */
 .btn {
     display: inline-block;
     padding: 8px 14px;
@@ -98,7 +53,8 @@ body {
 input, select {
     padding: 10px;
     margin: 8px 0;
-   width: 250px; /*chú ý chỗ này*/
+    width: 100%;
+    max-width: 300px;
     border-radius: 6px;
     border: 1px solid #ddd;
 }
@@ -106,7 +62,7 @@ input, select {
 button {
     padding: 10px;
     border: none;
-    background: #ff7a18;
+    background: #d4af37;
     color: white;
     border-radius: 6px;
     cursor: pointer;
@@ -117,10 +73,10 @@ button:hover {
 }
 
 /* ===== TABLE ===== */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+#tables {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
 }
 
 table th, table td {
@@ -133,7 +89,7 @@ table th {
     color: white;
 }
 
-/* ===== NAV (cũ vẫn dùng được) ===== */
+/* ===== NAV  ===== */
 .nav a {
     display: inline-block;
     margin: 10px;
@@ -147,6 +103,7 @@ table th {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 15px;
+
 }
 
 .food-item {
@@ -154,6 +111,10 @@ table th {
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+
+}
+.food-item * {
+    color: black;
 }
 /* Pending */
 .status.Pending {
@@ -171,16 +132,18 @@ table th {
 }
 
 .btn-exit {
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    left: auto !important;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
 }
+
 .btn-closehst {
-   position: fixed !important;
-    bottom: 20px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
 }
 
 /* ===== HISTORY UI ===== */
@@ -296,4 +259,192 @@ table th {
     .history-grid {
         grid-template-columns: 1fr;
     }
+}
+/* RESET */
+
+
+/* HEADER */
+.header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 60px;
+
+    background: rgba(255,255,255,0.9);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 30px;
+    box-sizing: border-box;   /* ✅ FIX */
+
+    z-index: 1000;
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.logo span {
+    color: #d4af37; /* vàng */
+}
+
+.nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: black;
+}
+
+.auth-buttons button {
+    margin-left: 10px;
+    padding: 6px 12px;
+    border: none;
+    cursor: pointer;
+}
+
+.auth-buttons button:first-child {
+    background: black;
+    color: white;
+}
+
+.auth-buttons button:last-child {
+    background: #d4af37;
+    color: white;
+}
+
+/* HERO */
+.hero {
+    min-height: 100vh;
+    position: relative;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+}
+
+.header {
+    height: 60px;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+.main-layout {
+    display: flex;
+    margin-top: 60px;
+    position: relative;
+}
+.sidebar {
+    width: 250px;
+    padding: 20px;
+
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(10px);
+
+    color: white;
+}
+
+.hero-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+}
+.content {
+    flex: 1;
+    padding: 40px;
+    color: white;
+}
+.card {
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+
+    padding: 20px;
+    border-radius: 15px;
+    color: white;
+
+    width: 100%;
+    max-width: 250px;
+
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+.dashboard {
+    display: flex;
+    gap: 20px;
+}
+.hero-content h1 {
+    font-size: 50px;
+    color: white;
+}
+
+.hero-content span {
+    color: #d4af37;
+}
+.hero-content p {
+    font-size: 18px;
+}
+/* POPUP FULL MÀN HÌNH */
+.popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+}
+
+.popup-content {
+    background: white;
+    color: black;
+
+    padding: 20px;
+    border-radius: 10px;
+
+    width: 400px;
+    max-height: 80vh;         /* giới hạn chiều cao */
+    overflow-y: auto;         /*  thanh cuộn */
+
+    position: relative;       /*để nút X đúng vị trí */
+}
+.popup-content input,
+.popup-content textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background: white;
+    color: black;
+}
+/* NÚT X */
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+
+    font-size: 22px;
+    cursor: pointer;
 }

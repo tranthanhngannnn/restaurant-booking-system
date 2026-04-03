@@ -10,79 +10,84 @@
 
 <body>
 
-<div class="container">
+<!-- HEADER -->
+<div class="header">
+    <div class="logo">GOLDEN <span>HARVEST</span></div>
+</div>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>🍽️ Restaurant</h2>
+<div class="hero">
+    <div class="overlay"></div>
 
-        <a href="home.html">🏠 Trang chủ</a>
-        <a href="search.html">🔍 Tìm kiếm</a>
-        <a href="booking.html">📅 Đặt bàn</a>
-        <a href="history.html" id="historyMenu" style="display:none;">📜 Lịch sử</a>
-    </div>
+    <div class="main-layout">
 
-    <div class="content">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <a href="home.html">🏠 Trang chủ</a>
+            <a href="search.html">🔍 Tìm kiếm</a>
+            <a href="booking.html">📅 Đặt bàn</a>
+            <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
 
-        <h2>Đặt bàn</h2>
-
-        <select id="restaurantSelect" onchange="changeRestaurant(this.value)">
-            <option value="">-- Chọn nhà hàng --</option>
-        </select>
-
-        <p>Giờ hoạt động:
-            <span id="openTime"></span> -
-            <span id="closeTime"></span>
-        </p>
-
-        <input id="nameInput" placeholder="Họ tên"><br>
-        <input id="phoneInput" placeholder="SĐT"><br>
-
-        <input id="dateInput" type="date">
-        <input id="timeInput" type="time"><br>
-
-        <input id="peopleInput" type="number" placeholder="Số người"><br>
-
-        <textarea id="noteInput" placeholder="Ghi chú"></textarea><br>
-
-        <button onclick="check()">Kiểm tra bàn</button>
-
-        <h3>Bàn trống</h3>
-        <div id="tables"></div>
-
-        <!-- PAYMENT -->
-        <div id="paymentBox" style="display:none; border:1px solid black; padding:20px;">
-            <h3>Thanh toán</h3>
-            <p>Mã đơn: <span id="resId"></span></p>
-            <p>Tên: <span id="cusName"></span></p>
-            <p>SĐT: <span id="cusPhone"></span></p>
-            <p>Ngày: <span id="cusDate"></span></p>
-            <p>Giờ: <span id="cusTime"></span></p>
-            <p>Số người: <span id="cusPeople"></span></p>
-            <p>Tiền cọc: <b id="depositText"></b></p>
-            <img id="qrImg" width="200">
-            <br><br>
-            <button onclick="confirmPayment()">Đã chuyển khoản</button>
-            <button onclick="closePayment()">Đóng</button>
         </div>
 
-        <!-- SUCCESS -->
-        <div id="successBox" style="
-            display:none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-            text-align: center;
-        ">
-            <h3 style="color: green;">Đặt bàn thành công!</h3>
-            <button onclick="goHome()">Quay về trang chủ</button>
-        </div>
+        <!-- CONTENT -->
+        <div class="content">
 
+            <h2>Đặt bàn</h2>
+
+            <select id="restaurantSelect" onchange="changeRestaurant(this.value)">
+                <option value="">-- Chọn nhà hàng --</option>
+            </select>
+
+            <p>Giờ hoạt động:
+                <span id="openTime"></span> -
+                <span id="closeTime"></span>
+            </p>
+
+            <input id="nameInput" placeholder="Họ tên"><br>
+            <input id="phoneInput" placeholder="SĐT"><br>
+
+            <input id="dateInput" type="date">
+            <input id="timeInput" type="time"><br>
+
+            <input id="peopleInput" type="number" placeholder="Số người"><br>
+
+            <textarea id="noteInput" placeholder="Ghi chú"></textarea><br>
+
+            <button onclick="check()">Kiểm tra bàn</button>
+
+            <h3>Bàn trống</h3>
+            <div id="tables"></div>
+
+            <!-- PAYMENT -->
+            <div id="paymentBox" class="popup" style="display:none;">
+                <div class="popup-content">
+                    <span class="close-btn" onclick="closePayment()">×</span>
+
+                    <h3>Thanh toán</h3>
+                    <p>Mã đơn: <span id="resId"></span></p>
+                    <p>Tên: <span id="cusName"></span></p>
+                    <p>SĐT: <span id="cusPhone"></span></p>
+                    <p>Ngày: <span id="cusDate"></span></p>
+                    <p>Giờ: <span id="cusTime"></span></p>
+                    <p>Số người: <span id="cusPeople"></span></p>
+                    <p>Tiền cọc: <b id="depositText"></b></p>
+
+                    <img id="qrImg" width="200">
+
+                    <br><br>
+                    <button onclick="confirmPayment()">Đã chuyển khoản</button>
+                </div>
+            </div>
+
+            <!-- SUCCESS -->
+            <div id="successBox" class="popup" style="display:none;">
+                <div class="popup-content">
+                    <h3 style="color: green;">Đặt bàn thành công!</h3>
+                    <button onclick="goHome()">Quay về trang chủ</button>
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
@@ -98,7 +103,17 @@ let bookingData = {}
 
 // LOAD
 window.onload = function() {
+    const historyLink = document.getElementById("historyLink")
 
+    fetch(`${API}/me`, {
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.logged_in) {
+            historyLink.style.display = "block"
+        }
+    })
     fetch(`${API}/restaurants`)
     .then(res => res.json())
     .then(data => {
@@ -241,7 +256,7 @@ function createBooking() {
 
 // PAYMENT
 function openPayment() {
-    paymentBox.style.display = "block"
+    paymentBox.style.display = "flex"
 
     resId.innerText = reservationId
     cusName.innerText = nameInput.value
@@ -287,6 +302,12 @@ function showSuccess() {
 
 function goHome() {
     window.location.href = "home.html"
+}
+function logout() {
+    fetch(`${API}/logout`, {
+        credentials: "include"
+    })
+    .then(() => location.reload())
 }
 </script>
 

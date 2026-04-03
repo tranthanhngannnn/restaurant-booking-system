@@ -10,69 +10,64 @@
 
 <body>
 
-<div class="container">
+<div class="header">
+    <div class="logo">GOLDEN <span>HARVEST</span></div>
+</div>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>🍽️ Restaurant</h2>
+<div class="hero">
+    <div class="overlay"></div>
 
-        <a href="home.html">🏠 Trang chủ</a>
-        <a href="search.html">🔍 Tìm kiếm</a>
-        <a href="booking.html">📅 Đặt bàn</a>
-        <a href="history.html">📜 Lịch sử</a>
-    </div>
+    <div class="main-layout">
 
-    <!-- CONTENT -->
-    <div class="content">
-
-        <h2 style="text-align:center;">📜 Lịch sử đặt bàn</h2>
-
-        <div class="toolbar">
-            <input id="searchInput" placeholder="🔍 Tìm theo tên hoặc mã...">
-
-            <select id="statusFilter">
-                <option value="">Tất cả</option>
-                <option value="Pending">Pending</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Cancelled">Cancelled</option>
-            </select>
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <a href="home.html">🏠 Trang chủ</a>
+            <a href="search.html">🔍 Tìm kiếm</a>
+            <a href="booking.html">📅 Đặt bàn</a>
+            <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
         </div>
 
-        <div id="historyContainer" class="history-grid"></div>
+        <!-- CONTENT -->
+        <div class="content">
 
-        <button class="btn btn-closehst" onclick="goHome()">❌ Đóng</button>
+            <h2> Lịch sử đặt bàn</h2>
 
-        <!-- REVIEW POPUP -->
-        <div id="reviewBox" style="
-            display:none;
-            position:fixed;
-            top:50%;
-            left:50%;
-            transform:translate(-50%,-50%);
-            background:white;
-            padding:20px;
-            border-radius:10px;
-            box-shadow:0 0 10px rgba(0,0,0,0.3);
-            z-index:9999;
-            width:300px;
-        ">
+            <div class="toolbar">
+                <input id="searchInput" placeholder="🔍 Tìm theo tên hoặc mã...">
 
-            <h3>⭐ Đánh giá</h3>
+                <select id="statusFilter">
+                    <option value="">Tất cả</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
 
-            <input type="hidden" id="restaurantId">
-            <input type="hidden" id="reservationId">
+            <div id="historyContainer" class="history-grid"></div>
 
-            <label>Rating:</label>
-            <input type="number" id="rating" min="1" max="5">
+            <button class="btn btn-closehst" onclick="goHome()"> Đóng</button>
 
-            <label>Nhận xét:</label>
-            <textarea id="comment"></textarea>
+            <!-- REVIEW POPUP -->
+            <div id="reviewBox" class="popup" style="display:none;">
+                <div class="popup-content">
+                    <h3>⭐ Đánh giá</h3>
 
-            <br><br>
-            <button onclick="submitReview()">Gửi</button>
-            <button onclick="closeReview()">Đóng</button>
+                    <input type="hidden" id="restaurantId">
+                    <input type="hidden" id="reservationId">
+
+                    <label>Rating:</label>
+                    <input type="number" id="rating" min="1" max="5">
+
+                    <label>Nhận xét:</label>
+                    <textarea id="comment"></textarea>
+
+                    <br><br>
+                    <button onclick="submitReview()">Gửi</button>
+                    <button onclick="closeReview()">Đóng</button>
+                </div>
+            </div>
+
         </div>
-
     </div>
 </div>
 
@@ -82,12 +77,27 @@ const API = "http://localhost:5000/api"
 let bookings = []
 
 window.onload = () => {
+    const historyLink = document.getElementById("historyLink")
+
+
+    // 🔥 CHECK LOGIN
+    fetch(`${API}/me`, {
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.logged_in) {
+            historyLink.style.display = "block"
+        } else {
+            alert("Bạn chưa đăng nhập")
+            window.location.href = "home.html"
+        }
+    })
+
+    // LOAD DATA
     loadHistory()
 
-    // SEARCH
     searchInput.addEventListener("keyup", filterData)
-
-    // FILTER
     statusFilter.addEventListener("change", filterData)
 }
 
@@ -187,7 +197,7 @@ function goHome() {
 }
 
 function openReview(restaurantID, reservationID) {
-    reviewBox.style.display = "block"
+    reviewBox.style.display = "flex"
     restaurantId.value = restaurantID
     reservationId.value = reservationID
 }
