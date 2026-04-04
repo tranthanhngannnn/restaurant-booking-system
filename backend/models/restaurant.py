@@ -16,11 +16,12 @@ class Restaurant(db.Model):
     status = db.Column(db.String(50), nullable=False, default='Pending')  # Mặc định là chờ duyệt
 
     # Khóa ngoại
-    UserID = db.Column(db.Integer)  # ID của chủ nhà hàng
+    UserID = db.Column(db.Integer, db.ForeignKey('users.UserID'))  # ID của chủ nhà hàng
     CuisineID = db.Column(db.Integer, db.ForeignKey('Cuisine.CuisineID'))
 
     # Thiết lập relationship để lấy dữ liệu từ bảng Cuisine dễ dàng hơn
     cuisine = db.relationship('Cuisine', backref='restaurants')
+    owner = db.relationship('User', backref='owned_restaurants')
 
     def __init__(self, RestaurantName, status='Đang chờ duyệt', Address=None, Phone=None,
                  Email=None, Opentime=None, Closetime=None, description=None,

@@ -1,0 +1,127 @@
+Index: backend/core/__init__.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import os\r\nfrom core.extensions import db, login_manager, jwt, ma\r\nfrom app.api.v1.auth.routes import auth_bp\r\nfrom app.api.v1.admin.routes import admin_bp\r\nfrom app.api.v1.restaurant import restaurant_bp\r\nfrom app.api.v1.customer.routes import customer_bp\r\nfrom flask import Flask, template_rendered\r\nfrom flask import render_template\r\nfrom core.config import Config\r\nfrom flask_cors import CORS\r\nfrom models.user import User\r\nfrom models.review import Review\r\n\r\n\r\ndef create_app():\r\n    BASE_DIR = os.path.abspath(os.path.dirname(__file__))\r\n\r\n    app = Flask(\r\n        __name__,\r\n        template_folder=os.path.join(BASE_DIR, \"../../frontend/templates\"),\r\n        static_folder=os.path.join(BASE_DIR, \"../../frontend/static\")\r\n    )\r\n\r\n    # Cấu hình Database & Security\r\n    app.config.from_object(Config)\r\n    app.config['SECRET_KEY'] = '123456'\r\n    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/restaurant_booking'\r\n    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False\r\n    app.config['JWT_SECRET_KEY'] = '6a2c53c83b86197f722e555454742656a926b1ae6de96f27'\r\n    app.secret_key = \"super_secret_key\"\r\n\r\n    # khởi tạo extensions\r\n    db.init_app(app)\r\n    ma.init_app(app)\r\n    login_manager.init_app(app)\r\n    jwt.init_app(app)\r\n    CORS(app, supports_credentials=True)\r\n\r\n    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')\r\n    app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')\r\n    app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurant')\r\n    app.register_blueprint(customer_bp, url_prefix=\"/api/v1/customer\")\r\n\r\n    # Route chính\r\n    @app.route(\"/\")\r\n    def root():\r\n        return render_template(\"customer/home.html\")\r\n\r\n    return app\r\n\r\n\r\n\r\n\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/backend/core/__init__.py b/backend/core/__init__.py
+--- a/backend/core/__init__.py	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/backend/core/__init__.py	(date 1775309044715)
+@@ -3,7 +3,6 @@
+ from app.api.v1.auth.routes import auth_bp
+ from app.api.v1.admin.routes import admin_bp
+ from app.api.v1.restaurant import restaurant_bp
+-from app.api.v1.customer.routes import customer_bp
+ from flask import Flask, template_rendered
+ from flask import render_template
+ from core.config import Config
+Index: frontend/core/config.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/core/config.py b/frontend/core/config.py
+new file mode 100644
+--- /dev/null	(date 1774843911160)
++++ b/frontend/core/config.py	(date 1774843911160)
+@@ -0,0 +1,14 @@
++import os
++from dotenv import load_dotenv
++
++load_dotenv()  # đọc file .env
++
++class Config:
++    SQLALCHEMY_DATABASE_URI = (
++        f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
++        f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', '3306')}"
++        f"/{os.getenv('DB_NAME')}"
++    )
++
++    SQLALCHEMY_TRACK_MODIFICATIONS = False
++    SECRET_KEY = "secret_key"
+\ No newline at end of file
+Index: frontend/core/__init__.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/core/__init__.py b/frontend/core/__init__.py
+new file mode 100644
+--- /dev/null	(date 1774846609129)
++++ b/frontend/core/__init__.py	(date 1774846609129)
+@@ -0,0 +1,54 @@
++import os
++from core.extensions import db, login_manager, jwt, ma
++from app.api.v1.auth.routes import auth_bp
++from app.api.v1.admin.routes import admin_bp
++from app.api.v1.restaurant import restaurant_bp
++from app.api.v1.customer.routes import customer_bp
++from flask import Flask, template_rendered
++from flask import render_template
++from core.config import Config
++from flask_cors import CORS
++from models.user import User
++from models.review import Review
++
++
++def create_app():
++    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
++
++    app = Flask(
++        __name__,
++        template_folder=os.path.join(BASE_DIR, "../../frontend/templates"),
++        static_folder=os.path.join(BASE_DIR, "../../frontend/static")
++    )
++
++    # Cấu hình Database & Security
++    app.config.from_object(Config)
++    app.config['SECRET_KEY'] = '123456'
++    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/restaurant_booking'
++    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
++    app.config['JWT_SECRET_KEY'] = '6a2c53c83b86197f722e555454742656a926b1ae6de96f27'
++    app.secret_key = "super_secret_key"
++
++    # khởi tạo extensions
++    db.init_app(app)
++    ma.init_app(app)
++    login_manager.init_app(app)
++    jwt.init_app(app)
++    CORS(app, supports_credentials=True)
++
++    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
++    app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
++    app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurant')
++    app.register_blueprint(customer_bp, url_prefix="/api/v1/customer")
++
++    # Route chính
++    @app.route("/")
++    def root():
++        return render_template("customer/home.html")
++
++    return app
++
++
++
++
++
+Index: frontend/core/extensions.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/core/extensions.py b/frontend/core/extensions.py
+new file mode 100644
+--- /dev/null	(date 1774846388383)
++++ b/frontend/core/extensions.py	(date 1774846388383)
+@@ -0,0 +1,9 @@
++from flask_sqlalchemy import SQLAlchemy
++from flask_login import LoginManager
++from flask_jwt_extended import JWTManager
++from flask_marshmallow import Marshmallow
++
++db = SQLAlchemy()
++ma = Marshmallow()
++login_manager = LoginManager()
++jwt = JWTManager()
+\ No newline at end of file

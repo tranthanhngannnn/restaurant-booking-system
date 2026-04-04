@@ -1,0 +1,1544 @@
+Index: backend/app/api/v1/customer/routes.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/backend/app/api/v1/customer/routes.py b/backend/app/api/v1/customer/routes.py
+--- a/backend/app/api/v1/customer/routes.py	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/backend/app/api/v1/customer/routes.py	(date 1774859166581)
+@@ -1,0 +1,175 @@
++from flask import Blueprint, session, redirect,request, jsonify, render_template
++from .service import *
++from werkzeug.security import generate_password_hash
++from sqlalchemy.exc import IntegrityError
++customer_bp = Blueprint("customer", __name__)
++from models.review import Review
++from core.extensions import db
++from models.user import User
++from app.api.v1.customer.service import get_all_restaurants, get_restaurant_by_id
++from models.booking import Reservation
++# HTML pages
++@customer_bp.route("/")
++def home():
++    return render_template("customer/home.html")
++
++@customer_bp.route("/search-page")
++def search_page():
++    return render_template("customer/search.html")
++
++@customer_bp.route("/menu-page")
++def menu_page():
++    restaurant_id = request.args.get("id")
++    return render_template("customer/menu.html", restaurant_id=restaurant_id)
++
++@customer_bp.route("/booking-page")
++def booking_page():
++    return render_template("customer/booking.html")
++
++@customer_bp.route("/history-page")
++def history_page():
++    return render_template("customer/history.html")
++
++# API
++@customer_bp.route("/search")
++def search():
++    address = request.args.get("address")
++    cuisine = request.args.get("cuisine")
++
++    # Gọi service lấy dữ liệu từ DB
++    restaurants = search_restaurant(address, cuisine)  # trả về list dict
++    return jsonify(restaurants)
++
++@customer_bp.route("/menu/<int:id>")
++def menu(id):
++    return jsonify(get_menu(id))
++
++@customer_bp.route("/check")
++def check():
++    restaurant_id = request.args.get("restaurant_id")
++    date = request.args.get("date")
++    time = request.args.get("time")
++    people = request.args.get("people")
++
++    # Check thiếu dữ liệu
++    if not all([restaurant_id, date, time, people]):
++        return jsonify({"error": "Vui lòng nhập đầy đủ thông tin"}), 400
++    # Check số người hợp lệ
++    try:
++        people = int(people)
++    except ValueError:
++        return jsonify({"error": "Số người không hợp lệ"}), 400
++
++    return jsonify(check_table(
++        restaurant_id,
++        date,
++        time,
++        people))
++
++@customer_bp.route("/book", methods=["POST"])
++def book():
++    if "user_id" not in session:
++        return jsonify({"error": "Chưa đăng nhập"}), 401
++
++    data = request.json
++    data["user_id"] = session["user_id"]
++
++    restaurant_id = data.get("restaurant_id")
++    time_str = data.get("time")
++
++    try:
++        booking_time = datetime.strptime(time_str, "%H:%M").time()
++    except:
++        return jsonify({"error": "Sai format thời gian"}), 400
++
++    restaurant = get_restaurant_by_id(restaurant_id)
++
++    if not restaurant:
++        return jsonify({"error": "Restaurant không tồn tại"}), 404
++
++    open_time = datetime.strptime(restaurant["Opentime"], "%H:%M").time()
++    close_time = datetime.strptime(restaurant["Closetime"], "%H:%M").time()
++
++    if not (open_time <= booking_time <= close_time):
++        return jsonify({
++            "error": f"Chỉ đặt từ {open_time} đến {close_time}"
++        }), 400
++    result = create_booking(data)
++    return jsonify({** result, "deposit":result.get("deposit")})
++
++@customer_bp.route("/restaurants")
++def get_restaurants():
++    return jsonify(get_all_restaurants())
++
++@customer_bp.route("/restaurant/<int:id>")
++def get_restaurant(id):
++    return jsonify(get_restaurant_by_id(id))
++
++# API thanh toán đặt cọc
++@customer_bp.route("/payment", methods=["POST"])
++def payment():
++    data = request.json
++
++    return jsonify(confirm_payment(
++        data.get("reservation_id"),
++        data.get("amount")
++    ))
++
++@customer_bp.route("/history")
++def get_history():
++    user_id = session.get("user_id")
++
++    print("USER_ID:", user_id)
++
++    if not user_id:
++        return jsonify([])
++
++    bookings = Reservation.query.filter_by(UserID=user_id).all()
++
++    result = []
++    for b in bookings:
++        result.append({
++            "ReservationID": b.ReservationID,
++            "CustomerName": b.CustomerName,
++            "BookingDate": str(b.BookingDate),
++            "BookingTime": str(b.BookingTime),
++            "GuestCount": b.GuestCount,
++            "Status": b.Status,
++            "RestaurantID": b.RestaurantID,
++            "RestaurantName": b.restaurant.RestaurantName if b.restaurant else "",
++            "TableNumber": b.table.TableNumber if b.table else ""
++        })
++
++    print("RESULT:", result)
++
++    return jsonify(result)
++
++
++@customer_bp.route("/review", methods=["POST"])
++def create_review():
++    if "user_id" not in session:
++        return jsonify({"error": "Bạn cần đăng nhập"}), 401
++
++    data = request.get_json()
++
++    new_review = Review(
++        UserID=session["user_id"],
++        RestaurantID=data["RestaurantID"],
++        Rating=data["Rating"],
++        Comment=data["Comment"]
++    )
++
++    try:
++        db.session.add(new_review)
++        db.session.commit()
++    except IntegrityError:
++        db.session.rollback()
++        return jsonify({"error": "Bạn đã review rồi"}), 400
++
++    return jsonify({"message": "Review thành công"})
++
++@customer_bp.route("/me")
++def get_me():
++    if "user_id" in session:
++        return jsonify({"logged_in": True})
++    return jsonify({"logged_in": False})
+Index: backend/app/api/v1/customer/service.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/backend/app/api/v1/customer/service.py b/backend/app/api/v1/customer/service.py
+--- a/backend/app/api/v1/customer/service.py	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/backend/app/api/v1/customer/service.py	(date 1774858228308)
+@@ -1,0 +1,223 @@
++from models.menu import Food
++from models.table import Table
++from models.booking import Reservation
++from core.extensions import db
++from datetime import datetime, timedelta
++from models.payment import Payment
++from models.restaurant import Restaurant
++from schemas.booking_schema import bookings_schema
++
++
++# ================== SEARCH ==================
++def search_restaurant(address, cuisine):
++    query = Restaurant.query
++
++    if address:
++        query = query.filter(Restaurant.Address.ilike(f"%{address}%"))
++
++    if cuisine:
++        query = query.filter(Restaurant.CuisineID == int(cuisine))
++
++    restaurants = query.all()
++
++    result = []
++    for r in restaurants:
++        empty_tables = Table.query.filter_by(
++            RestaurantID=r.RestaurantID,
++            Status="Trống"
++        ).count()
++
++        result.append({
++            "RestaurantID": r.RestaurantID,
++            "RestaurantName": r.RestaurantName,
++            "Address": r.Address,
++            "Phone": r.Phone,
++            "Available": "Còn bàn" if empty_tables > 0 else "Hết bàn"
++        })
++
++    return result
++
++
++# ================== MENU ==================
++def get_menu(restaurant_id):
++    foods = Food.query.filter_by(RestaurantID=restaurant_id).all()
++
++    return [{
++        "FoodName": f.FoodName,
++        "Price": float(f.Price),
++        "Description": f.Description
++    } for f in foods]
++
++
++# ================== CHECK TABLE ==================
++def check_table(restaurant_id, date, time, people):
++    people = int(people)
++
++    tables = Table.query.filter_by(RestaurantID=restaurant_id).all()
++    result = []
++
++    for t in tables:
++        if t.Capacity >= people:
++            exist = Reservation.query.filter(
++                Reservation.TableID == t.TableID,
++                Reservation.BookingDate == date,
++                Reservation.BookingTime == time,
++                Reservation.Status.in_(["Pending", "Confirmed"])
++            ).first()
++
++            if not exist:
++                result.append({
++                    "TableID": t.TableID,
++                    "Capacity": t.Capacity
++                })
++
++    return result
++
++
++# ================== CREATE BOOKING ==================
++def create_booking(data):
++    cancel_expired_bookings()  # chuyển sang đây
++
++    if not data.get("name"):
++        return {"error": "Customer name is required"}
++
++    # chống double booking
++    exist = Reservation.query.filter(
++        Reservation.TableID == int(data.get("table_id")),
++        Reservation.BookingDate == data.get("date"),
++        Reservation.BookingTime == data.get("time"),
++        Reservation.Status.in_(["Pending", "Confirmed"])
++    ).first()
++
++    if exist:
++        return {"error": "Bàn đã được đặt"}
++
++    guest_count = int(data.get("people"))
++    #  tính tiền cọc ở backend
++    deposit = calculate_deposit(guest_count)
++
++    reservation = Reservation(
++        UserID=str(data.get("user_id")),
++        CustomerName=data.get("name"),
++        phone=data.get("phone"),
++        RestaurantID=int(data.get("restaurant_id")),
++        TableID=int(data.get("table_id")),
++        BookingDate=data.get("date"),
++        BookingTime=data.get("time"),
++        GuestCount=guest_count,
++        Deposit=deposit,
++        Status="Pending"
++    )
++
++    db.session.add(reservation)
++    db.session.commit()
++
++    qr = generate_vietqr(reservation.Deposit, reservation.ReservationID)
++
++    return { "reservation_id": reservation.ReservationID,
++             "qr":qr,
++             "deposit": deposit }
++
++
++def get_all_restaurants():
++    restaurants = Restaurant.query.all()
++
++    return [
++        {
++            "RestaurantID": r.RestaurantID,
++            "RestaurantName": r.RestaurantName,
++            "Opentime": r.Opentime.strftime("%H:%M"),
++            "Closetime": r.Closetime.strftime("%H:%M")
++        }
++        for r in restaurants
++    ]
++
++def get_restaurant_by_id(restaurant_id):
++    r = Restaurant.query.get(restaurant_id)
++    if not r:
++        return {}
++    return {
++        "RestaurantID": r.RestaurantID,
++        "RestaurantName": r.RestaurantName,
++        "Opentime": r.Opentime.strftime("%H:%M"),
++        "Closetime": r.Closetime.strftime("%H:%M")
++    }
++
++
++# ================== PAYMENT ==================
++def calculate_deposit(people):
++    return people * 50000  # 50k / người
++
++def confirm_payment(reservation_id, amount):
++    booking = Reservation.query.get(reservation_id)
++
++    if not booking:
++        return {"error": "Not found"}
++
++    if booking.Status != "Pending":
++        return {"error": "Booking already processed"}
++
++    # check số tiền
++    if float(amount) != float(booking.Deposit):
++        return {"error": "Sai số tiền"}
++
++    payment = Payment(
++        ReservationID=reservation_id,
++        Amounts=float(amount),
++        Status="Paid",
++        PaymentMethod="QR",
++        CreatedAt=datetime.now()
++    )
++
++    booking.Status = "Confirmed"
++
++    db.session.add(payment)
++    db.session.commit()
++
++    return {"message": "Payment success"}
++
++
++# ================== QR CODE (VIETQR) ==================
++def generate_vietqr(amount, reservation_id):
++    bank_id = "970422"  # MB Bank
++    account_no = "123456789"
++    account_name = "NGUYEN VAN A"
++
++    description = f"DATBAN_{reservation_id}"
++
++    return f"https://img.vietqr.io/image/{bank_id}-{account_no}-compact2.png?amount={amount}&addInfo={description}&accountName={account_name}"
++
++
++# ================== AUTO CANCEL ==================
++def cancel_expired_bookings():
++    now = datetime.now()
++    bookings = Reservation.query.filter_by(Status="Pending").all()
++
++    for b in bookings:
++        booking_datetime = datetime.combine(b.BookingDate, b.BookingTime)
++
++        if booking_datetime < now - timedelta(minutes=5):
++            b.Status = "Cancelled"
++    db.session.commit()
++
++
++# ================== HISTORY ==================
++def get_history(user_id):
++    bookings = Reservation.query.filter_by(UserID=user_id).all()
++
++    result = []
++    for b in bookings:
++        result.append({
++            "ReservationID": b.ReservationID,
++            "CustomerName": b.CustomerName,
++            "phone": b.phone,
++            "BookingDate": str(b.BookingDate),
++            "BookingTime": str(b.BookingTime),
++            "GuestCount": b.GuestCount,
++            "Status": b.Status,
++
++            # lấy từ JOIN
++            "RestaurantName": b.restaurant.RestaurantName if b.restaurant else None,
++            "TableNumber": b.table.TableNumber if b.table else None
++        })
++    return result
+\ No newline at end of file
+Index: frontend/templates/customer/home.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Title</title>\r\n</head>\r\n<body>\r\n\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/templates/customer/home.html b/frontend/templates/customer/home.html
+--- a/frontend/templates/customer/home.html	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/frontend/templates/customer/home.html	(date 1774858229479)
+@@ -1,10 +1,158 @@
+-<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-    <meta charset="UTF-8">
+-    <title>Title</title>
+-</head>
+-<body>
++{% extends "base.html" %}
++{% block header %}
++    Tổng quan
++{% endblock %}
++{% block content %}
++
++    <div style="text-align:right; margin-bottom:20px;" id="authBox">
++
++        <!-- CHƯA LOGIN -->
++        <div id="guestUI">
++
++            <!-- LOGIN -->
++            <div id="loginForm">
++                <input id="username" placeholder="Username">
++                <input id="password" type="password" placeholder="Password">
++
++                <button onclick="login()">Đăng nhập</button>
++                <button onclick="showRegister()">Đăng ký</button>
++            </div>
++
++            <!-- REGISTER -->
++            <div id="registerForm" style="display:none;">
++                <input id="reg_username" placeholder="Username">
++                <input id="reg_password" type="password" placeholder="Password">
++                <input id="reg_email" placeholder="Email">
++                <input id="reg_phone" placeholder="Số điện thoại">
++
++                <button onclick="register()">Tạo tài khoản</button>
++                <button onclick="showLogin()">Quay lại</button>
++            </div>
++        </div>
++    </div>
++
++    <div class="dashboard">
++        <div class="card">
++            <h3>🍽️ Nhà hàng</h3>
++            <p>Tìm kiếm và xem menu nhà hàng dễ dàng</p>
++            <a href="/api/v1/customer/search-page" class="btn">Tìm kiếm</a>
++        </div>
++
++        <div class="card">
++            <h3>📅 Đặt bàn</h3>
++            <p>Đặt bàn nhanh chóng chỉ trong vài bước</p>
++            <a href="/api/v1/customer/booking-page" class="btn">Đặt ngay</a>
++        </div>
++
++        <div class="card" id="historyCard" style="display:none;">
++            <h3>📜 Lịch sử</h3>
++            <p>Xem lại các lần đặt bàn trước đó</p>
++            <a href="/api/v1/customer/history-page" class="btn">Xem lịch sử</a>
++        </div>
++    </div>
++
++    <script>
++        function login() {
++            fetch("/api/v1/customer/login", {
++                method: "POST",
++                headers: {"Content-Type": "application/json"},
++                credentials: "include",
++                body: JSON.stringify({
++                    username: document.getElementById("username").value,
++                    password: document.getElementById("password").value
++                })
++            })
++                .then(res => res.json())
++                .then(data => {
++                    alert(data.message || data.error)
++
++                    if (data.message) {
++                        location.reload()
++                    }
++                })
++        }
++
++
++        function register() {
++            console.log("CLICK REGISTER")
++
++            const username = document.getElementById("reg_username")?.value
++            const password = document.getElementById("reg_password")?.value
++            const email = document.getElementById("reg_email")?.value
++            const phone = document.getElementById("reg_phone")?.value
++
++            console.log(username, password, email, phone)
++
++            if (!username || !password) {
++                alert("Nhập thiếu dữ liệu")
++                return
++            }
+ 
+-</body>
+-</html>
+\ No newline at end of file
++            fetch("/api/v1/customer/register", {
++                method: "POST",
++                headers: {"Content-Type": "application/json"},
++                body: JSON.stringify({
++                    username, password, email, phone
++                })
++            })
++                .then(res => res.json())
++                .then(data => {
++                    console.log(data)
++                    alert(data.message || data.error)
++
++                    if (data.message) {
++                        login()
++                    }
++                })
++                .catch(err => console.error("ERROR:", err))
++        }
++
++
++        function logout() {
++            fetch("/api/v1/customer/logout", {
++                method: "GET",
++                credentials: "include"
++            })
++                .then(res => res.json())
++                .then(data => {
++                    alert(data.message)
++                    location.reload()
++                })
++        }
++    </script>
++    <script>
++
++        window.addEventListener("load", function () {
++            fetch("/api/v1/customer/me", {
++                credentials: "include"
++            })
++                .then(res => res.json())
++                .then(data => {
++
++                    console.log("HOME CHECK:", data)
++
++                    const guestUI = document.getElementById("guestUI")
++                    const historyCard = document.getElementById("historyCard")
++
++                    if (data.logged_in) {
++                        if (guestUI) guestUI.style.display = "none"
++                        if (historyCard) historyCard.style.display = "block"
++                    } else {
++                        if (guestUI) guestUI.style.display = "block"
++                        if (historyCard) historyCard.style.display = "none"
++                    }
++                })
++        })
++
++
++        function showRegister() {
++            document.getElementById("loginForm").style.display = "none"
++            document.getElementById("registerForm").style.display = "block"
++        }
++
++        function showLogin() {
++            document.getElementById("loginForm").style.display = "block"
++            document.getElementById("registerForm").style.display = "none"
++        }
++    </script>
++{% endblock %}
+\ No newline at end of file
+Index: frontend/templates/customer/booking.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Title</title>\r\n</head>\r\n<body>\r\n\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/templates/customer/booking.html b/frontend/templates/customer/booking.html
+--- a/frontend/templates/customer/booking.html	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/frontend/templates/customer/booking.html	(date 1774858229215)
+@@ -1,10 +1,260 @@
+-<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-    <meta charset="UTF-8">
+-    <title>Title</title>
+-</head>
+-<body>
++{% extends "base.html" %}
++
++{% block content %}
++
++    <h2>Đặt bàn</h2>
++    <select id="restaurantSelect" onchange="changeRestaurant(this.value)">
++        <option value="">-- Chọn nhà hàng --</option>
++    </select>
++
++    <p>Giờ hoạt động: <span id="openTime"></span> - <span id="closeTime"></span></p>
++    <input id="name" placeholder="Họ tên"><br>
++    <input id="phone" placeholder="SĐT"><br>
++
++    <input id="date" type="date">
++    <input id="time" type="time"><br>
++
++    <input id="people" type="number" placeholder="Số người"><br>
++
++    <textarea id="note" placeholder="Ghi chú"></textarea><br>
++
++    <button onclick="check()">Kiểm tra bàn</button>
++
++    <h3>Bàn trống</h3>
++    <div id="tables"></div>
++
++    <!-- POPUP -->
++    <div id="paymentBox" style="display:none; border:1px solid black; padding:20px;">
++        <h3>Thanh toán</h3>
++
++        <p>Mã đơn: <span id="resId"></span></p>
++        <p>Tên: <span id="cusName"></span></p>
++        <p>SĐT: <span id="cusPhone"></span></p>
++        <p>Ngày: <span id="cusDate"></span></p>
++        <p>Giờ: <span id="cusTime"></span></p>
++        <p>Số người: <span id="cusPeople"></span></p>
++
++        <p>Tiền cọc: <b id="depositText"></b></p>
++
++        <img id="qrImg" width="200">
++
++        <br><br>
++        <button onclick="confirmPayment()">Đã chuyển khoản</button>
++        <button onclick="closePayment()">Đóng</button>
++    </div>
++    <div id="successBox" style="
++    display:none;
++    position: fixed;
++    top: 50%;
++    left: 50%;
++    transform: translate(-50%, -50%);
++    background: white;
++    padding: 30px;
++    border-radius: 10px;
++    box-shadow: 0 0 10px rgba(0,0,0,0.3);
++    text-align: center;
++">
++        <h3 style="color: green;"> Đặt bàn thành công!</h3>
++
++        <button onclick="goHome()" style="
++        margin-top: 15px;
++        padding: 10px 20px;
++        background: #007bff;
++        color: white;
++        border: none;
++        border-radius: 5px;
++        cursor: pointer;
++    ">
++            Quay về trang chủ
++        </button>
++    </div>
++    <script>
++        window.addEventListener("load", function () {
++
++            fetch("/api/v1/customer/restaurants")
++                .then(res => res.json())
++                .then(data => {
++                    const select = document.getElementById("restaurantSelect")
++
++                    data.forEach(r => {
++                        const option = document.createElement("option")
++                        option.value = r.RestaurantID
++                        option.textContent = r.RestaurantName
++
++                        if (restaurant_id && r.RestaurantID == restaurant_id) {
++                            option.selected = true
++                        }
++
++                        select.appendChild(option)
++                    })
++
++                    if (restaurant_id) {
++                        loadRestaurantInfo(restaurant_id)
++                    }
++                })
++        })
++
++        let params = new URLSearchParams(window.location.search)
++        let restaurant_id = params.get("restaurant_id") || params.get("id") //  sửa lại đúng keylet selectedTable = null
++        let reservationId = null
++
++
++        function changeRestaurant(id) {
++            restaurant_id = id
++            loadRestaurantInfo(id)
++        }
+ 
+-</body>
+-</html>
+\ No newline at end of file
++        function loadRestaurantInfo(id) {
++            fetch(`/api/v1/customer/restaurant/${id}`)
++                .then(res => res.json())
++                .then(data => {
++
++                    const open = data.Opentime.substring(0, 5)
++                    const close = data.Closetime.substring(0, 5)
++
++                    document.getElementById("time").min = open
++                    document.getElementById("time").max = close
++
++                    document.getElementById("openTime").innerText = open
++                    document.getElementById("closeTime").innerText = close
++                })
++        }
++
++        function toMinutes(t) {
++            const [h, m] = t.split(":").map(Number)
++            return h * 60 + m
++        }
++
++        function check() {
++            const open = document.getElementById("time").min
++            const close = document.getElementById("time").max
++
++            const name = document.getElementById("name").value.trim()
++            const phone = document.getElementById("phone").value.trim()
++            const time = document.getElementById("time").value
++            const date = document.getElementById("date").value
++            const people = document.getElementById("people").value
++
++            // CHECK ĐẦY ĐỦ DỮ LIỆU
++            if (!name || !phone || !date || !time || !people) {
++                alert("Vui lòng nhập đầy đủ thông tin!")
++                return
++            }
++
++            if (!open || !close) {
++                alert("Vui lòng chọn nhà hàng trước!")
++                return
++            }
++
++            const timeVal = toMinutes(time)
++            const openVal = toMinutes(open)
++            const closeVal = toMinutes(close)
++
++            if (timeVal < openVal || timeVal > closeVal) {
++                alert(`Chỉ được đặt từ ${open} đến ${close}`)
++                return
++            }
++
++            // GỌI API + BẮT LỖI BACKEND
++            fetch(`/api/v1/customer/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`)
++                .then(async res => {
++                    const data = await res.json()
++
++                    if (!res.ok) {
++                        alert(data.error || "Có lỗi xảy ra!")
++                        return
++                    }
++
++                    let html = ""
++                    data.forEach(t => {
++                        html += `<button onclick="selectTable(${t.TableID})">
++                        Bàn ${t.TableID} (${t.Capacity})
++                     </button>`
++                    })
++
++                    document.getElementById("tables").innerHTML = html
++                })
++        }
++
++
++        function selectTable(table_id) {
++            selectedTable = table_id
++            createBooking()
++        }
++
++        function createBooking() {
++            const name = document.getElementById("name").value
++            const phone = document.getElementById("phone").value
++            const date = document.getElementById("date").value
++            const time = document.getElementById("time").value
++            const people = document.getElementById("people").value
++            const note = document.getElementById("note").value
++            bookingData = {name, phone, date, time, people}
++            if (!restaurant_id) {
++                alert("Vui lòng chọn nhà hàng")
++                return
++            }
++            fetch("/api/v1/customer/book", {
++                method: "POST",
++                headers: {"Content-Type": "application/json"},
++                body: JSON.stringify({
++                    user_id: 1,
++                    name, phone,
++                    restaurant_id,
++                    table_id: selectedTable,
++                    date, time, people, note
++                })
++            })
++                .then(res => res.json())
++                .then(data => {
++                    reservationId = data.reservation_id
++                    bookingData.qr = data.qr   //  nhận QR từ backend
++                    bookingData.deposit = data.deposit
++                    openPayment()
++                })
++        }
++
++        function openPayment() {
++            paymentBox.style.display = "block"
++
++            document.getElementById("resId").innerText = reservationId
++            document.getElementById("cusName").innerText = bookingData.name
++            document.getElementById("cusPhone").innerText = bookingData.phone
++            document.getElementById("cusDate").innerText = bookingData.date
++            document.getElementById("cusTime").innerText = bookingData.time
++            document.getElementById("cusPeople").innerText = bookingData.people
++
++            depositText.innerText = bookingData.deposit + " VND"
++            document.getElementById("qrImg").src = bookingData.qr
++        }
++
++        function closePayment() {
++            paymentBox.style.display = "none"
++        }
++
++        function confirmPayment() {
++            fetch("/api/v1/customer/payment", {
++                method: "POST",
++                headers: {"Content-Type": "application/json"},
++                body: JSON.stringify({
++                    reservation_id: reservationId,
++                    amount: bookingData.deposit
++                })
++            })
++                .then(res => res.json())
++                .then(() => {
++                    closePayment()   // đóng popup QR
++                    showSuccess()    // hiện thông báo đẹp
++                })
++        }
++
++        function showSuccess() {
++            document.getElementById("successBox").style.display = "block"
++        }
++
++        function goHome() {
++            window.location.href = "/"
++        }
++    </script>
++
++{% endblock %}
+\ No newline at end of file
+Index: frontend/requirements.txt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-16LE
+===================================================================
+diff --git a/frontend/requirements.txt b/frontend/requirements.txt
+new file mode 100644
+--- /dev/null	(date 1773906933387)
++++ b/frontend/requirements.txt	(date 1773906933387)
+@@ -0,0 +1,23 @@
++alembic==1.18.4
++blinker==1.9.0
++click==8.3.1
++colorama==0.4.6
++Flask==3.1.3
++flask-cors==6.0.2
++Flask-JWT-Extended==4.7.1
++flask-marshmallow==1.4.0
++Flask-Migrate==4.1.0
++Flask-SQLAlchemy==3.1.1
++greenlet==3.3.2
++itsdangerous==2.2.0
++Jinja2==3.1.6
++Mako==1.3.10
++MarkupSafe==3.0.3
++marshmallow==4.2.2
++marshmallow-sqlalchemy==1.4.2
++PyJWT==2.12.1
++PyMySQL==1.1.2
++python-dotenv==1.2.2
++SQLAlchemy==2.0.48
++typing_extensions==4.15.0
++Werkzeug==3.1.6
+Index: frontend/templates/customer/history.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/templates/customer/history.html b/frontend/templates/customer/history.html
+new file mode 100644
+--- /dev/null	(date 1774858228897)
++++ b/frontend/templates/customer/history.html	(date 1774858228897)
+@@ -0,0 +1,213 @@
++{% extends "base.html" %}
++
++{% block content %}
++    <h2 style="text-align:center;">📜 Lịch sử đặt bàn</h2>
++
++    <div class="toolbar">
++        <input id="searchInput" placeholder="🔍 Tìm theo tên hoặc mã...">
++
++        <select id="statusFilter">
++            <option value="">Tất cả</option>
++            <option value="Pending">Pending</option>
++            <option value="Confirmed">Confirmed</option>
++            <option value="Cancelled">Cancelled</option>
++        </select>
++    </div>
++
++
++    <div id="historyContainer" class="history-grid"></div>
++    <button class="btn btn-closehst" onclick="goHome()">❌ Đóng</button>
++
++    <!-- REVIEW POPUP -->
++    <div id="reviewBox" style="
++display:none;
++position:fixed;
++top:50%;
++left:50%;
++transform:translate(-50%,-50%);
++background:white;
++padding:20px;
++border-radius:10px;
++box-shadow:0 0 10px rgba(0,0,0,0.3);
++z-index:9999;
++width:300px;
++">
++
++        <h3>⭐ Đánh giá</h3>
++
++        <input type="hidden" id="restaurantId">
++        <input type="hidden" id="reservationId">
++
++        <label>Rating:</label>
++        <input type="number" id="rating" min="1" max="5">
++
++        <label>Nhận xét:</label>
++        <textarea id="comment"></textarea>
++
++        <br><br>
++        <button onclick="submitReview()">Gửi</button>
++        <button onclick="closeReview()">Đóng</button>
++    </div>
++
++    <script>
++        let bookings = []
++
++        window.onload = () => {
++            loadHistory()
++
++            // SEARCH
++            document.getElementById("searchInput").addEventListener("keyup", function () {
++                const key = this.value.toLowerCase()
++
++                const filtered = bookings.filter(b =>
++                    b.CustomerName.toLowerCase().includes(key) ||
++                    String(b.ReservationID).includes(key)
++                )
++
++                renderTable(filtered)
++            })
++
++            // FILTER
++            document.getElementById("statusFilter").addEventListener("change", function () {
++                const status = this.value
++
++                if (!status) return renderTable(bookings)
++
++                const filtered = bookings.filter(b => b.Status === status)
++                renderTable(filtered)
++            })
++        }
++
++        function loadHistory() {
++            fetch("/api/v1/customer/history", {
++                credentials: "include"
++            })
++                .then(res => res.json())
++                .then(data => {
++                    console.log("DATA:", data) // 👈 thêm dòng này để debug
++
++                    // 🔥 nếu API trả object thay vì array thì fix luôn
++                    if (!Array.isArray(data)) {
++                        data = data.data || []
++                    }
++
++                    bookings = data
++                    renderTable(data)
++                })
++                .catch(err => {
++                    console.error("Lỗi fetch history:", err)
++                })
++        }
++
++
++        function renderTable(data) {
++            let html = ""
++
++            if (data.length === 0) {
++                html = "<p>Không có dữ liệu</p>"
++            }
++
++            data.forEach(b => {
++                html += `
++            <div class="history-card ${b.Status}" onclick="handleClick('${b.Status}', ${b.RestaurantID})">
++
++                <div class="card-header">
++                    <h3>🍲 ${b.RestaurantName || "Nhà hàng"}</h3>
++                    <span class="status ${b.Status}">
++                        ${b.Status}
++                    </span>
++                </div>
++
++                <div class="card-body">
++                    <p>📅 ${b.BookingDate} - ${b.BookingTime}</p>
++                    <p>👤 ${b.GuestCount} người</p>
++                    <p>🪑 Bàn: ${b.TableNumber || "Chưa xếp"}</p>
++                </div>
++
++                <div class="card-footer">
++                    ${b.Status === "Confirmed"
++                    ? `<button onclick="event.stopPropagation(); openReview(${b.RestaurantID}, ${b.ReservationID}))">⭐ Đánh giá</button>`
++                    : ""
++                }
++                </div>
++
++            </div>
++        `
++            })
++
++            document.getElementById("historyContainer").innerHTML = html
++        }
++
++        function goHome() {
++            window.location.href = `/`
++        }
++
++        // SEARCH
++        document.getElementById("searchInput").addEventListener("keyup", function () {
++            const key = this.value.toLowerCase()
++
++            const filtered = bookings.filter(b =>
++                b.CustomerName.toLowerCase().includes(key) ||
++                String(b.ReservationID).includes(key)
++            )
++
++            renderTable(filtered)
++        })
++
++        // FILTER
++        document.getElementById("statusFilter").addEventListener("change", function () {
++            const status = this.value
++
++            if (!status) return renderTable(bookings)
++
++            const filtered = bookings.filter(b => b.Status === status)
++            renderTable(filtered)
++        })
++
++
++        function handleClick(status, restaurantID) {
++            if (status === "Confirmed") {
++                openReview(restaurantID)
++            } else if (status === "Cancelled") {
++                alert("Đơn đã bị hủy")
++            } else {
++                alert("Chưa sử dụng dịch vụ")
++            }
++        }
++
++
++        function openReview(restaurantID, reservationID) {
++            document.getElementById("reviewBox").style.display = "block"
++            document.getElementById("restaurantId").value = restaurantID
++            document.getElementById("reservationId").value = reservationID
++        }
++
++
++        function closeReview() {
++            document.getElementById("reviewBox").style.display = "none"
++        }
++
++
++        function submitReview() {
++            const restaurantID = document.getElementById("restaurantId").value
++            const reservationID = document.getElementById("reservationId").value
++
++            fetch("/api/v1/customer/review", {
++                method: "POST",
++                headers: {"Content-Type": "application/json"},
++                credentials: "include",
++                body: JSON.stringify({
++                    RestaurantID: restaurantID,
++                    ReservationID: reservationID, // 👈 QUAN TRỌNG
++                    Rating: document.getElementById("rating").value,
++                    Comment: document.getElementById("comment").value
++                })
++            })
++                .then(res => res.json())
++                .then(data => {
++                    alert(data.message || data.error)
++                    if (data.message) closeReview()
++                })
++        }
++    </script>
++{% endblock %}
+\ No newline at end of file
+Index: frontend/templates/base.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Title</title>\r\n</head>\r\n<body>\r\n\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/templates/base.html b/frontend/templates/base.html
+--- a/frontend/templates/base.html	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/frontend/templates/base.html	(date 1774858228798)
+@@ -1,10 +1,62 @@
+ <!DOCTYPE html>
+-<html lang="en">
++<html lang="vi">
+ <head>
+     <meta charset="UTF-8">
+-    <title>Title</title>
++    <title>{% block title %}Restaurant{% endblock %}</title>
++
++    <link rel="stylesheet" href="{{ url_for('static', filename='css/customer.css') }}">
+ </head>
++
+ <body>
+ 
++<div class="container">
++
++    <!-- SIDEBAR -->
++    <div class="sidebar">
++        <h2>🍽️ Restaurant</h2>
++
++        <a href="/">🏠 Trang chủ</a>
++        <a href="/api/v1/customer/search-page">🔍 Tìm kiếm</a>
++        <a href="/api/v1/customer/booking-page">📅 Đặt bàn</a>
++        <a href="/api/v1/customer/history-page" id="historyMenu" style="display:none;">📜Lịch sử</a>
++        <hr>
++        <a href="#" onclick="logout()" id="logoutMenu" style="display:none;">🚪 Đăng xuất</a>
++    </div>
++
++    <div class="content">
++        <div class="header">
++            {% block header %}{% endblock %}
++        </div>
++
++        {% block content %}{% endblock %}
++    </div>
++
++
++</div>
++<script>
++    window.addEventListener("load", function () {
++            fetch("/api/v1/customer/me", {
++                credentials: "include"
++            })
++                .then(res => res.json())
++                .then(data => {
++
++                    console.log("LOGIN STATUS:", data) // 👈 debug
++
++                    const logoutBtn = document.getElementById("logoutMenu")
++                    const historyMenu = document.getElementById("historyMenu")
++
++                    // chỉ xử lý sidebar ở base.html
++                    if (data.logged_in) {
++                        if (logoutBtn) logoutBtn.style.display = "block"
++                        if (historyMenu) historyMenu.style.display = "block"
++                    } else {
++                        if (logoutBtn) logoutBtn.style.display = "none"
++                        if (historyMenu) historyMenu.style.display = "none"
++                    }
++                })
++        }
++    )
++</script>
+ </body>
+ </html>
+\ No newline at end of file
+Index: frontend/run.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/run.py b/frontend/run.py
+new file mode 100644
+--- /dev/null	(date 1774846591511)
++++ b/frontend/run.py	(date 1774846591511)
+@@ -0,0 +1,8 @@
++from core import create_app
++
++
++app = create_app()
++
++
++if __name__ == "__main__":
++    app.run(debug=True)
+Index: frontend/core/config.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/core/config.py b/frontend/core/config.py
+new file mode 100644
+--- /dev/null	(date 1774843911160)
++++ b/frontend/core/config.py	(date 1774843911160)
+@@ -0,0 +1,14 @@
++import os
++from dotenv import load_dotenv
++
++load_dotenv()  # đọc file .env
++
++class Config:
++    SQLALCHEMY_DATABASE_URI = (
++        f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
++        f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', '3306')}"
++        f"/{os.getenv('DB_NAME')}"
++    )
++
++    SQLALCHEMY_TRACK_MODIFICATIONS = False
++    SECRET_KEY = "secret_key"
+\ No newline at end of file
+Index: frontend/templates/customer/search.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Title</title>\r\n</head>\r\n<body>\r\n\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/templates/customer/search.html b/frontend/templates/customer/search.html
+--- a/frontend/templates/customer/search.html	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/frontend/templates/customer/search.html	(date 1774858229269)
+@@ -1,10 +1,128 @@
+-<!DOCTYPE html>
+-<html lang="en">
++<!--<!DOCTYPE html>
++<html lang="vi">
+ <head>
+     <meta charset="UTF-8">
+-    <title>Title</title>
++    <title>Tìm kiếm nhà hàng</title>
++-->
++<!-- CSS -->
++<!--
++    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+ </head>
+ <body>
+ 
++<h1>🔍 Tìm kiếm nhà hàng</h1>
++
++<div class="search-box">
++    <input id="address" type="text" placeholder="Nhập địa chỉ">
++
++    <select id="cuisine">
++        <option value="">-- Chọn loại món --</option>
++        <option value="1">Việt</option>
++        <option value="2">Âu</option>
++    </select>
++
++    <button onclick="searchRestaurant()">Tìm kiếm</button>
++</div>
++
++<hr>
++
++<div id="result"></div>
++-->
++<!--  JS viết trực tiếp -->
++<!--
++<script>
++async function searchRestaurant() {
++    const address = document.getElementById("address").value;
++    const cuisine = document.getElementById("cuisine").value;
++
++    try {
++        const res = await fetch(`/api/v1/customer/search?address=${address}&cuisine=${cuisine}`);
++        const data = await res.json();
++
++        const resultDiv = document.getElementById("result");
++        resultDiv.innerHTML = "";
++
++        if (data.length === 0) {
++            resultDiv.innerHTML = "<p>Không tìm thấy nhà hàng</p>";
++            return;
++        }
++
++        data.forEach(r => {
++            resultDiv.innerHTML += `
++                <div style="border:1px solid #ccc; margin:10px; padding:10px">
++                    <h3>${r.Name}</h3>
++                    <p>📍 ${r.Address}</p>
++                </div>
++            `;
++        });
++
++    } catch (error) {
++        console.error(error);
++        alert("Lỗi gọi API (check database)");
++    }
++}
++</script>
++
+ </body>
+-</html>
+\ No newline at end of file
++</html>
++-->
++{% extends "base.html" %}
++
++{% block header %}
++    Tìm kiếm nhà hàng
++{% endblock %}
++
++{% block content %}
++
++    <input id="address" placeholder="Tìm kiếm nhà hàng...">
++
++    <select id="cuisine">
++        <option value="">Loại hình ẩm thực</option>
++        <option value="1">Lẩu</option>
++        <option value="2">Nướng</option>
++        <option value="3">Hải sản</option>
++        <option value="4">Chay</option>
++        <option value="5">Hấp</option>
++    </select>
++
++    <button onclick="search()">Tìm kiếm</button>
++
++    <div id="result"></div>
++
++    <script>
++        function search() {
++            const address = document.getElementById("address").value;
++            const cuisine = document.getElementById("cuisine").value;
++
++            fetch(`/api/v1/customer/search?address=${encodeURIComponent(address)}&cuisine=${cuisine}`)
++                .then(res => res.json())
++                .then(data => {
++                    let html = "";
++
++                    if (data.length === 0) {
++                        html = "<p>Không tìm thấy nhà hàng</p>";
++                    }
++
++                    data.forEach(r => {
++                        html += `
++                    <div>
++                        <h3>${r.RestaurantName}</h3>
++                        <p>${r.Address}</p>
++                        <p>${r.Phone}</p>
++                        <p>${r.Available}</p>
++                        <button onclick="goMenu(${r.RestaurantID})">
++                            Xem chi tiết
++                        </button>
++                    </div>
++                `;
++                    });
++
++                    document.getElementById("result").innerHTML = html;
++                });
++        }
++
++        function goMenu(id) {
++            window.location.href = `/api/v1/customer/menu-page?id=${id}`;
++        }
++    </script>
++{% endblock %}
+\ No newline at end of file
+Index: frontend/core/__init__.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/core/__init__.py b/frontend/core/__init__.py
+new file mode 100644
+--- /dev/null	(date 1774867486942)
++++ b/frontend/core/__init__.py	(date 1774867486942)
+@@ -0,0 +1,45 @@
++import os
++from core.extensions import db, ma
++from flask import Flask, template_rendered
++from flask import render_template
++from core.config import Config
++from flask_cors import CORS
++
++
++
++def create_app():
++    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
++
++    app = Flask(
++        __name__,
++        template_folder=os.path.join(BASE_DIR, "../../frontend/templates"),
++        static_folder=os.path.join(BASE_DIR, "../../frontend/static")
++    )
++
++    # Cấu hình Database & Security
++    app.config.from_object(Config)
++    app.config['SECRET_KEY'] = '123456'
++    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/restaurant_booking'
++    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
++    app.config['JWT_SECRET_KEY'] = '6a2c53c83b86197f722e555454742656a926b1ae6de96f27'
++    app.secret_key = "super_secret_key"
++
++    # khởi tạo extensions
++    db.init_app(app)
++    ma.init_app(app)
++
++
++    CORS(app, supports_credentials=True)
++
++
++    # Route chính
++    @app.route("/")
++    def root():
++        return render_template("customer/home.html")
++
++    return app
++
++
++
++
++
+Index: frontend/templates/customer/menu.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\r\n<html lang=\"en\">\r\n<head>\r\n    <meta charset=\"UTF-8\">\r\n    <title>Title</title>\r\n</head>\r\n<body>\r\n\r\n</body>\r\n</html>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/templates/customer/menu.html b/frontend/templates/customer/menu.html
+--- a/frontend/templates/customer/menu.html	(revision cbbc06b02cce018e8cf0d33a329c8aff8a1bf276)
++++ b/frontend/templates/customer/menu.html	(date 1774858229415)
+@@ -2,9 +2,56 @@
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+-    <title>Title</title>
++    <title>Menu</title>
++    <link rel="stylesheet" href="{{ url_for('static', filename='css/customer.css') }}">
+ </head>
+ <body>
++<button class="btn-exit" onclick="goHome()"> Đóng</button>
++<h2>🍜 Menu nhà hàng</h2>
++
++<div id="menu"></div>
++
++<button onclick="goBooking()">👉 Đặt bàn</button>
++
++<script>
++    const params = new URLSearchParams(window.location.search)
++    const id = params.get("id")
++
++    // kiểm tra id
++    if (!id) {
++        document.getElementById("menu").innerHTML = "<p>Lỗi: không có nhà hàng</p>"
++    } else {
++        fetch(`/api/v1/customer/menu/${id}`)
++            .then(res => res.json())
++            .then(data => {
++                let html = ""
++
++                if (data.length === 0) {
++                    html = "<p>Chưa có món ăn</p>"
++                }
++
++                data.forEach(m => {
++                    html += `
++            <div class="card">
++                <h3>${m.FoodName}</h3>
++                <p>💰 ${m.Price} VND</p>
++                <p>${m.Description || ""}</p>
++            </div>
++            `
++                })
++
++                document.getElementById("menu").innerHTML = html
++            })
++    }
++
++    function goBooking() {
++        window.location.href = `/api/v1/customer/booking-page?id=${id}`
++    }
++
++    function goHome() {
++        window.location.href = `/`
++    }
++</script>
+ 
+ </body>
+ </html>
+\ No newline at end of file
+Index: frontend/core/extensions.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend/core/extensions.py b/frontend/core/extensions.py
+new file mode 100644
+--- /dev/null	(date 1774867487033)
++++ b/frontend/core/extensions.py	(date 1774867487033)
+@@ -0,0 +1,6 @@
++from flask_sqlalchemy import SQLAlchemy
++from flask_marshmallow import Marshmallow
++
++db = SQLAlchemy()
++ma = Marshmallow()
++
+diff --git a/frontend/.env b/frontend/.env
+new file mode 100644
+diff --git a/frontend/__init__.py b/frontend/__init__.py
+new file mode 100644

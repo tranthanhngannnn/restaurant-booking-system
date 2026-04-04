@@ -1,4 +1,4 @@
-from backend.core.extensions import db
+from core.extensions import db
 
 class Payment(db.Model):
     __tablename__ = "Payments"

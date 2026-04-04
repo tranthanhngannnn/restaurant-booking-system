@@ -34,7 +34,11 @@ def create_app():
     ma.init_app(app)
     login_manager.init_app(app)
     jwt.init_app(app)
-    CORS(app, supports_credentials=True)
+    CORS(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
 
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
