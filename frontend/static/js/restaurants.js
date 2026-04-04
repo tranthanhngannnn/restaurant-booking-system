@@ -84,24 +84,29 @@ async function fetchRestaurants() {
         listRes = data;
         const tbody = document.getElementById('res-list-body');
 
-        tbody.innerHTML = data.map(r => `
-    <tr>
-        <td>${r.RestaurantID}</td>
-        <td title="${r.RestaurantName}"><strong>${r.RestaurantName}</strong></td>
-        <td title="${r.Address || ''}">${r.Address || ''}</td>
-        <td>${r.Phone || 'N/A'}</td>
-        <td title="${r.Email || ''}"><small>${r.Email || ''}</small></td>
-        <td>${r.Opentime || '--:--'}</td>
-        <td>${r.Closetime || '--:--'}</td>
-        <td title="${r.description || ''}">${r.description || ''}</td>
-        <td>User: ${r.UserID}</td>
-        <td>${r.CuisineID || 'N/A'}</td>
-        <td><span class="status-tag ${r.status == 'Đang hoạt động' ? 'active' : 'pending'}">${r.status}</span></td>
-        <td class="col-action">
-            <button class="btn-edit" onclick="prepareEdit(${r.RestaurantID})">Sửa</button>
-            <button class="btn-delete" onclick="handleDelete(${r.RestaurantID})">Xóa</button>
-        </td>
-    </tr>`).join('');
+        tbody.innerHTML = data.map(r => {
+            const statusClass = (r.status === 'ACTIVE' || r.status === 'Đang hoạt động') ? 'active' : 'pending';
+            const statusText = (r.status === 'ACTIVE' || r.status === 'Đang hoạt động') ? 'Hoạt động' : (r.status || 'Chờ duyệt');
+            
+            return `
+        <tr>
+            <td>${r.RestaurantID}</td>
+            <td title="${r.RestaurantName}"><strong>${r.RestaurantName}</strong></td>
+            <td title="${r.Address || ''}">${r.Address || ''}</td>
+            <td>${r.Phone || 'N/A'}</td>
+            <td title="${r.Email || ''}"><small>${r.Email || ''}</small></td>
+            <td>${r.Opentime || '--:--'}</td>
+            <td>${r.Closetime || '--:--'}</td>
+            <td title="${r.description || ''}">${r.description || ''}</td>
+            <td>User: ${r.UserID}</td>
+            <td>${r.CuisineID || 'N/A'}</td>
+            <td><span class="status-tag ${statusClass}">${statusText}</span></td>
+            <td class="col-action">
+                <button class="btn-edit" onclick="prepareEdit(${r.RestaurantID})">Sửa</button>
+                <button class="btn-delete" onclick="handleDelete(${r.RestaurantID})">Xóa</button>
+            </td>
+        </tr>`;
+        }).join('');
     } catch (err) {
         console.error("Lỗi load danh sách:", err);
     }
@@ -205,5 +210,4 @@ async function handleDelete(id) {
 window.onload = () => {
     loadDropdowns();
     fetchRestaurants();
-    fetchCuisines();
 };

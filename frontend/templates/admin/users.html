@@ -2,36 +2,54 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản Lý Users</title>
+    <title>Golden Harvest | User Management</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../static/css/admin.css">
 </head>
 <body>
 
+<header class="admin-header">
+    <div class="header-left">
+        <a href="homepage.html" style="text-decoration: none;">
+            <h1 class="logo">GOLDEN <span>HARVEST</span></h1>
+        </a>
+    </div>
+
+    <div class="header-right">
+        <nav class="admin-nav">
+            <a href="restaurants.html" class="nav-item">Restaurants</a>
+            <a href="cuisine.html" class="nav-item">Cuisine</a>
+            <a href="users.html" class="nav-item active">Users</a>
+        </nav>
+
+        <button onclick="handleLogout()" class="btn-logout">Đăng xuất</button>
+    </div>
+</header>
+
 <div class="User-list-container">
     <div class="header">
-        <h2>Danh sách Users</h2>
+        <h2>User Management</h2>
+        <button class="btn-add" onclick="openAddModal()">+ Thêm User</button>
     </div>
 
     <table class="user-table">
         <thead>
-        <tr class="user-table-header">
-            <th class="cell-id">ID</th>
-            <th class="cell-info">Username</th>
-            <th class="cell-email">Email</th>
-            <th class="cell-phone">Phone</th>
-            <th class="cell-role">Role</th>
-            <th class="cell-action">Thao tác</th>
-        </tr>
+            <tr>
+                <th class="cell-id">ID</th>
+                <th class="cell-info">Username</th>
+                <th class="cell-email">Email</th>
+                <th class="cell-phone">Phone</th>
+                <th class="cell-role">Role</th>
+                <th class="cell-action">Thao tác</th>
+            </tr>
         </thead>
-        <tbody id="user-list-body">
-
-        </tbody>
+        <tbody id="user-list-body"></tbody>
     </table>
-
 </div>
 
-<div id="userModal" class="user-modal-overlay">
-    <div class="user-window">
+<div id="userModal" class="modal">
+    <div class="modal-content">
         <h3 id="user-title">Người Dùng</h3>
         <input type="hidden" id="form-id">
 
@@ -59,9 +77,9 @@
             </select>
         </div>
 
-        <div class="user-modal-actions">
-            <button id="button-submit" class="button-save">Lưu</button>
-            <button onclick="closeUserEntry()" class="button-cancel">Hủy</button>
+        <div class="modal-actions">
+            <button id="button-submit" class="btn-add">Lưu</button>
+            <button onclick="closeUserEntry()" class="btn-logout" style="background: #95a5a6;">Hủy</button>
         </div>
     </div>
 </div>
@@ -69,59 +87,90 @@
 <script>
     const API_URL = 'http://127.0.0.1:5000/api/v1/admin/users';
 
-    //READ: Đổ data vào bảng
     async function fetchUsers() {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL, {
-            headers: {'Authorization': `Bearer ${token}`}
-        });
-        const users = await res.json();
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(API_URL, {
+                headers: {'Authorization': `Bearer ${token}`}
+            });
+            const users = await res.json();
+            const tbody = document.getElementById('user-list-body');
 
-        const tbody = document.getElementById('user-list-body');
-
-        tbody.innerHTML = users.map(u => `
-    <tr>
-    <td class="cell-id">${u.id}</td>
-    <td class="cell-info"><strong>${u.username}</strong></td>
-    <td class="cell-email">${u.email}</td>
-    <td class="cell-phone">${u.phone || 'Chưa có số'}</td>
-    <td class="cell-role">${u.role}</td>
-    <td class="cell-action">
-        <button onclick="openEditModal(${u.id}, '${u.username}', '${u.email}', '${u.phone}', '${u.role}')">Sửa</button>
-        <button onclick="handleDelete(${u.id})">Xóa</button>
-    </td>
-    </tr>
- `).join('');
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td class="cell-id">${u.id}</td>
+                    <td class="cell-info"><strong>${u.username}</strong></td>
+                    <td class="cell-email">${u.email}</td>
+                    <td class="cell-phone">${u.phone || 'Chưa có số'}</td>
+                    <td class="cell-role"><strong>${u.role}</strong></td>
+                    <td class="cell-action">
+                        <button class="btn-edit" onclick="openEditModal(${u.id}, '${u.username}', '${u.email}', '${u.phone}', '${u.role}')">Sửa</button>
+                        <button class="btn-delete" onclick="handleDelete(${u.id})">Xóa</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("Lỗi:", err);
+        }
     }
 
-    //PUT
+    async function handleAdd() {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('Username', document.getElementById('user-field-name').value);
+        formData.append('Email', document.getElementById('user-field-email').value);
+        formData.append('Phone', document.getElementById('user-field-phone').value);
+        formData.append('Role', document.getElementById('user-field-role').value);
+        formData.append('Password', '123456'); 
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {'Authorization': `Bearer ${token}`},
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("Thêm user thành công!");
+                closeUserEntry();
+                fetchUsers();
+            } else {
+                const error = await response.json();
+                alert("Lỗi: " + (error.message || "Thất bại"));
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
     async function updateUser(id) {
         const token = localStorage.getItem('token');
         const formData = new FormData();
-
         formData.append('Username', document.getElementById('user-field-name').value);
         formData.append('Email', document.getElementById('user-field-email').value);
         formData.append('Phone', document.getElementById('user-field-phone').value);
         formData.append('Role', document.getElementById('user-field-role').value);
 
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: {'Authorization': `Bearer ${token}`},
+                body: formData
+            });
 
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: 'PUT',
-            headers: {'Authorization': `Bearer ${token}`},
-            body: formData
-        });
-
-        if (response.ok) {
-            alert("Cập nhật thành công!");
-            closeUserEntry();
-            fetchUsers();
-        } else {
-            const error = await response.json();
-            alert("Lỗi cập nhật: " + (error.message || "Không xác định"));
+            if (response.ok) {
+                alert("Cập nhật thành công!");
+                closeUserEntry();
+                fetchUsers();
+            } else {
+                const error = await response.json();
+                alert("Lỗi: " + (error.message || "Thất bại"));
+            }
+        } catch (err) {
+            console.error(err);
         }
     }
 
-    //DELETE
     async function handleDelete(id) {
         if (confirm("Xóa user này?")) {
             const token = localStorage.getItem('token');
@@ -133,24 +182,14 @@
         }
     }
 
-    // UI LOGIC
-    // Hàm tổng để quyết định là Thêm hay Sửa
-    function handleSaveUser() {
-        const id = document.getElementById('form-id').value;
-
-        if (id) {
-            updateUser(id); // Chỉ chạy hàm này khi có ID (tức là đang sửa)
-        } else {
-            console.warn("Không tìm thấy ID user để cập nhật!");
-            alert("Lỗi: Không xác định được người dùng cần sửa.");
-        }
-    }
-
-
     function openAddModal() {
         document.getElementById('form-id').value = '';
+        document.getElementById('user-field-name').value = '';
+        document.getElementById('user-field-email').value = '';
+        document.getElementById('user-field-phone').value = '';
+        document.getElementById('user-field-role').value = 'CUSTOMER';
         document.getElementById('user-title').innerText = "Thêm User";
-        document.getElementById('button-submit').onclick = handleSaveUser;
+        document.getElementById('button-submit').onclick = handleAdd;
         document.getElementById('userModal').style.display = 'flex';
     }
 
@@ -161,7 +200,7 @@
         document.getElementById('user-field-phone').value = phone;
         document.getElementById('user-field-role').value = role;
         document.getElementById('user-title').innerText = "Sửa User";
-        document.getElementById('button-submit').onclick = handleSaveUser;
+        document.getElementById('button-submit').onclick = () => updateUser(id);
         document.getElementById('userModal').style.display = 'flex';
     }
 
@@ -169,9 +208,14 @@
         document.getElementById('userModal').style.display = 'none';
     }
 
+    function handleLogout() {
+        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+            localStorage.removeItem('token');
+            window.location.href = "../auth/login.html";
+        }
+    }
+
     window.onload = fetchUsers;
-
-
 </script>
 </body>
 </html>

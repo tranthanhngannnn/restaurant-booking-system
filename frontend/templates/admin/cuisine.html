@@ -2,27 +2,47 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Cuisine</title>
+    <title>Golden Harvest | Cuisine Management</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../static/css/admin.css">
 </head>
 <body>
 
+<header class="admin-header">
+    <div class="header-left">
+        <a href="homepage.html" style="text-decoration: none;">
+            <h1 class="logo">GOLDEN <span>HARVEST</span></h1>
+        </a>
+    </div>
+
+    <div class="header-right">
+        <nav class="admin-nav">
+            <a href="restaurants.html" class="nav-item">Restaurants</a>
+            <a href="cuisine.html" class="nav-item active">Cuisine</a>
+            <a href="users.html" class="nav-item">Users</a>
+        </nav>
+
+        <button onclick="handleLogout()" class="btn-logout">Đăng xuất</button>
+    </div>
+</header>
+
 <div class="list-container">
-    <h2>Cuisine</h2>
+    <div class="header">
+        <h2>Cuisine Management</h2>
+        <button class="btn-add" onclick="openAddModal()">+ Thêm Mới</button>
+    </div>
 
-    <button class="btn-add" onclick="openAddModal()">+ Thêm Mới</button>
-
-    <table class="list-header"> <thead>
-        <tr class="table-header">
-            <th class="col-id">Cuisine ID</th>
-            <th class="col-info">Cuisine Name</th>
-            <th class="col-status">Status</th>
-            <th class="col-action">Thao tác</th>
-        </tr>
-    </thead>
-
-    <tbody id="cuisine-list-body">
-    </tbody>
+    <table>
+        <thead>
+            <tr>
+                <th class="col-id">Cuisine ID</th>
+                <th class="col-info">Cuisine Name</th>
+                <th class="col-status">Status</th>
+                <th class="col-action">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody id="cuisine-list-body"></tbody>
     </table>
 </div>
 
@@ -44,178 +64,150 @@
         </div>
 
         <div class="modal-actions">
-            <button id="btn-submit" class="btn-submit">Lưu thay đổi</button>
-            <button onclick="closeModal()" class="closeModal">Hủy</button>
+            <button id="btn-submit" class="btn-add">Lưu thay đổi</button>
+            <button onclick="closeModal()" class="btn-logout" style="background: #95a5a6;">Hủy</button>
         </div>
-
     </div>
 </div>
 
 <script>
     const API_URL = 'http://127.0.0.1:5000/api/v1/admin/cuisines';
 
-    // 1. GET
     async function fetchCuisines() {
-        const token = localStorage.getItem('token');
-        const res = await fetch(API_URL, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await res.json();
-        const body = document.getElementById('cuisine-list-body');
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(API_URL, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await res.json();
+            const body = document.getElementById('cuisine-list-body');
 
-        body.innerHTML = data.map(item => `
-            <tr class="list-row">
-                <td class="col-id">${item.id}</td>
-                <td class="col-name">${item.name}</td>
-                <td class="col-status">${item.status}</td>
-                <td class="col-action">
-                    <button class="btn-edit" onclick="openEditModal(${item.id},'${item.name}','${item.status}')">Sửa</button>
-                    <button class="btn-delete" onclick="handleDelete(${item.id})">Xóa</button>
-                </td>
-            </tr>
-        `).join('');
+            body.innerHTML = data.map(item => `
+                <tr class="list-row">
+                    <td class="col-id">${item.id}</td>
+                    <td class="col-name"><strong>${item.name}</strong></td>
+                    <td class="col-status"><span class="status-tag ${item.status === 'Hoạt động' ? 'active' : 'pending'}">${item.status}</span></td>
+                    <td class="col-action">
+                        <button class="btn-edit" onclick="openEditModal(${item.id},'${item.name}','${item.status}')">Sửa</button>
+                        <button class="btn-delete" onclick="handleDelete(${item.id})">Xóa</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error("Lỗi fetch:", err);
+        }
     }
 
-
-    // 2. POST - Thêm mới
     async function handleAdd() {
         const name = document.getElementById('form-name').value;
+        const status = document.getElementById('form-status').value;
         const token = localStorage.getItem('token');
 
-        // 1. Dùng FormData thay vì object JSON
         const formData = new FormData();
         formData.append('CuisineName', name);
-        // Nếu có Status thì thêm: formData.append('Status', 'Hoạt động');
+        formData.append('Status', status);
 
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData // Gửi trực tiếp formData
+                headers: {'Authorization': `Bearer ${token}`},
+                body: formData
             });
-
-            const result = await response.json();
 
             if (response.ok) {
                 alert("Thêm thành công!");
-                location.reload();
+                closeModal();
+                fetchCuisines();
             } else {
-                alert("Lỗi từ Server: " + (result.message || "Thất bại"));
+                const result = await response.json();
+                alert("Lỗi: " + (result.message || "Thất bại"));
             }
         } catch (err) {
-            console.error("Lỗi kết nối:", err);
+            console.error("Lỗi:", err);
         }
     }
 
-    // Logic mở Modal Thêm mới (Reset sạch sẽ dữ liệu cũ)
     function openAddModal() {
         document.getElementById('form-id').value = '';
         document.getElementById('form-name').value = '';
         document.getElementById('modal-title').innerText = 'Thêm Cuisine';
-        document.getElementById('btn-submit').onclick = handleAdd; // Gán hàm Add
+        document.getElementById('btn-submit').onclick = handleAdd;
         document.getElementById('cuisineModal').style.display = 'flex';
     }
 
-    // 3. PUT
     async function handleUpdate() {
         const id = document.getElementById('form-id').value;
         const name = document.getElementById('form-name').value;
         const status = document.getElementById('form-status').value;
         const token = localStorage.getItem('token');
 
-        // 1. Khởi tạo FormData
         const formData = new FormData();
         formData.append('CuisineName', name);
         formData.append('Status', status);
 
-        console.log("Đang gửi Form Data để cập nhật ID:", id);
-
         try {
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
-                headers: {
-                    // CHỈ để Authorization, KHÔNG để Content-Type JSON
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData // Gửi trực tiếp biến formData
+                headers: {'Authorization': `Bearer ${token}`},
+                body: formData
             });
 
-            const result = await response.json();
-
             if (response.ok) {
-                alert(result.message || "Cập nhật thành công!");
+                alert("Cập nhật thành công!");
                 closeModal();
-                location.reload();
+                fetchCuisines();
             } else {
-                alert("Lỗi server: " + (result.message || "Không thể cập nhật"));
+                const result = await response.json();
+                alert("Lỗi: " + (result.message || "Thất bại"));
             }
         } catch (err) {
-            console.error("Lỗi kết nối:", err);
-            alert("Lỗi kết nối server, kiểm tra lại console!");
+            console.error("Lỗi:", err);
         }
     }
 
-
-    // 4. DELETE
-    async function handleDelete(id) {
-        if (confirm('Chắc chắn xóa món này không?')) {
-            const token = localStorage.getItem('token'); // Lấy token ra
-
-            try {
-                const response = await fetch(`${API_URL}/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        // Thêm cái này để Backend biết có quyền xóa
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert(result.message || "Đã xóa xong!");
-                    fetchCuisines(); // Load lại danh sách mà không cần reload cả trang
-                } else {
-                    alert("Lỗi khi xóa: " + (result.message || "Không thể xóa"));
-                }
-            } catch (err) {
-                console.error("Lỗi kết nối khi xóa:", err);
-            }
-        }
-    }
-
-    // Logic UI Modal
     function openEditModal(id, name, status) {
         document.getElementById('form-id').value = id;
         document.getElementById('form-name').value = name;
         document.getElementById('form-status').value = status;
-
+        document.getElementById('modal-title').innerText = 'Dỉnh sửa Cuisine';
+        document.getElementById('btn-submit').onclick = handleUpdate;
         document.getElementById('cuisineModal').style.display = 'flex';
-
-        const btn = document.getElementById('btn-submit');
-        btn.onclick = handleUpdate;
     }
 
-    function showModal(title, name, actionFunc) {
-        document.getElementById('modal-title').innerText = title;
-        document.getElementById('form-name').value = name;
-        document.getElementById('btn-submit').onclick = actionFunc;
-        document.getElementById('cuisineModal').style.display = 'flex';
+    async function handleDelete(id) {
+        if (confirm('Chắc chắn xóa món này không?')) {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                if (response.ok) {
+                    alert("Đã xóa xong!");
+                    fetchCuisines();
+                } else {
+                    const result = await response.json();
+                    alert("Lỗi: " + (result.message || "Thất bại"));
+                }
+            } catch (err) {
+                console.error("Lỗi:", err);
+            }
+        }
     }
 
     function closeModal() {
         document.getElementById('cuisineModal').style.display = 'none';
     }
 
-    function finishAction() {
-        closeModal();
-        fetchCuisines();
+    function handleLogout() {
+        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+            localStorage.removeItem('token');
+            window.location.href = "../auth/login.html";
+        }
     }
 
     window.onload = fetchCuisines;

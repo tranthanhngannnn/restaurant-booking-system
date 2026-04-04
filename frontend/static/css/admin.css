@@ -1,5 +1,18 @@
-/*=================Trang chủ admin=====================*/
-/* Triệt tiêu khoảng trắng mặc định */
+/* ================= ADMIN DESIGN SYSTEM (GOLD/GLASSMORHISM) ================= */
+:root {
+    --primary-gold: #d4af37;
+    --primary-dark: #111111;
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --text-white: #ffffff;
+    --text-gray: #aaaaaa;
+    --success: #28a745;
+    --danger: #e74c3c;
+    --edit: #3498db;
+    --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-heading: 'Playfair Display', serif;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -9,731 +22,250 @@
 html, body {
     width: 100%;
     height: 100%;
-    overflow-x: hidden; /* Chống bị lẹm ngang */
+    overflow-x: hidden;
+    font-family: var(--font-main);
+    background: url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
+    background-size: cover;
 }
 
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: -1;
+}
+
+/* --- HEADER --- */
 .admin-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 4%;
-    background-color: #f4f4f4; /* Nền xám nhạt */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 15px 4%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
-/* Logo GOLDEN HARVEST */
 .logo {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 800;
-    color: #333;
+    color: var(--text-white);
     letter-spacing: 1px;
-}
-.logo span {
-    color: #D4AF37; /* Màu vàng đồng */
+    font-family: var(--font-heading);
 }
 
-/* Cụm Menu bên phải */
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 25px;
+.logo span {
+    color: var(--primary-gold);
 }
 
 .admin-nav {
     display: flex;
-    align-items: center;
-    gap: 15px;
+    gap: 20px;
 }
 
-/* Các nút điều hướng */
 .nav-item {
     text-decoration: none;
-    color: #333;
+    color: var(--text-white);
     font-weight: 600;
     padding: 8px 15px;
-    border-radius: 5px;
+    border-radius: 8px;
     transition: all 0.3s ease;
+    border: 1px solid transparent;
 }
 
-.nav-item:hover {
-    background-color: #e0e0e0;
-    color: #D4AF37;
+.nav-item:hover, .nav-item.active {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--primary-gold);
+    color: var(--primary-gold);
 }
 
-/* Nút Đăng xuất màu đen */
 .btn-logout {
-    background-color: #000;
-    color: #fff;
+    background: var(--primary-gold);
+    color: black;
     border: none;
     padding: 9px 20px;
-    border-radius: 6px;
-    font-weight: 600;
+    border-radius: 8px;
+    font-weight: 700;
     cursor: pointer;
     transition: 0.3s;
 }
 
 .btn-logout:hover {
-    background-color: #333;
-    transform: translateY(-1px);
-}
-
-/* Tổng thể phần Hero Section */
-.hero-section {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop'); /* Hình nền và lớp phủ tối */
-    background-size: cover;
-    background-position: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    color: #fff;
-    font-family: 'Playfair Display', serif; /* Font chữ có chân cho sang trọng */
-}
-
-/* Nội dung bên trong Hero */
-.hero-content {
-    max-width: 800px;
-    padding: 20px;
-}
-
-/* Câu Slogan chính */
-.slogan {
-    font-size: 64px;
-    font-weight: 700;
-    margin-bottom: 10px;
-    letter-spacing: 2px;
-}
-.slogan span {
-    color: #D4AF37; /* Màu vàng đồng thương hiệu */
-}
-
-/* Câu Slogan phụ */
-.sub-slogan {
-    font-size: 20px;
-    font-weight: 400;
-    margin-bottom: 30px;
-    font-family: 'Arial', sans-serif; /* Font không chân cho dễ đọc */
-    opacity: 0.9;
-}
-
-
-/* Tổng thể Footer */
-.admin-footer {
-    background-color: #111; /* Màu đen tuyền sang trọng */
-    color: #fff;
-    padding: 30px 0 15px 0;
-    font-family: 'Arial', sans-serif;
-}
-
-.footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1.5fr 1fr 1fr 1.5fr; /* Chia 4 cột theo tỉ lệ */
-    gap: 40px;
-    padding: 0 5%;
-}
-
-/* Các cột */
-.footer-column h3 {
-    font-size: 18px;
-    margin-bottom: 20px;
-    color: #fff;
-}
-
-.footer-column ul {
-    list-style: none;
-    padding: 0;
-}
-
-.footer-column ul li {
-    margin-bottom: 12px;
-}
-
-.footer-column ul li a {
-    color: #aaa;
-    text-decoration: none;
-    transition: 0.3s;
-    font-size: 14px;
-}
-
-.footer-column ul li a:hover {
-    color: #D4AF37;
-}
-
-/* Cột thương hiệu */
-.brand-info p {
-    color: #888;
-    line-height: 1.6;
-    font-size: 14px;
-    margin-top: 15px;
-}
-
-/* Subscribe Form */
-.subscribe-text {
-    font-size: 13px;
-    color: #888;
-    margin: 15px 0 10px 0;
-}
-
-.subscribe-form {
-    display: flex;
-}
-
-.subscribe-form input {
-    background: #222;
-    border: 1px solid #333;
-    padding: 10px;
-    color: #fff;
-    flex: 1;
-    font-size: 13px;
-    outline: none;
-}
-
-.subscribe-form button {
-    background-color: #D4AF37; /* Màu vàng đồng chuẩn mẫu */
-    border: none;
-    padding: 0 20px;
-    color: #000;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.subscribe-form button:hover {
-    background-color: #fff;
-}
-
-/* Icons mạng xã hội */
-.social-icons {
-    display: flex;
-    gap: 15px;
-}
-
-.social-icons a {
-    color: #fff;
-    font-size: 24px;
-    transition: 0.3s;
-}
-
-.social-icons a:hover {
-    color: #D4AF37;
-}
-
-/* Dòng Bottom */
-.footer-bottom {
-    text-align: center;
-    border-top: 1px solid #222;
-    margin-top: 50px;
-    padding-top: 20px;
-}
-
-.footer-bottom p {
-    color: #666;
-    font-size: 12px;
-}
-
-/*=========================CUISINE============================*/
-/* Container chính */
-.list-container {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 20px;
     background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    font-family: Arial, sans-serif;
+    transform: translateY(-2px);
 }
 
-/* Table cơ bản */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-/* Header bảng */
-.table-header {
-    background-color: #111; /* Màu đen sang trọng chỉ cho tiêu đề */
-    color: white;
-}
-
-.table-header th {
-    padding: 12px;
-    text-align: left;
-    text-transform: uppercase;
-    font-size: 14px;
-
-}
-
-/* Các dòng dữ liệu */
-.list-row {
-    border-bottom: 1px solid #eee;
-    transition: background 0.3s;
-}
-
-.list-row:hover {
-    background-color: #f9f9f9;
-}
-
-.list-row td {
-    padding: 12px;
-    vertical-align: middle;
-}
-
-/* FLEXBOX cho cột Action (Sửa/Xóa) */
-.col-action {
-    display: flex;
-    gap: 8px; /* Khoảng cách giữa 2 nút */
-    justify-content: center;
-    align-items: center; /*căn chiều dọc*/
-}
-
-/* Style cho các button */
-.btn-add {
-    background-color: #28a745;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.btn-edit {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-delete {
-    background-color: #e74c3c;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.btn-edit:hover, .btn-delete:hover {
-    opacity: 0.8;
-}
-
-/* --- MODAL STYLES */
-.modal {
-    display: none; /* Ẩn mặc định, JS sẽ chuyển thành 'flex' */
-    position: fixed;
-    z-index: 9999;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5); /* Làm tối nền */
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(3px); /* Làm mờ nền phía sau */
-}
-
-.modal-content {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 12px;
-    width: 400px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.modal-content h3 {
-    margin: 0;
-    color: #333;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
-
-/* Form trong modal */
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.form-group label {
-    font-weight: bold;
-    font-size: 14px;
-    color: #555;
-}
-
-.form-group input, .form-group select {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    outline: none;
-}
-
-.form-group input:focus {
-    border-color: #3498db;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
-
-.closeModal {
-    background-color: #95a5a6;
-    color: white;
-    padding: 7px 15px;
-}
-
-
-/*================================Users==============================*/
-/* Khung bao bọc bên ngoài - giống cái card trắng của Cuisine */
-.User-list-container {
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    max-width: 1000px;
+/* --- MAIN CONTAINER --- */
+.list-container, .res-container, .User-list-container {
+    max-width: 1200px;
     margin: 40px auto;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    color: var(--text-white);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
 }
 
-.user-header {
+.header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 15px;
 }
 
-/* Đảm bảo bảng trải dài hết cỡ */
-.user-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto; /* Để trình duyệt tự căn chỉnh hoặc dùng 'fixed' nếu muốn ép cứng width */
+.header h2 {
+    font-family: var(--font-heading);
+    color: var(--primary-gold);
+    font-size: 28px;
 }
 
-.user-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: Arial, sans-serif;
-    background: white;
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+/* --- BUTTONS --- */
+.btn-add {
+    background: var(--primary-gold);
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: 0.3s;
 }
 
-/* HEADER */
-.user-table thead {
-    background: #111;
+.btn-add:hover {
+    background: #fff;
+}
+
+.btn-edit {
+    background: var(--edit);
     color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-right: 5px;
 }
 
-.user-table th {
-    padding: 12px;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.btn-delete {
+    background: var(--danger);
+    color: white;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* --- TABLE --- */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+}
+
+th {
+    background: rgba(212, 175, 55, 0.8);
+    color: black;
+    padding: 15px;
     text-align: left;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 1px;
 }
 
-.user-table .cell-action{text-align: center;}
-/* BODY */
-.user-table td {
-    padding: 12px;
+th:first-child { border-top-left-radius: 8px; }
+th:last-child { border-top-right-radius: 8px; }
+
+td {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--glass-border);
+    color: var(--text-white);
     font-size: 14px;
-    border-bottom: 1px solid #eee;
 }
 
-/* ZEBRA */
-.user-table tbody tr:nth-child(even) {
-    background: #f9f9f9;
+tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+
+tr:hover td {
+    background: rgba(255, 255, 255, 0.1);
 }
 
-/* HOVER */
-.user-table tbody tr:hover {
-    background: #f1f5ff;
-    transition: 0.2s;
-}
-
-/* COLUMN STYLE */
-.cell-id {
-    font-weight: bold;
-    color: #555;
-}
-
-.cell-info strong {
-    color: #222;
-}
-
-.cell-email {
-    color: #666;
-}
-
-.cell-phone {
-    color: #777;
-}
-
-.cell-role {
-    font-weight: 600;
-}
-
-/* ACTION */
-.cell-action {
+.col-action {
     text-align: center;
     white-space: nowrap;
 }
 
-/* EDIT */
-.cell-action button:first-child {
-    background: #3498db !important;
-    color: white !important;
-    padding: 6px 12px;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-/* DELETE */
-.cell-action button:last-child {
-    background: #e74c3c !important;
-    color: white !important;
-    padding: 6px 12px;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.cell-action button:last-child:hover {
-    background: #c0392b;
-}
-
-/* Tỉ lệ Flexbox cho các cột */
-/* Container dòng (áp dụng cho cả header và body) */
-.user-item {
-    display: flex;
-    align-items: center; /* Căn giữa theo chiều dọc */
-    padding: 12px;
-}
-
-/* Tách và chia tỷ lệ các cột */
-.cell-id {
-    flex: 0 0 10%; /* Cột ID nhỏ nhất */
-}
-
-.cell-username {
-    flex: 0 0 20%; /* Cột tên rộng vừa phải */
-    font-weight: bold;
-}
-
-.cell-email {
-    flex: 0 0 25%;   /* Cột email thường dài nên cho rộng nhất */
-
-}
-
-.cell-phone {
-    flex: 0 0 15%; /* Cột số điện thoại */
-}
-
-.cell-role {
-    flex: 0 0 15%;
-}
-
-.cell-action {
-    flex: 0 0 10%;
-    text-align: right; /* Đẩy các nút Sửa/Xóa về bên phải */
-}
-
-/* Modal Flexbox */
-.user-modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.user-window {
-    background: white; width: 420px; padding: 20px;
-    border-radius: 8px; display: flex; flex-direction: column; gap: 15px;
-}
-
-.user-form-group { display: flex; flex-direction: column; gap: 5px; }
-.user-modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
-
-/*===================================QUAN LY NHA HANG================================*/
-/* Layout chính */
-.res-container {
-    display: flex;
-    flex-direction: column;
-    width: 100%; /* Hoặc 1200px */
-    margin: 0 auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-
-.header-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-/*Bảng dữ liệu */
-.table-responsive {
-    display: block;
-    width: 100%;
-    overflow-x: auto; /* Tạo thanh cuộn ngang khi màn hình quá nhỏ */
-    -webkit-overflow-scrolling: touch;
-}
-
-.res-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.res-table th, .res-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-
-}
-.res-table td.col-action {
-    display: flex;            /* Kích hoạt Flexbox */
-    justify-content: center;  /* Căn giữa theo chiều ngang */
-    align-items: center;      /* Căn giữa theo chiều dọc (QUAN TRỌNG) */
-    gap: 10px;                /* Khoảng cách giữa nút Sửa và Xóa */
-    height: 100%;             /* Đảm bảo chiếm hết chiều cao ô */
-    border-bottom: none;      /* Khử bỏ các đường kẻ thừa nếu có */
-    padding: 10px;            /* Thêm khoảng đệm cho dễ nhìn */
-}
-/* Đảm bảo dòng trong bảng có chiều cao đồng nhất */
-.res-table tr {
-    height: auto;             /* Hoặc để auto tùy dữ liệu */
-}
-/*header*/
-.res-table thead{
-    background: #111;
-    color: white;
-    vertical-align: middle; /* Căn giữa nội dung theo chiều dọc */
-    text-align: center; /* Căn giữa theo chiều ngang cho cột Thao tác */
-}
-
-
-/* Style cho ảnh trong bảng */
-.res-thumb {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-/*Nút Thao Tác*/
-.res-col-action{
-    vertical-align: middle !important;
-    text-align: center;
-}
-
-/* Biến màu sắc cho chuyên nghiệp */
-:root {
-    --primary: #6366f1;
-    --danger: #f43f5e;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --dark: #1e293b;
-    --gray: #64748b;
-    --bg: #f8fafc;
-}
-
-/* Layout Header dùng Flexbox */
-.header-section {
-    display: flex;
-    justify-content: space-between; /* Đẩy Title sang trái, Button sang phải */
-    align-items: center;            /* Căn giữa dọc */
-    padding: 1.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
-}
-
-
-/* Form Group là một flex container con */
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-group label {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--dark);
-}
-
-.form-group input, .form-group select {
-    padding: 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    transition: all 0.2s;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-
-/* Footer Modal dùng Flexbox */
-.modal-actions {
-    display: flex;
-    justify-content: flex-end; /* Đẩy nút về bên phải */
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-/* Các thẻ trạng thái */
+/* --- STATUS TAGS --- */
 .status-tag {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 99px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
 }
 
 .status-tag.active {
-    background: #dcfce7 !important;
-    color: #15803d;
+    background: rgba(40, 167, 69, 0.2);
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
 }
 
 .status-tag.pending {
-    background: #fef3c7;
-    color: #b45309;
+    background: rgba(243, 156, 18, 0.2);
+    color: #f39c12;
+    border: 1px solid #f39c12;
 }
 
-/* Ảnh nhà hàng */
-.res-thumb {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
-    object-fit: cover;
+/* --- MODALS --- */
+.modal, .app-modal-overlay, .user-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
 }
 
+.modal-content, .app-modal-window, .user-window {
+    background: #ffffff;
+    color: #111;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    border: none;
+}
 
+.form-group label {
+    color: #555;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
 
+.form-group input, .form-group select, .form-group textarea {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    color: black;
+    padding: 12px;
+}
 
+.form-group input:focus {
+    border-color: var(--primary-gold);
+}
 
+/* --- FOOTER --- */
+.admin-footer {
+    background: rgba(0, 0, 0, 0.9);
+    color: var(--text-white);
+    padding: 40px 0 20px 0;
+    margin-top: 80px;
+}
 
-
+.footer-logo {
+    color: var(--primary-gold);
+    font-family: var(--font-heading);
+}

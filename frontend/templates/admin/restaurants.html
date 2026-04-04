@@ -7,6 +7,24 @@
     <link rel="stylesheet" href="../../static/css/restaurant.css">
 </head>
 <body>
+<header class="admin-header">
+    <div class="header-left">
+        <a href="homepage.html" style="text-decoration: none;">
+            <h1 class="logo">GOLDEN <span>HARVEST</span></h1>
+        </a>
+    </div>
+
+    <div class="header-right">
+        <nav class="admin-nav">
+            <a href="restaurants.html" class="nav-item active">Restaurants</a>
+            <a href="cuisine.html" class="nav-item">Cuisine</a>
+            <a href="users.html" class="nav-item">Users</a>
+        </nav>
+
+        <button onclick="handleLogout()" class="btn-logout">Đăng xuất</button>
+    </div>
+</header>
+
 <div class="res-container">
     <div class="header">
         <h2>Quản Lý Nhà Hàng</h2>
@@ -103,5 +121,13 @@
 </div>
 
 <script src="../../static/js/restaurants.js"></script>
+<script>
+    function handleLogout() {
+        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+            localStorage.removeItem('token');
+            window.location.href = "../auth/login.html";
+        }
+    }
+</script>
 </body>
 </html>
