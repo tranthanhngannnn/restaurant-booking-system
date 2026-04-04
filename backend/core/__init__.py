@@ -1,9 +1,5 @@
 import os
 from core.extensions import db, login_manager, jwt, ma
-from app.api.v1.auth.routes import auth_bp
-from app.api.v1.admin.routes import admin_bp
-from app.api.v1.restaurant import restaurant_bp
-from app.api.v1.customer.routes import customer_bp
 from flask import Flask, template_rendered
 from flask import render_template
 from core.config import Config
@@ -36,10 +32,19 @@ def create_app():
     jwt.init_app(app)
     CORS(app, supports_credentials=True)
 
+    from app.api.v1.auth.routes import auth_bp
+    from app.api.v1.admin.routes import admin_bp
+    from app.api.v1.restaurant import restaurant_bp
+    from app.api.v1.customer.routes import customer_bp
+
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
     app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurant')
     app.register_blueprint(customer_bp, url_prefix="/api/v1/customer")
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
 
     # Route chính
     @app.route("/")
