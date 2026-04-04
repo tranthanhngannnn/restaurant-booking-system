@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Users</title>
+    <link rel="stylesheet" href="../../static/css/admin.css">
+</head>
+<body>
+
+<div class="User-list-container">
+    <div class="header">
+        <h2>Danh sách Users</h2>
+    </div>
+
+    <table class="user-table">
+        <thead>
+        <tr class="user-table-header">
+            <th class="cell-id">ID</th>
+            <th class="cell-info">Username</th>
+            <th class="cell-email">Email</th>
+            <th class="cell-phone">Phone</th>
+            <th class="cell-role">Role</th>
+            <th class="cell-action">Thao tác</th>
+        </tr>
+        </thead>
+        <tbody id="user-list-body">
+
+        </tbody>
+    </table>
+
+</div>
+
+<div id="userModal" class="user-modal-overlay">
+    <div class="user-window">
+        <h3 id="user-title">Người Dùng</h3>
+        <input type="hidden" id="form-id">
+
+        <div class="form-group">
+            <label>Họ tên:</label>
+            <input type="text" id="user-field-name" placeholder="Nhập họ tên...">
+        </div>
+
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="user-field-email" placeholder="Nhập email...">
+        </div>
+
+        <div class="form-group">
+            <label>Phone:</label>
+            <input type="text" id="user-field-phone" placeholder="Nhập Số Điện Thoại...">
+        </div>
+
+        <div class="form-group">
+            <label>Role:</label>
+            <select id="user-field-role">
+                <option value="STAFF">STAFF</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="CUSTOMER">CUSTOMER</option>
+            </select>
+        </div>
+
+        <div class="user-modal-actions">
+            <button id="button-submit" class="button-save">Lưu</button>
+            <button onclick="closeUserEntry()" class="button-cancel">Hủy</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://127.0.0.1:5000/api/v1/admin/users';
+
+    //READ: Đổ data vào bảng
+    async function fetchUsers() {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL, {
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        const users = await res.json();
+
+        const tbody = document.getElementById('user-list-body');
+
+        tbody.innerHTML = users.map(u => `
+    <tr>
+    <td class="cell-id">${u.id}</td>
+    <td class="cell-info"><strong>${u.username}</strong></td>
+    <td class="cell-email">${u.email}</td>
+    <td class="cell-phone">${u.phone || 'Chưa có số'}</td>
+    <td class="cell-role">${u.role}</td>
+    <td class="cell-action">
+        <button onclick="openEditModal(${u.id}, '${u.username}', '${u.email}', '${u.phone}', '${u.role}')">Sửa</button>
+        <button onclick="handleDelete(${u.id})">Xóa</button>
+    </td>
+    </tr>
+ `).join('');
+    }
+
+    //PUT
+    async function updateUser(id) {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+
+        formData.append('Username', document.getElementById('user-field-name').value);
+        formData.append('Email', document.getElementById('user-field-email').value);
+        formData.append('Phone', document.getElementById('user-field-phone').value);
+        formData.append('Role', document.getElementById('user-field-role').value);
+
+
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: {'Authorization': `Bearer ${token}`},
+            body: formData
+        });
+
+        if (response.ok) {
+            alert("Cập nhật thành công!");
+            closeUserEntry();
+            fetchUsers();
+        } else {
+            const error = await response.json();
+            alert("Lỗi cập nhật: " + (error.message || "Không xác định"));
+        }
+    }
+
+    //DELETE
+    async function handleDelete(id) {
+        if (confirm("Xóa user này?")) {
+            const token = localStorage.getItem('token');
+            await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: {'Authorization': `Bearer ${token}`}
+            });
+            fetchUsers();
+        }
+    }
+
+    // UI LOGIC
+    // Hàm tổng để quyết định là Thêm hay Sửa
+    function handleSaveUser() {
+        const id = document.getElementById('form-id').value;
+
+        if (id) {
+            updateUser(id); // Chỉ chạy hàm này khi có ID (tức là đang sửa)
+        } else {
+            console.warn("Không tìm thấy ID user để cập nhật!");
+            alert("Lỗi: Không xác định được người dùng cần sửa.");
+        }
+    }
+
+
+    function openAddModal() {
+        document.getElementById('form-id').value = '';
+        document.getElementById('user-title').innerText = "Thêm User";
+        document.getElementById('button-submit').onclick = handleSaveUser;
+        document.getElementById('userModal').style.display = 'flex';
+    }
+
+    function openEditModal(id, name, email, phone, role) {
+        document.getElementById('form-id').value = id;
+        document.getElementById('user-field-name').value = name;
+        document.getElementById('user-field-email').value = email;
+        document.getElementById('user-field-phone').value = phone;
+        document.getElementById('user-field-role').value = role;
+        document.getElementById('user-title').innerText = "Sửa User";
+        document.getElementById('button-submit').onclick = handleSaveUser;
+        document.getElementById('userModal').style.display = 'flex';
+    }
+
+    function closeUserEntry() {
+        document.getElementById('userModal').style.display = 'none';
+    }
+
+    window.onload = fetchUsers;
+
+
+</script>
+</body>
+</html>

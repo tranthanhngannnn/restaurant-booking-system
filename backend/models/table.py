@@ -13,4 +13,3 @@ class Table(db.Model):
     Status = db.Column(db.String(50))
 
     restaurant = db.relationship("Restaurant", backref="tables")
-

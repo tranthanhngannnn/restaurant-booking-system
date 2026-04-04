@@ -1,5 +1,5 @@
-from backend.core.extensions import ma
-from backend.models.booking import Reservation   # sửa đúng path
+from core.extensions import ma
+from models.booking import Reservation   # sửa đúng path
 
 class BookingSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
