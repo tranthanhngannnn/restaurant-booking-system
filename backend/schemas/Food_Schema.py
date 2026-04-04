@@ -1,4 +1,3 @@
-
 from backend.core.extensions import ma
 from backend.models.menu import Food
 

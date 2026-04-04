@@ -1,13 +1,15 @@
-from core.extensions import db
+from backend.core.extensions import db
+
 
 class Table(db.Model):
+    __tablename__ = "RestaurantTables"
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50))
-    seats = db.Column(db.Integer)
-    status = db.Column(db.String(20), default="available")
-    capacity = db.Column(db.Integer)
+    TableID = db.Column(db.Integer, primary_key=True)
+    RestaurantID = db.Column(
+        db.Integer,
+        db.ForeignKey("Restaurant.RestaurantID"))
+    TableNumber = db.Column(db.String(10))
+    Capacity = db.Column(db.Integer)
+    Status = db.Column(db.String(50))
 
-
-    bookings = db.relationship('Booking', backref='table', lazy=True)
-    restaurant_id = db.Column(db.Integer, db.ForeignKey('Restaurant.RestaurantID'), nullable=False)
+    restaurant = db.relationship("Restaurant", backref="tables")

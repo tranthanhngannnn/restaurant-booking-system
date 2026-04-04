@@ -1,10 +1,224 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Cuisine</title>
+    <link rel="stylesheet" href="../../static/css/admin.css">
 </head>
 <body>
 
+<div class="list-container">
+    <h2>Cuisine</h2>
+
+    <button class="btn-add" onclick="openAddModal()">+ Thêm Mới</button>
+
+    <table class="list-header"> <thead>
+        <tr class="table-header">
+            <th class="col-id">Cuisine ID</th>
+            <th class="col-info">Cuisine Name</th>
+            <th class="col-status">Status</th>
+            <th class="col-action">Thao tác</th>
+        </tr>
+    </thead>
+
+    <tbody id="cuisine-list-body">
+    </tbody>
+    </table>
+</div>
+
+<div id="cuisineModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modal-title">Cuisine</h3>
+        <input type="hidden" id="form-id">
+        <div class="form-group">
+            <label for="form-name">Cuisine Name:</label>
+            <input type="text" id="form-name" placeholder="Nhập tên món...">
+        </div>
+
+        <div class="form-group">
+            <label for="form-status">Status:</label>
+            <select id="form-status">
+                <option value="Hoạt động">Hoạt động</option>
+                <option value="Ngưng hoạt động">Ngưng hoạt động</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button id="btn-submit" class="btn-submit">Lưu thay đổi</button>
+            <button onclick="closeModal()" class="closeModal">Hủy</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://127.0.0.1:5000/api/v1/admin/cuisines';
+
+    // 1. GET
+    async function fetchCuisines() {
+        const token = localStorage.getItem('token');
+        const res = await fetch(API_URL, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await res.json();
+        const body = document.getElementById('cuisine-list-body');
+
+        body.innerHTML = data.map(item => `
+            <tr class="list-row">
+                <td class="col-id">${item.id}</td>
+                <td class="col-name">${item.name}</td>
+                <td class="col-status">${item.status}</td>
+                <td class="col-action">
+                    <button class="btn-edit" onclick="openEditModal(${item.id},'${item.name}','${item.status}')">Sửa</button>
+                    <button class="btn-delete" onclick="handleDelete(${item.id})">Xóa</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+
+    // 2. POST - Thêm mới
+    async function handleAdd() {
+        const name = document.getElementById('form-name').value;
+        const token = localStorage.getItem('token');
+
+        // 1. Dùng FormData thay vì object JSON
+        const formData = new FormData();
+        formData.append('CuisineName', name);
+        // Nếu có Status thì thêm: formData.append('Status', 'Hoạt động');
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData // Gửi trực tiếp formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("Thêm thành công!");
+                location.reload();
+            } else {
+                alert("Lỗi từ Server: " + (result.message || "Thất bại"));
+            }
+        } catch (err) {
+            console.error("Lỗi kết nối:", err);
+        }
+    }
+
+    // Logic mở Modal Thêm mới (Reset sạch sẽ dữ liệu cũ)
+    function openAddModal() {
+        document.getElementById('form-id').value = '';
+        document.getElementById('form-name').value = '';
+        document.getElementById('modal-title').innerText = 'Thêm Cuisine';
+        document.getElementById('btn-submit').onclick = handleAdd; // Gán hàm Add
+        document.getElementById('cuisineModal').style.display = 'flex';
+    }
+
+    // 3. PUT
+    async function handleUpdate() {
+        const id = document.getElementById('form-id').value;
+        const name = document.getElementById('form-name').value;
+        const status = document.getElementById('form-status').value;
+        const token = localStorage.getItem('token');
+
+        // 1. Khởi tạo FormData
+        const formData = new FormData();
+        formData.append('CuisineName', name);
+        formData.append('Status', status);
+
+        console.log("Đang gửi Form Data để cập nhật ID:", id);
+
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    // CHỈ để Authorization, KHÔNG để Content-Type JSON
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData // Gửi trực tiếp biến formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(result.message || "Cập nhật thành công!");
+                closeModal();
+                location.reload();
+            } else {
+                alert("Lỗi server: " + (result.message || "Không thể cập nhật"));
+            }
+        } catch (err) {
+            console.error("Lỗi kết nối:", err);
+            alert("Lỗi kết nối server, kiểm tra lại console!");
+        }
+    }
+
+
+    // 4. DELETE
+    async function handleDelete(id) {
+        if (confirm('Chắc chắn xóa món này không?')) {
+            const token = localStorage.getItem('token'); // Lấy token ra
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        // Thêm cái này để Backend biết có quyền xóa
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message || "Đã xóa xong!");
+                    fetchCuisines(); // Load lại danh sách mà không cần reload cả trang
+                } else {
+                    alert("Lỗi khi xóa: " + (result.message || "Không thể xóa"));
+                }
+            } catch (err) {
+                console.error("Lỗi kết nối khi xóa:", err);
+            }
+        }
+    }
+
+    // Logic UI Modal
+    function openEditModal(id, name, status) {
+        document.getElementById('form-id').value = id;
+        document.getElementById('form-name').value = name;
+        document.getElementById('form-status').value = status;
+
+        document.getElementById('cuisineModal').style.display = 'flex';
+
+        const btn = document.getElementById('btn-submit');
+        btn.onclick = handleUpdate;
+    }
+
+    function showModal(title, name, actionFunc) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('form-name').value = name;
+        document.getElementById('btn-submit').onclick = actionFunc;
+        document.getElementById('cuisineModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('cuisineModal').style.display = 'none';
+    }
+
+    function finishAction() {
+        closeModal();
+        fetchCuisines();
+    }
+
+    window.onload = fetchCuisines;
+</script>
 </body>
 </html>

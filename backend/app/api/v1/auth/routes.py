@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 
 from app.api.v1.auth.service import AuthService  # Import class logic từ file service
 
@@ -33,3 +33,9 @@ def login():
 
     # Bước 3: Trả về kết quả cho Client thông qua jsonify
     return jsonify(result), status_code
+
+@auth_bp.route("/logout")
+def logout():
+    session.clear()
+    return jsonify({"message": "Đã đăng xuất"})
+

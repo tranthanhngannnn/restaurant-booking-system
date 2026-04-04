@@ -1,0 +1,194 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body { /*cài đặt cho toàn bộ màn hình*/
+    background: #f4f7f6; /* Màu nền xám nhạt cho dễ nhìn */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* Thanh Navigation dùng Flexbox */
+.nav { /*header*/
+    position: fixed;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 100px;
+    padding: 0 10%;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.nav-logo p {
+    color: #b8860b; /* Màu vàng mặc định cho chữ GOLDEN */
+    font-size: 25px;
+    font-weight: 700;
+}
+.nav-logo p span {
+    color: #000; /* Đổi màu riêng chữ HARVEST thành màu đen */
+}
+
+.nav-button {
+    display: flex;
+    gap: 15px;
+}
+
+/* Định dạng nút bấm */
+.btn {
+    width: 120px;
+    height: 45px;
+    font-weight: 500;
+    background: #b8860b;
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.btn:hover { /*Khi đưa chuột vào, nút sẽ đổi sang màu vàng đậm hơn một chút.*/
+    background: #966d09;
+}
+
+/*nút "Đăng nhập" (màu nhạt hơn).
+dùng màu vàng nhưng cho nó trong suốt (rgba) và có viền để phân biệt với nút "Đăng ký"*/
+.white-btn {
+    background: rgba(184, 134, 11, 0.1);
+    color: #b8860b;
+    border: 1px solid #b8860b;
+}
+
+/* Khung chứa Form dùng Flexbox */
+.form-box {
+    width: 400px;
+    background: #fff;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    margin-top: 100px;
+}
+
+.top {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.top header {
+    color: #333;
+    font-size: 30px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.top span a {
+    text-decoration: none;
+    color: #b8860b;
+    font-weight: 500;
+}
+
+/* Các ô Input */
+.input-box {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.input-field {
+    width: 100%;
+    height: 50px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 10px;
+    padding: 0 45px 0 20px;
+    outline: none;
+}
+
+.input-box i {
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    color: #777;
+    font-size: 20px;
+}
+
+/* Nút Submit */
+.submit {
+    width: 100%;
+    height: 50px;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.submit:hover {
+    background: #000;
+}
+
+/*Register*/
+/* 1. Sửa ô chọn Role (Khách hàng/Nhân viên) cho giống các ô trên */
+select.input-field {
+    cursor: pointer;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 10px;
+    color: #333;
+    padding: 0 20px;
+    width: 100%;
+    height: 50px;
+    outline: none;
+}
+
+/* 2. Fix lỗi icon cho trang Đăng ký (Đảm bảo tất cả icon nằm bên phải) */
+.input-box i {
+    position: absolute;
+    right: 15px; /* Ép icon về bên phải */
+    top: 50%;
+    transform: translateY(-50%);
+    color: #777;
+    font-size: 20px;
+    pointer-events: none; /* Để khi click vào icon vẫn focus được vào ô input */
+}
+
+/* 3. Chỉnh lại cho cái Form không bị dính sát vào Header khi màn hình nhỏ */
+.form-box {
+    margin-top: 120px; /* Tăng khoảng cách với Nav một chút */
+    margin-bottom: 50px;
+    height: auto; /* Cho phép form dài ra theo số lượng ô input */
+}
+
+/* 4. Chỉnh cho chữ trong ô Select nằm ngay ngắn */
+select.input-field {
+    padding-left: 20px; /* Giống padding của input bình thường Ngân đang để */
+}
+
+#registerBtn {
+    text-decoration: none;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#loginBtn{
+    text-decoration: none;
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
