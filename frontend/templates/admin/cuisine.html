@@ -6,23 +6,41 @@
     <link rel="stylesheet" href="../../static/css/admin.css">
 </head>
 <body>
+<header class="admin-header">
+    <div class="header-left">
+        <a href="homepage.html" style="text-decoration: none;">
+            <h1 class="logo">GOLDEN <span>HARVEST</span></h1>
+        </a>
+    </div>
+
+    <div class="header-right">
+        <nav class="admin-nav">
+            <a href="restaurants.html" class="nav-item">Restaurants</a>
+            <a href="cuisine.html" class="nav-item">Cuisine</a>
+            <a href="users.html" class="nav-item">Users</a>
+        </nav>
+
+        <button onclick="handleLogout()" class="btn-logout">Đăng xuất</button>
+    </div>
+</header>
 
 <div class="list-container">
     <h2>Cuisine</h2>
 
     <button class="btn-add" onclick="openAddModal()">+ Thêm Mới</button>
 
-    <table class="list-header"> <thead>
+    <table class="list-header">
+        <thead>
         <tr class="table-header">
             <th class="col-id">Cuisine ID</th>
             <th class="col-info">Cuisine Name</th>
             <th class="col-status">Status</th>
             <th class="col-action">Thao tác</th>
         </tr>
-    </thead>
+        </thead>
 
-    <tbody id="cuisine-list-body">
-    </tbody>
+        <tbody id="cuisine-list-body">
+        </tbody>
     </table>
 </div>
 
@@ -218,7 +236,17 @@
         fetchCuisines();
     }
 
-    window.onload = fetchCuisines;
+    window.onload = async function () {
+        fetchCuisines();      // Load dữ liệu
+    };
+
+    // Logic đăng xuất
+    function handleLogout() {
+        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+            localStorage.removeItem('token');
+            window.location.href = "../auth/login.html";
+        }
+    }
 </script>
 </body>
 </html>
