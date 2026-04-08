@@ -437,10 +437,9 @@ table th {
     border-radius: 10px;
 
     width: 400px;
-    max-height: 80vh;         /* giới hạn chiều cao */
-    overflow-y: auto;         /*  thanh cuộn */
-
-    position: relative;       /*để nút X đúng vị trí */
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
 }
 .popup-content input,
 .popup-content textarea {
