@@ -43,9 +43,9 @@ def get_menu(restaurant_id):
     return [{
         "FoodName": f.FoodName,
         "Price": float(f.Price),
-        "Description": f.Description
+        "Description": f.Description,
+        "Image": f.Image
     } for f in foods]
-
 
 # ================== CHECK TABLE ==================
 def check_table(restaurant_id, date, time, people):

@@ -7,7 +7,6 @@
 
     <link rel="stylesheet" href="../../static/css/customer.css">
 </head>
-
 <body>
 
 <!-- HEADER -->
@@ -19,7 +18,6 @@
     <div class="overlay"></div>
 
     <div class="main-layout">
-
         <!-- SIDEBAR -->
         <div class="sidebar">
             <a href="home.html">🏠 Trang chủ</a>
@@ -28,12 +26,9 @@
             <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
 
         </div>
-
         <!-- CONTENT -->
         <div class="content">
-
             <h2>Đặt bàn</h2>
-
             <select id="restaurantSelect" onchange="changeRestaurant(this.value)">
                 <option value="">-- Chọn nhà hàng --</option>
             </select>
@@ -45,12 +40,9 @@
 
             <input id="nameInput" placeholder="Họ tên"><br>
             <input id="phoneInput" placeholder="SĐT"><br>
-
-            <input id="dateInput" type="date">
+            <input id="dateInput" type="date"><br>
             <input id="timeInput" type="time"><br>
-
             <input id="peopleInput" type="number" placeholder="Số người"><br>
-
             <textarea id="noteInput" placeholder="Ghi chú"></textarea><br>
 
             <button onclick="check()">Kiểm tra bàn</button>

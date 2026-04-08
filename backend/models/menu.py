@@ -13,5 +13,5 @@ class Food(db.Model):
 
     Price = db.Column(db.Float)
     Description = db.Column(db.String(255))
-
+    Image = db.Column(db.String(255))
     restaurant = db.relationship("Restaurant", backref="foods")

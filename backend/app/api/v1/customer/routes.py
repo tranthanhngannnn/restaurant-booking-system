@@ -1,5 +1,4 @@
-from flask import Blueprint, session, redirect,request, jsonify
-from flask import send_from_directory
+from flask import Blueprint, session,request, jsonify
 from .service import *
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
@@ -154,27 +153,53 @@ def get_history_route():
 
 
 @customer_bp.route("/review", methods=["POST"])
+@customer_bp.route("/review", methods=["POST"])
 def create_review():
     if "user_id" not in session:
-        return jsonify({"error": "Bạn cần đăng nhập"}), 401
-
+        return jsonify({"error": "Chưa đăng nhập"}), 401
     data = request.get_json()
-
+    # CHECK TRƯỚC
+    existing = Review.query.filter_by(
+        UserID=session["user_id"],
+        RestaurantID=data["RestaurantID"]
+    ).first()
+    if existing:
+        return jsonify({
+            "error": "Bạn đã thực hiện đánh giá",
+            "reviewed": True
+        }), 400
     new_review = Review(
         UserID=session["user_id"],
         RestaurantID=data["RestaurantID"],
         Rating=data["Rating"],
         Comment=data["Comment"]
     )
+    db.session.add(new_review)
+    db.session.commit()
+    return jsonify({
+        "message": "Review thành công",
+        "reviewed": False
+    })
+@customer_bp.route("/review/check", methods=["GET"])
+def check_review():
+    if "user_id" not in session:
+        return jsonify({"reviewed": False})
 
-    try:
-        db.session.add(new_review)
-        db.session.commit()
-    except IntegrityError:
-        db.session.rollback()
-        return jsonify({"error": "Bạn đã review rồi"}), 400
+    restaurant_id = request.args.get("restaurant_id")
 
-    return jsonify({"message": "Review thành công"})
+    review = Review.query.filter_by(
+        UserID=session["user_id"],
+        RestaurantID=restaurant_id
+    ).first()
+
+    if review:
+        return jsonify({
+            "reviewed": True,
+            "rating": review.Rating,
+            "comment": review.Comment
+        })
+
+    return jsonify({"reviewed": False})
 
 @customer_bp.route("/me")
 def get_me():
@@ -182,7 +207,3 @@ def get_me():
         return jsonify({"logged_in": True})
     return jsonify({"logged_in": False})
 
-#@customer_bp.route("/", defaults={"path": ""})
-#@customer_bp.route("/<path:path>")
-#def spa(path):
-#    return send_from_directory("frontend", "home.html")
