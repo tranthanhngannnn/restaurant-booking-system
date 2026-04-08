@@ -138,14 +138,40 @@ function filterData() {
     renderTable(filtered)
 }
 
-function renderTable(data) {
+async function renderTable(data) {
     let html = ""
 
     if (data.length === 0) {
         html = "<p>Không có dữ liệu</p>"
+        historyContainer.innerHTML = html
+        return
     }
+    for (const b of data) {
 
-    data.forEach(b => {
+        let reviewHtml = ""
+        // CHỈ CHECK KHI ĐÃ CONFIRMED
+        if (b.Status === "Confirmed") {
+            const reviewData = await checkReview(b.RestaurantID || b.restaurant_id)
+            if (reviewData.reviewed) {
+                reviewHtml = `
+                    <div class="review-box">
+                        <div class="stars">
+                            ${"⭐".repeat(Math.round(reviewData.rating || 0))}
+                            <span class="rating-number">(${reviewData.rating}/5)</span>
+                        </div>
+                        <div class="review-text">
+                            ${reviewData.comment || "Không có nhận xét"}
+                        </div>
+                    </div>
+                `
+            } else {
+                reviewHtml = `
+                    <button onclick="event.stopPropagation(); openReview(${b.RestaurantID || b.restaurant_id}, ${b.ReservationID})">
+                        ⭐ Đánh giá
+                    </button>
+                `
+            }
+        }
         html += `
             <div class="history-card ${b.Status}"
                  onclick="handleClick('${b.Status}',
@@ -166,24 +192,22 @@ function renderTable(data) {
                 </div>
 
                 <div class="card-footer">
-                    ${
-                        b.Status === "Confirmed"
-                        ? `<button onclick="event.stopPropagation(); openReview(${b.RestaurantID || b.restaurant_id}, ${b.ReservationID})">
-                                ⭐ Đánh giá
-                           </button>`
-                        : ""
-                    }
+                    ${reviewHtml}
                 </div>
 
             </div>
         `
-    })
+    }
 
     historyContainer.innerHTML = html
 }
 
-function handleClick(status, restaurantID, reservationID) {
+async function handleClick(status, restaurantID, reservationID) {
     if (status === "Confirmed") {
+        const reviewData = await checkReview(restaurantID)
+        if (reviewData.reviewed) {
+            return //  KHÔNG MỞ LẠI
+        }
         openReview(restaurantID, reservationID)
     } else if (status === "Cancelled") {
         alert("Đơn đã bị hủy")
@@ -191,7 +215,12 @@ function handleClick(status, restaurantID, reservationID) {
         alert("Chưa sử dụng dịch vụ")
     }
 }
-
+async function checkReview(restaurantId) {
+    const res = await fetch(`${API}/review/check?restaurant_id=${restaurantId}`, {
+        credentials: "include"
+    });
+    return await res.json();
+}
 function goHome() {
     window.location.href = "home.html"
 }
@@ -227,8 +256,12 @@ function submitReview() {
     })
     .then(res => res.json())
     .then(data => {
-        alert(data.message || data.error)
-        if (data.message) closeReview()
+    alert(data.message || data.error)
+
+    if (data.message) {
+        closeReview()
+        loadHistory()
+    }
     })
 }
 </script>
