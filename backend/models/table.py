@@ -1,4 +1,4 @@
-from backend.core.extensions import db
+from core.extensions import db
 
 
 class Table(db.Model):
@@ -13,4 +13,3 @@ class Table(db.Model):
     Status = db.Column(db.String(50))
 
     restaurant = db.relationship("Restaurant", backref="tables")
-

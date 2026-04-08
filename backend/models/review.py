@@ -1,11 +1,11 @@
-from backend.core.extensions import db
+from core.extensions import db
 from datetime import datetime
 
 class Review(db.Model):
     __tablename__ = "Reviews"
 
     ReviewID = db.Column(db.Integer, primary_key=True)
-    UserID = db.Column(db.Integer, db.ForeignKey("Users.UserID"), nullable=False)
+    UserID = db.Column(db.Integer, db.ForeignKey("users.UserID"), nullable=False)
     RestaurantID = db.Column(db.Integer, db.ForeignKey("Restaurant.RestaurantID"), nullable=False)
 
     Rating = db.Column(db.Float)

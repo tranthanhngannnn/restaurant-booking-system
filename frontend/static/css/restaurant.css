@@ -1,0 +1,123 @@
+/* Khóa cuộn trang chính khi mở modal */
+body.modal-open {
+    overflow: hidden;
+    /* Bù đắp độ rộng thanh cuộn để tránh nháy layout */
+}
+
+.app-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.75); /* Tông tối sang trọng */
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+
+    /* Ẩn mặc định */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.app-modal-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.app-modal-window {
+    background: #fff;
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh; /* Giới hạn chiều cao */
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column; /* Chia Header - Body - Actions */
+    overflow: hidden;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+    
+    /* Hiệu ứng mượt mà khi hiện ra */
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-modal-overlay.is-visible .app-modal-window {
+    transform: scale(1);
+}
+
+/* Header cố định */
+.app-modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #edf2f7;
+    background: #fff;
+}
+
+.app-modal-header h3 { margin: 0; font-size: 1.25rem; color: #1a202c; }
+
+/* Body có thanh cuộn */
+.app-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    background: #fff;
+}
+
+/* Actions cố định ở dưới cùng */
+.app-modal-actions {
+    padding: 16px 24px;
+    border-top: 1px solid #edf2f7;
+    background: #f8fafc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Grid & Form */
+.app-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.app-full-width { grid-column: span 2; }
+
+.app-form-group { display: flex; flex-direction: column; gap: 6px; }
+
+.app-form-group label { font-weight: 600; font-size: 0.85rem; color: #4a5568; }
+
+.app-form-group input, .app-form-group select, .app-form-group textarea {
+    padding: 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.app-form-group input:focus { border-color: #3182ce; outline: none; }
+
+/* Nút bấm */
+.app-btn-save {
+    background: #3182ce;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.app-btn-cancel {
+    background: white;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Webkit Scrollbar */
+.app-modal-body::-webkit-scrollbar { width: 6px; }
+.app-modal-body::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
+
+/*button sửa xóa*/
+tr td { min-height: 80px;}

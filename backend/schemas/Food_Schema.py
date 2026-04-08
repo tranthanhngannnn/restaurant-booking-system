@@ -1,6 +1,5 @@
-
-from backend.core.extensions import ma
-from backend.models.menu import Food
+from core.extensions import ma
+from models.menu import Food
 
 class FoodSchema(ma.SQLAlchemyAutoSchema):
     class Meta:

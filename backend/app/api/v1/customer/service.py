@@ -1,10 +1,10 @@
-from backend.models.menu import Food
-from backend.models.table import Table
-from backend.models.booking import Reservation
-from backend.core.extensions import db
+from models.menu import Food
+from models.table import Table
+from models.booking import Reservation
+from core.extensions import db
 from datetime import datetime, timedelta
-from backend.models.payment import Payment
-from backend.models.restaurant import Restaurant
+from models.payment import Payment
+from models.restaurant import Restaurant
 
 # ================== SEARCH ==================
 def search_restaurant(address, cuisine):

@@ -3,10 +3,10 @@ from .service import *
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
-from backend.models.review import Review
-from backend.core.extensions import db
-from backend.models.user import User
-from backend.app.api.v1.customer.service import get_all_restaurants, get_restaurant_by_id
+from models.review import Review
+from core.extensions import db
+from models.user import User
+from app.api.v1.customer.service import get_all_restaurants, get_restaurant_by_id
 
 
 # HTML pages
