@@ -3,15 +3,14 @@ from .service import *
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
-from models.review import Review
-from core.extensions import db
-from models.user import User
-from app.api.v1.customer.service import get_all_restaurants, get_restaurant_by_id
+from backend.models.review import Review
+from backend.core.extensions import db
+from backend.models.user import User
+from backend.app.api.v1.customer.service import get_all_restaurants, get_restaurant_by_id
 
 
 # HTML pages
 customer_bp = Blueprint("customer", __name__, url_prefix="/api")
-
 
 # API
 @customer_bp.route("/register", methods=["POST"])
@@ -80,14 +79,19 @@ def check():
     time = request.args.get("time")
     people = request.args.get("people")
 
-    # Check thiếu dữ liệu
     if not all([restaurant_id, date, time, people]):
         return jsonify({"error": "Vui lòng nhập đầy đủ thông tin"}), 400
-    # Check số người hợp lệ
+
+    restaurant = get_restaurant_by_id(restaurant_id)
+    if not restaurant:
+        return jsonify({"error": "Restaurant không tồn tại"}), 404
+
     try:
         people = int(people)
+        if people < 1 or people > 10:
+            return jsonify({"error": "Chỉ được đặt từ 1-10 khách"}), 400
     except ValueError:
-        return jsonify({"error": "Số người không hợp lệ"}), 400
+        return jsonify({"error": "Số khách không hợp lệ"}), 400
 
     return jsonify(check_table(
         restaurant_id,
@@ -97,32 +101,62 @@ def check():
 
 @customer_bp.route("/book", methods=["POST"])
 def book():
-
     data = request.json
-    data["user_id"] = session.get("user_id")  # có thể None
-
-    restaurant_id = data.get("restaurant_id")
-    time_str = data.get("time")
+    # VALIDATE BẮT BUỘC
+    if not data.get("name") or not data.get("phone"):
+        return jsonify({"error": "Tên và SĐT là bắt buộc"}), 400
 
     try:
-        booking_time = datetime.strptime(time_str, "%H:%M").time()
+        people = int(data.get("people"))
+        if people < 1 or people > 10:
+            return jsonify({"error": "Chỉ được đặt từ 1-10 khách"}), 400
     except:
-        return jsonify({"error": "Sai format thời gian"}), 400
+        return jsonify({"error": "Số khách không hợp lệ"}), 400
 
+    table_id = data.get("table_id")
+    restaurant_id = data.get("restaurant_id")
+
+    # Check table tồn tại và thuộc restaurant
+    table = Table.query.get(table_id)
+    if not table or table.RestaurantID != int(restaurant_id):
+        return jsonify({"error": "Bàn không hợp lệ"}), 400
+
+    # Check ngày đặt không quá khứ
+    try:
+        booking_date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+        booking_time = datetime.strptime(data.get("time"), "%H:%M").time()
+        if datetime.combine(booking_date, booking_time) < datetime.now():
+            return jsonify({"error": "Không thể đặt bàn trong quá khứ"}), 400
+    except:
+        return jsonify({"error": "Sai format ngày/giờ"}), 400
+
+    # Check nhà hàng tồn tại + giờ đặt hợp lệ
     restaurant = get_restaurant_by_id(restaurant_id)
-
     if not restaurant:
         return jsonify({"error": "Restaurant không tồn tại"}), 404
-
     open_time = datetime.strptime(restaurant["Opentime"], "%H:%M").time()
     close_time = datetime.strptime(restaurant["Closetime"], "%H:%M").time()
-
     if not (open_time <= booking_time <= close_time):
         return jsonify({
             "error": f"Chỉ đặt từ {open_time} đến {close_time}"
         }), 400
+    # Chống double booking
+    exist = Reservation.query.filter(
+        Reservation.TableID == table_id,
+        Reservation.BookingDate == booking_date,
+        Reservation.BookingTime == booking_time,
+        Reservation.Status.in_(["Pending", "Confirmed"])
+    ).first()
+    if exist:
+        return jsonify({"error": "Bàn đã được đặt"}), 400
+
+    # Gọi service tạo booking
+    data["user_id"] = session.get("user_id")  # có thể None
     result = create_booking(data)
-    return jsonify({** result, "deposit":result.get("deposit")})
+    if "error" in result:
+        return jsonify(result), 400
+
+    return jsonify({**result, "deposit": result.get("deposit")})
 
 @customer_bp.route("/restaurants")
 def get_restaurants():
@@ -153,12 +187,20 @@ def get_history_route():
 
 
 @customer_bp.route("/review", methods=["POST"])
-@customer_bp.route("/review", methods=["POST"])
 def create_review():
     if "user_id" not in session:
         return jsonify({"error": "Chưa đăng nhập"}), 401
     data = request.get_json()
-    # CHECK TRƯỚC
+    rating = data.get("Rating")
+    comment = data.get("Comment", "")
+    # VALIDATE RATING
+    if rating is None or not isinstance(rating, int) or rating < 1 or rating > 5:
+        return jsonify({"error": "Vui lòng nhập đánh giá từ 1-5 sao"}), 400
+    # VALIDATE COMMENT (optional)
+    if comment:
+        if len(comment) < 5 or len(comment) > 500:
+            return jsonify({"error": "Bình luận chỉ được từ 5 đến 500 ký tự"}), 400
+    # CHECK ĐÃ REVIEW
     existing = Review.query.filter_by(
         UserID=session["user_id"],
         RestaurantID=data["RestaurantID"]
@@ -171,8 +213,8 @@ def create_review():
     new_review = Review(
         UserID=session["user_id"],
         RestaurantID=data["RestaurantID"],
-        Rating=data["Rating"],
-        Comment=data["Comment"]
+        Rating=rating,
+        Comment=comment
     )
     db.session.add(new_review)
     db.session.commit()
@@ -180,6 +222,7 @@ def create_review():
         "message": "Review thành công",
         "reviewed": False
     })
+
 @customer_bp.route("/review/check", methods=["GET"])
 def check_review():
     if "user_id" not in session:

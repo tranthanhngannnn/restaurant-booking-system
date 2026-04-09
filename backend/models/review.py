@@ -1,4 +1,4 @@
-from core.extensions import db
+from backend.core.extensions import db
 from datetime import datetime
 
 class Review(db.Model):
@@ -8,8 +8,8 @@ class Review(db.Model):
     UserID = db.Column(db.Integer, db.ForeignKey("users.UserID"), nullable=False)
     RestaurantID = db.Column(db.Integer, db.ForeignKey("Restaurant.RestaurantID"), nullable=False)
 
-    Rating = db.Column(db.Float)
-    Comment = db.Column(db.String(255))
+    Rating = db.Column(db.Integer, nullable=False)
+    Comment = db.Column(db.String(500), nullable=True)
     CreateAt = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (

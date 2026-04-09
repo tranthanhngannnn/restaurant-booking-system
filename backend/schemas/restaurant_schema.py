@@ -1,5 +1,5 @@
-from core.extensions import ma
-from models.restaurant import Restaurant   # sửa đúng path model
+from backend.core.extensions import ma
+from backend.models.restaurant import Restaurant   # sửa đúng path model
 
 class RestaurantSchema(ma.SQLAlchemyAutoSchema):
     class Meta:

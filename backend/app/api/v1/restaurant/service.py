@@ -1,5 +1,5 @@
-from models.restaurant import Restaurant
-from core.extensions import db
+from backend.models.restaurant import Restaurant
+from backend.core.extensions import db
 
 
 class RestaurantService:

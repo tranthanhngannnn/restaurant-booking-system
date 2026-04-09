@@ -1,4 +1,4 @@
-from core.extensions import db
+from backend.core.extensions import db
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash
 

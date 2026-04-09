@@ -1,11 +1,11 @@
 import os
-from core.extensions import db, login_manager, jwt, ma
+from backend.core.extensions import db, login_manager, jwt, ma
 from flask import Flask, template_rendered
 from flask import render_template
-from core.config import Config
+from backend.core.config import Config
 from flask_cors import CORS
-from models.user import User
-from models.review import Review
+from backend.models.user import User
+from backend.models.review import Review
 
 
 def create_app():
@@ -30,12 +30,15 @@ def create_app():
     ma.init_app(app)
     login_manager.init_app(app)
     jwt.init_app(app)
-    CORS(app, supports_credentials=True)
+    CORS(app, supports_credentials=True, origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500"
+    ])
 
-    from app.api.v1.auth.routes import auth_bp
-    from app.api.v1.admin.routes import admin_bp
-    from app.api.v1.restaurant import restaurant_bp
-    from app.api.v1.customer.routes import customer_bp
+    from backend.app.api.v1.auth.routes import auth_bp
+    from backend.app.api.v1.admin.routes import admin_bp
+    from backend.app.api.v1.restaurant import restaurant_bp
+    from backend.app.api.v1.customer.routes import customer_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')

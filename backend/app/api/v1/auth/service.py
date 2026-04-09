@@ -1,5 +1,5 @@
-from models.user import User
-from core.extensions import db
+from backend.models.user import User
+from backend.core.extensions import db
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 

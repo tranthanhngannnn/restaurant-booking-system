@@ -1,11 +1,11 @@
 from flask import request, jsonify
-from app.api.v1.admin import admin_bp
+from backend.app.api.v1.admin import admin_bp
 from flask_jwt_extended import jwt_required, get_jwt
-from app.api.v1.admin.service import CuisineService
-from app.api.v1.admin.service import AdminRestaurantService
-from app.api.v1.admin.service import AdminUserService
-from app.api.v1.restaurant.service import RestaurantService
-from models.restaurant import Restaurant
+from backend.app.api.v1.admin.service import CuisineService
+from backend.app.api.v1.admin.service import AdminRestaurantService
+from backend.app.api.v1.admin.service import AdminUserService
+from backend.app.api.v1.restaurant.service import RestaurantService
+from backend.models.restaurant import Restaurant
 
 
 

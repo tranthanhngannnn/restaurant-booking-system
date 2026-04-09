@@ -72,7 +72,7 @@
 </div>
 
 <script>
-const API = "http://localhost:5000/api"
+const API = "http://127.0.0.1:5000/api/v1/customer"
 
 let bookings = []
 
@@ -156,7 +156,7 @@ async function renderTable(data) {
                 reviewHtml = `
                     <div class="review-box">
                         <div class="stars">
-                            ${"⭐".repeat(Math.round(reviewData.rating || 0))}
+                            ${"\u2B50".repeat(Math.round(reviewData.rating || 0))}
                             <span class="rating-number">(${reviewData.rating}/5)</span>
                         </div>
                         <div class="review-text">
@@ -175,9 +175,7 @@ async function renderTable(data) {
         html += `
             <div class="history-card ${b.Status}"
                  onclick="handleClick('${b.Status}',
-                                        ${b.RestaurantID || b.restaurant_id},
-                                        ${b.ReservationID})">
-
+                  ${b.RestaurantID || b.restaurant_id},${b.ReservationID})">
                 <div class="card-header">
                     <h3>🍲 ${b.RestaurantName || "Nhà hàng"}</h3>
                     <span class="status ${b.Status}">
@@ -235,14 +233,40 @@ function closeReview() {
     reviewBox.style.display = "none"
 }
 
+function validateReview(ratingValue, commentValue) {
+    if (
+        ratingValue === "" ||
+        isNaN(ratingValue) ||
+        !Number.isInteger(Number(ratingValue)) ||
+        ratingValue < 1 ||
+        ratingValue > 5
+    ) {
+        return "Vui lòng nhập đánh giá từ 1-5 sao";
+    }
+    // Comment optional
+    if (commentValue) {
+        if (commentValue.length < 5 || commentValue.length > 500) {
+            return "Bình luận chỉ được từ 5 đến 500 ký tự";
+        }
+    }
+    return null;
+}
+
 function submitReview() {
     const rID = restaurantId.value
+    const ratingValue = rating.value
+    const commentValue = comment.value.trim()
 
     if (!rID) {
         alert("Thiếu RestaurantID")
         return
     }
-
+    // VALIDATE TRƯỚC KHI GỌI API
+    const error = validateReview(ratingValue, commentValue)
+    if (error) {
+        alert(error)
+        return
+    }
     fetch(`${API}/review`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -250,20 +274,23 @@ function submitReview() {
         body: JSON.stringify({
             RestaurantID: parseInt(rID),
             ReservationID: parseInt(reservationId.value),
-            Rating: parseInt(rating.value),
-            Comment: comment.value
+            Rating: parseInt(ratingValue),
+            Comment: commentValue
         })
     })
     .then(res => res.json())
     .then(data => {
-    alert(data.message || data.error)
+        alert(data.message || data.error)
 
-    if (data.message) {
-        closeReview()
-        loadHistory()
-    }
+        if (data.message) {
+            closeReview()
+            loadHistory()
+        }
     })
 }
+
+
+
 </script>
 
 </body>

@@ -1,7 +1,7 @@
-from models.cuisine import Cuisine
-from models.restaurant import Restaurant
-from core.extensions import db
-from models.user import User
+from backend.models.cuisine import Cuisine
+from backend.models.restaurant import Restaurant
+from backend.core.extensions import db
+from backend.models.user import User
 
 
 class AdminUserService:

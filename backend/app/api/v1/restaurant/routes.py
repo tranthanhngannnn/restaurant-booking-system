@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from app.api.v1.restaurant.service import RestaurantService
+from backend.app.api.v1.restaurant.service import RestaurantService
 from . import restaurant_bp
 
 @restaurant_bp.route('/registerRestaurant', methods=['POST'])
