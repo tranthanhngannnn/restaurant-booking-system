@@ -8,3 +8,6 @@ class Booking(db.Model):
     people = db.Column(db.Integer)
     table_id = db.Column(db.Integer, db.ForeignKey('table.id'))
 
+
+
+

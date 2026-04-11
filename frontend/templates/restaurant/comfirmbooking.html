@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đặt bàn</title>
+    <link rel="stylesheet" href="/frontend/static/css/comfirmbooking.css">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>Restaurant</h2>
+        <ul>
+            <li>Dashboard</li>
+            <li>Quản lý bàn</li>
+            <li class="active">Đặt bàn</li>
+        </ul>
+    </div>
+
+    <!-- Popup -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2>Đặt bàn</h2>
+
+            <!-- FORM NẰM NGANG -->
+            <form id="bookingForm" class="form-inline">
+                <input type="hidden" id="tableId" value="1">
+
+                <div class="form-group">
+                    <label>Tên khách</label>
+                    <input type="text" id="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>SĐT</label>
+                    <input type="text" id="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Số người</label>
+                    <input type="number" id="guests" value="4" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Ngày</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Giờ</label>
+                    <input type="time" id="time" required>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit">Xác nhận</button>
+                    <button type="button" onclick="closeModal()">Hủy</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Hiển thị popup luôn
+window.onload = function() {
+    document.getElementById("modal").style.display = "flex";
+};
+
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+}
+
+document.getElementById("bookingForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const data = {
+        tableId: document.getElementById("tableId").value,
+        name: document.getElementById("name").value,
+        phone: document.getElementById("phone").value,
+        guests: document.getElementById("guests").value,
+        date: document.getElementById("date").value,
+        time: document.getElementById("time").value
+    };
+
+    console.log("Đặt bàn:", data);
+    alert("Đặt bàn thành công!");
+
+    closeModal();
+});
+</script>
+
+</body>
+</html>

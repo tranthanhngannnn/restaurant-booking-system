@@ -2,6 +2,7 @@ from marshmallow import Schema, fields
 
 class BookingSchema(Schema):
     id = fields.Int(dump_only=True)
+    people = fields.Int(required=True)
 
     customer_name = fields.Str(required=True)
     status = fields.Str(dump_only=True)

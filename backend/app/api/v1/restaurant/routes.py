@@ -1,7 +1,7 @@
 from flask import request, jsonify ,Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.api.v1.restaurant.service import RestaurantService
-from . import restaurant_bp
+
 
 from .service import *
 
@@ -30,7 +30,16 @@ def update_table_status(id):
 
 @restaurant_bp.route('/menu', methods=['GET'])
 def get_menu():
-    return jsonify(get_all_menu())
+    menus = Menu.query.filter_by(visible=True).all()  # chỉ lấy món hiển thị
+    return jsonify([{
+        "id": m.id,
+        "name": m.name,
+        "price": m.price,
+        "image": m.image,
+        "category": m.category,
+        "description": m.description,
+        "visible": m.visible
+    } for m in menus])
 
 @restaurant_bp.route('/menu', methods=['POST'])
 def create_food_api():
@@ -80,3 +89,96 @@ def delete_booking_api(id):
 @restaurant_bp.route("/tables/<int:id>/bookings", methods=["GET"])
 def get_booking_by_table(id):
     return jsonify(get_booking_by_table_service(id))
+
+
+@restaurant_bp.route("/orders", methods=["POST"])
+def create_order():
+    data = request.json
+    table_id = data["table_id"]
+
+    # 🔥 check bàn
+    table = Table.query.get(table_id)
+    if not table:
+        return {"error": "Table not found"}, 404
+
+    # 🔥 lấy order active (nếu có)
+    order = Order.query.filter_by(table_id=table_id, status="active").first()
+
+    if not order:
+        order = Order(table_id=table_id, status="active")
+        db.session.add(order)
+        db.session.commit()
+
+        # cập nhật bàn
+        table.status = "reserved"
+
+    # 🔥 thêm món
+    for item in data["items"]:
+        existing = OrderItem.query.filter_by(
+            order_id=order.id,
+            menu_id=item["menu_id"]
+        ).first()
+
+        if existing:
+            existing.quantity += item["qty"]
+        else:
+            oi = OrderItem(
+                order_id=order.id,
+                menu_id=item["menu_id"],
+                quantity=item["qty"]
+            )
+            db.session.add(oi)
+
+    db.session.commit()
+
+    return {"message": "Order updated"}
+
+@restaurant_bp.route("/orders/pay/<int:table_id>", methods=["PUT"])
+def pay_order(table_id):
+    order = Order.query.filter_by(table_id=table_id, status="active").first()
+
+    if not order:
+        return {"error": "No active order"}
+
+    order.status = "paid"
+
+    table = Table.query.get(table_id)
+    table.status = "available"
+
+    db.session.commit()
+
+    return {"message": "Paid"}
+
+@restaurant_bp.route("/orders/table/<int:table_id>", methods=["GET"])
+def get_order_by_table(table_id):
+    order = Order.query.filter_by(table_id=table_id, status="active").first()
+
+    if not order:
+        return jsonify(None)
+
+    items = OrderItem.query.filter_by(order_id=order.id).all()
+
+    return jsonify({
+        "id": order.id,
+        "items": [
+            {
+                "menu_id": i.menu_id,
+                "qty": i.quantity
+            } for i in items
+        ]
+    })
+
+@restaurant_bp.route("/menu/<int:id>/visible", methods=["PUT"])
+def toggle_menu_visibility(id):
+    menu = Menu.query.get(id)
+    if not menu:
+        return {"error": "Menu not found"}, 404
+
+    data = request.json
+    if "visible" in data:
+        menu.visible = data["visible"]
+    else:
+        menu.visible = not menu.visible  # toggle
+
+    db.session.commit()
+    return {"id": menu.id, "visible": menu.visible}

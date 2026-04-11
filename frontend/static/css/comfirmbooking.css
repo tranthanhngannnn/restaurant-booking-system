@@ -1,0 +1,41 @@
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* FORM NẰM NGANG */
+.form-inline {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+}
+
+input {
+    padding: 6px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+}

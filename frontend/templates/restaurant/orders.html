@@ -1,10 +1,235 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+<meta charset="UTF-8">
+<title>Order</title>
+<link rel="stylesheet" href="/frontend/static/css/style.css">
 </head>
 <body>
 
+<div class="container">
+  <h2 class="title">🍽️ Bàn <span id="table-id"></span></h2>
+
+  <div class="tab-buttons">
+    <button class="active" onclick="changeTab('lau', event)">Lẩu</button>
+    <button onclick="changeTab('nuong', event)">Nướng</button>
+  </div>
+
+  <div class="layout">
+
+    <!-- MENU -->
+    <div class="menu">
+      <h3>Menu</h3>
+      <div id="menu-list" class="menu-container"></div>
+    </div>
+
+
+    <div class="order-box">
+
+      <h3>Danh sách món</h3>
+      <ul id="order-list"></ul>
+
+      <div class="total">
+        Tổng: <span id="total">0</span> đ
+      </div>
+      <div class="actions">
+        <button class="create-btn" onclick="createOrder()">Gửi order</button>
+        <button class="pay-btn" onclick="payOrder()">Thanh toán</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ===== TABLE ID =====
+const tableId = new URLSearchParams(window.location.search).get("table_id");
+document.getElementById("table-id").innerText = tableId;
+
+// ===== DATA MENU =====
+let currentTab = 'lau';
+let order = [];
+
+const MENU_DATA = [
+    // Lẩu
+    { id: 'LT', name: 'Lẩu Thái', price: 50000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/6/0/60001564-lau-thai_1_1.jpg', type:'lau' },
+    { id: 'LM', name: 'Lẩu Mala', price: 50000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/6/0/60001563-lau-mala-dai-loan_1_2.jpg', type:'lau' },
+    { id: 'LCD', name: 'Lẩu Cua Đồng', price: 50000, image: 'https://tiki.vn/blog/wp-content/uploads/2023/07/thanh-pham-lau-cua-dong-5-nguoi-an-1-1536x1030.jpg', type:'lau' },
+    { id: 'LKC', name: 'Lẩu Kimchi', price: 60000, image: 'https://thichlaunuong.com/uploads/files/2021/05/21/gyu-kimchi-nabe-lau-bo-kim-chi1537556147.jpg', type:'lau' },
+    { id: 'LTX', name: 'Lẩu Tứ Xuyên', price: 50000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/l/a/lau-hong-ngoc_1.jpg', type:'lau' },
+    { id: 'LBNG', name: 'Lẩu Bò Nhúng Giấm', price: 50000, image: 'https://i.pinimg.com/1200x/84/2f/c8/842fc899420614cf55de8b8e7481d8d2.jpg', type:'lau' },
+    { id: 'STN', name: 'Set Thịt Nhỏ', price: 120000, image: 'https://i.pinimg.com/1200x/10/84/9a/10849a51b3a4716655ab197944a1d995.jpg', type:'lau' },
+    { id: 'HSTH', name: 'Hải Sản Tổng Hợp', price: 150000, image: 'https://i.pinimg.com/736x/f2/c0/41/f2c04156507b638dd7710a393405840e.jpg', type:'lau' },
+    { id: 'CBRN', name: 'Combo Rau Nấm', price: 100000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/r/a/rau_nam_tong_hop.jpg', type:'lau' },
+    { id: 'STL', name: 'Set Thịt Lớn', price: 240000, image: 'https://i.pinimg.com/736x/cd/2f/59/cd2f59d1d3406af4e0c80cbe8b726799.jpg', type:'lau' },
+    { id: 'SVTL', name: 'Set Viên Thả Lẩu', price: 100000, image: 'http://anvatngon.vn/upload/images/set-vien-tha-lau-eb-steamboat-5in1-nk-malaysia-mon-an-che-bien-tai-nha-hotline-093-8828-553.jpg', type:'lau' },
+    { id: 'BFTM', name: 'Buffet Tráng Miệng', price: 50000, image: 'https://i.pinimg.com/736x/93/21/0c/93210c9b608c619be5495e4253d95fbd.jpg', type:'lau' },
+
+    // Nướng
+    { id: 'BCBM', name: 'Ba Chỉ Bò Mỹ', price: 90000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/t/h/thitbonhuy.png', type:'nuong' },
+    { id: 'LVB', name: 'Lõi Vai Bò', price: 90000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/2/8/2865-loi-vai-wagyu.jpg', type:'nuong' },
+    { id: 'THI', name: 'Thịt Heo Iberico', price: 70000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/6/0/60001584-ba-chi-heo-iberico_2_1.jpg', type:'nuong' },
+    { id: 'KC', name: 'Kimchi', price: 25000, image: 'https://i.pinimg.com/1200x/88/5e/d9/885ed9d3194e58c01b3c2865a943691a.jpg', type:'nuong' },
+    { id: 'BTM', name: 'Bạch Tuộc Mini', price: 85000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/6/0/60001591-bach-tuoc-baby_1_1.jpg', type:'nuong' },
+    { id: 'SDMH', name: 'Sò Điệp Mỡ Hành', price: 85000, image: 'https://i.pinimg.com/1200x/c4/b6/34/c4b634ee4f04c0cf4fe83a9fba39dd19.jpg', type:'nuong' },
+    { id: 'SNMO', name: 'Sườn Non Ướp Mật Ong', price: 120000, image: 'https://i.pinimg.com/736x/3e/58/15/3e58156f6d4f5efba5ec8c72f52d5ff3.jpg', type:'nuong' },
+    { id: 'RSAK', name: 'Rau Sống Ăn Kèm', price: 90000, image: 'https://cdn.yeutre.vn/medias/uploads/228/228658-rau-an-do-nuong-han-quoc.jpg', type:'nuong' },
+    { id: 'CMN', name: 'Combo Nấm', price: 100000, image: 'https://image.foodbook.vn/upload/20220503/1651551345115_blob.png', type:'nuong' },
+    { id: 'TNST', name: 'Tôm Nướng Sa Tế', price: 240000, image: 'https://i.pinimg.com/1200x/94/03/bf/9403bf0a4317828cc0d50e30d493c189.jpg', type:'nuong' },
+    { id: 'NVH', name: 'Nạc Vai Heo', price: 100000, image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/3/1/31_1.jpg', type:'nuong' },
+    { id: 'TCTH', name: 'Trái Cây Tổng Hợp', price: 100000, image: 'https://i.pinimg.com/1200x/51/e9/00/51e90025e4f0f776b454617976400147.jpg', type:'nuong' }
+];
+
+// ===== RENDER MENU =====
+function renderMenu(){
+  const menuDiv = document.getElementById("menu-list");
+  menuDiv.innerHTML = "";
+
+  const filtered = MENU_DATA.filter(item => item.type === currentTab);
+
+  filtered.forEach(item => {
+    // mặc định visible = true nếu chưa có
+    if(item.visible === undefined) item.visible = true;
+
+    const btn = document.createElement("div");
+    btn.classList.add("menu-item");
+
+    // ẩn menu nếu visible = false
+    btn.style.display = item.visible ? "block" : "none";
+
+    btn.innerHTML = `
+      <img src="${item.image}" alt="${item.name}">
+      <h3>${item.name}</h3>
+      <p>${item.price}đ</p>
+      <button onclick="addItem('${item.id}', '${item.name}', ${item.price}, '${item.image}')">Thêm</button>
+    `;
+    menuDiv.appendChild(btn);
+  });
+}
+
+// ===== CHANGE TAB =====
+function changeTab(tab, e){
+  currentTab = tab;
+  renderMenu();
+  renderOrder(); // cập nhật order theo menu
+  document.querySelectorAll(".tab-buttons button").forEach(b=>b.classList.remove("active"));
+  e.target.classList.add("active");
+}
+
+// ===== ADD ITEM =====
+function addItem(menu_id, name, price, image){
+  const item = order.find(i => i.menu_id === menu_id);
+  if(item) item.qty++;
+  else order.push({menu_id, name, price, qty:1, image});
+  renderOrder();
+}
+
+// ===== RENDER ORDER =====
+function renderOrder(){
+  const list = document.getElementById("order-list");
+  list.innerHTML = "";
+  let total = 0;
+
+  // Lọc order: chỉ hiển thị món còn visible
+  const filteredOrder = order.filter(i => {
+    const menuItem = MENU_DATA.find(m => m.id === i.menu_id);
+    return menuItem && menuItem.visible;
+  });
+
+  filteredOrder.forEach(i=>{
+    total += i.price * i.qty;
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;margin-right:10px;">
+      ${i.name} x${i.qty} - ${i.price*i.qty}đ
+    `;
+    list.appendChild(li);
+  });
+
+  document.getElementById("total").innerText = total;
+
+  // ẩn order-box nếu không có món hiển thị
+  document.querySelector(".order-box").style.display = filteredOrder.length ? "block" : "none";
+}
+
+// ===== CHANGE TAB =====
+function changeTab(tab, e){
+  currentTab = tab;
+  renderMenu();
+  document.querySelectorAll(".tab-buttons button").forEach(b=>b.classList.remove("active"));
+  e.target.classList.add("active");
+}
+
+// ===== ADD ITEM =====
+function addItem(menu_id, name, price, image){
+  const item = order.find(i => i.menu_id === menu_id);
+  if(item) item.qty++;
+  else order.push({menu_id, name, price, qty:1, image});
+  renderOrder();
+}
+
+// ===== RENDER ORDER =====
+function renderOrder(){
+  const list = document.getElementById("order-list");
+  list.innerHTML = "";
+  let total = 0;
+  order.forEach(i=>{
+    total += i.price * i.qty;
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;margin-right:10px;">
+      ${i.name} x${i.qty} - ${i.price*i.qty}đ
+    `;
+    list.appendChild(li);
+  });
+  document.getElementById("total").innerText = total;
+}
+
+// ===== CREATE ORDER =====
+async function createOrder(){
+  if(order.length === 0){
+    alert("Chưa có món");
+    return;
+  }
+
+  try {
+    const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        table_id: parseInt(tableId),
+        items: order.map(i=>({
+          menu_id: i.menu_id,
+          qty: i.qty
+        }))
+      })
+    });
+
+    const data = await res.text(); // lấy lỗi từ backend
+
+    if(res.ok){
+      alert("Đã lưu order");
+    } else {
+      console.error(data);
+      alert("Lỗi gửi order: " + data);
+    }
+
+  } catch(err){
+    console.error(err);
+    alert("Không kết nối được backend!");
+  }
+}
+
+// ===== PAY =====
+async function payOrder(){
+  await fetch(`http://127.0.0.1:5000/api/v1/restaurant/orders/pay/${tableId}`,{method:"PUT"});
+  alert("Thanh toán xong");
+  window.location.href = "table.html";
+}
+
+// ===== INIT =====
+window.onload = renderMenu;
+
+</script>
 </body>
 </html>
