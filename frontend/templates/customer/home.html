@@ -1,10 +1,181 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Trang chủ</title>
+
+    <link rel="stylesheet" href="../../static/css/customer.css">
 </head>
+
 <body>
+
+<div class="header">
+    <div class="logo">GOLDEN <span>HARVEST</span></div>
+    <div class="auth-buttons">
+        <button onclick="showLogin()">Đăng nhập</button>
+        <button onclick="showRegister()">Đăng ký</button>
+    </div>
+</div>
+
+<div class="hero">
+    <div class="overlay"></div>
+
+    <!--  THÊM WRAPPER -->
+    <div class="main-layout">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <h2></h2>
+
+            <a href="home.html">🏠 Trang chủ</a>
+            <a href="search.html">🔍 Tìm kiếm</a>
+            <a href="booking.html">📅 Đặt bàn</a>
+            <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
+            <a href="#" onclick="logout()" id="logoutMenu" style="display:none;">🚪 Đăng xuất</a>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <h2>Trang chủ</h2>
+
+            <!-- LOGIN POPUP -->
+            <div id="authBox" class="popup" style="display:none;">
+                <div class="popup-content">
+                    <span class="close-btn" onclick="closePopup()">×</span>
+                    <div id="loginForm">
+                        <input id="username" placeholder="Username">
+                        <input id="password" type="password" placeholder="Password">
+                        <button onclick="login()">Đăng nhập</button>
+                        <button onclick="showRegister()">Đăng ký</button>
+                    </div>
+
+                    <div id="registerForm" style="display:none;">
+                        <input id="reg_username" placeholder="Username">
+                        <input id="reg_password" type="password" placeholder="Password">
+                        <input id="reg_email" placeholder="Email">
+                        <input id="reg_phone" placeholder="SĐT">
+                        <button onclick="register()">Tạo tài khoản</button>
+                        <button onclick="showLogin()">Quay lại</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARDS -->
+            <div class="dashboard">
+                <div class="card">
+                    <h3>🍽️ Nhà hàng</h3>
+                    <p>Tìm kiếm và xem menu nhà hàng dễ dàng</p>
+                    <a href="search.html" class="btn">Tìm kiếm</a>
+                </div>
+
+                <div class="card">
+                    <h3>📅 Đặt bàn</h3>
+                    <p>Đặt bàn nhanh chóng chỉ trong vài bước</p>
+                    <a href="booking.html" class="btn">Đặt ngay</a>
+                </div>
+
+                <div class="card" id="historyCard" style="display:none;">
+                    <h3>📜 Lịch sử</h3>
+                    <p>Xem lại các lần đặt bàn trước đó</p>
+                    <a href="history.html" class="btn">Xem lịch sử</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:5000/api/v1/customer"
+//Login
+function login(){
+    const usernameInput = document.getElementById("username").value
+    const passwordInput=document.getElementById("password").value
+    fetch(`${API}/login`, {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    credentials: "include", body: JSON.stringify({
+        username: usernameInput,
+        password: passwordInput })
+        }) .then(async res => {
+        const data = await res.json().catch(() => null)
+        if (!res.ok) {
+            throw new Error(data?.error || "Lỗi server")
+        }
+        return data
+        })
+        .then(data => {
+            alert(data.message)
+            location.reload()
+        })
+        .catch(err => alert(err.message))
+}
+// REGISTER
+    function register() {
+        fetch(`${API}/register`, {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: reg_username.value,
+            password: reg_password.value,
+            email: reg_email.value,
+            phone: reg_phone.value
+        })
+    })
+     .then(async res => {
+     const data = await res.json().catch(() => null)
+     if (!res.ok) throw new Error(data?.error || "Lỗi")
+     return data
+      })
+      .then(data => alert(data.message))
+      .catch(err => alert(err.message)) }
+// LOGOUT
+function logout() {
+    fetch(`${API}/logout`, {
+        credentials: "include"
+    })
+    .then(() => location.reload())
+}
+
+// CHECK LOGIN
+window.onload = () => {
+    window.authBox = document.getElementById("authBox")
+    window.loginForm = document.getElementById("loginForm")
+    window.registerForm = document.getElementById("registerForm")
+    window.logoutMenu = document.getElementById("logoutMenu")
+    window.historyLink = document.getElementById("historyLink")
+    window.historyCard = document.getElementById("historyCard")
+    fetch(`${API}/me`, {
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.logged_in) {
+        //guestUI.style.display = "none"
+
+        historyLink.style.display = "block"
+        historyCard.style.display = "block"
+        logoutMenu.style.display = "block"
+        }
+    })
+}
+// UI SWITCH
+  function showLogin() {
+    authBox.style.display = "flex"
+    loginForm.style.display = "block"
+    registerForm.style.display = "none"
+}
+
+function showRegister() {
+    authBox.style.display = "flex"
+    loginForm.style.display = "none"
+    registerForm.style.display = "block"
+}
+function closePopup() {
+    authBox.style.display = "none"
+}
+</script>
 
 </body>
 </html>

@@ -1,7 +1,7 @@
 body {
     margin: 0;
     font-family: Arial;
-    background: #f4f6f9;
+    background: #f5f5f5;
 }
 
 .container {
@@ -17,6 +17,19 @@ body {
     height: 100vh;
     position: sticky;
     top: 0;
+}
+
+.sidebar a{
+  display:block;
+  padding:10px;
+  margin:5px 0;
+  color:white;
+  text-decoration:none;
+  border-radius:6px;
+}
+
+.sidebar a:hover{
+  background:#34495e;
 }
 
 .sidebar ul {
@@ -128,4 +141,25 @@ button:hover {
     width: 500px;
     padding: 20px;
     border-radius: 12px;
+}
+/* 🔥 NÚT SỬA - HỦY */
+.actions {
+    display: flex;
+    justify-content: space-between; /* Sửa trái - Hủy phải */
+    gap: 10px;
+}
+
+.actions button {
+    flex: 1; /* 2 nút đều nhau */
+}
+
+/* màu cho đẹp */
+.actions button:first-child {
+    background: #4CAF50; /* Sửa */
+    color: white;
+}
+
+.actions button:last-child {
+    background: #f44336; /* Hủy */
+    color: white;
 }

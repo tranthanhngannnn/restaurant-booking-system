@@ -1,10 +1,120 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Tìm kiếm nhà hàng</title>
+
+    <link rel="stylesheet" href="../../static/css/customer.css">
 </head>
+
 <body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="logo">GOLDEN <span>HARVEST</span></div>
+</div>
+
+<div class="hero">
+    <div class="overlay"></div>
+
+    <div class="main-layout">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <a href="home.html">🏠 Trang chủ</a>
+            <a href="search.html">🔍 Tìm kiếm</a>
+            <a href="booking.html">📅 Đặt bàn</a>
+            <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <h2>Tìm kiếm nhà hàng</h2>
+
+            <input id="address" placeholder="Tìm kiếm nhà hàng...">
+
+            <select id="cuisine">
+                <option value="">Loại hình ẩm thực</option>
+                <option value="1">Lẩu</option>
+                <option value="2">Nướng</option>
+                <option value="3">Hải sản</option>
+                <option value="4">Chay</option>
+                <option value="5">Hấp</option>
+            </select>
+
+            <button onclick="search()">Tìm kiếm</button>
+
+            <div id="result"></div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:5000/api/v1/customer"
+
+function search() {
+    const address = document.getElementById("address").value;
+    const cuisine = document.getElementById("cuisine").value;
+
+    fetch(`${API}/search?address=${encodeURIComponent(address)}&cuisine=${cuisine}`)
+        .then(res => res.json())
+        .then(data => {
+            let html = "";
+
+            if (data.length === 0) {
+                html = "<p>Không tìm thấy nhà hàng</p>";
+            }
+
+            data.forEach(r => {
+                html += `
+                    <div style="border:1px solid #ccc; margin:10px; padding:10px">
+                        <h3>${r.RestaurantName}</h3>
+                        <p>📍 ${r.Address}</p>
+                        <p>📞 ${r.Phone}</p>
+                        <p>${r.Available}</p>
+
+                        <button onclick="goMenu(${r.RestaurantID})">
+                            Xem chi tiết
+                        </button>
+
+                        <button onclick="goBooking(${r.RestaurantID})">
+                            Đặt bàn
+                        </button>
+                    </div>
+                `;
+            });
+
+            document.getElementById("result").innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Lỗi gọi API");
+        });
+}
+
+function goMenu(id) {
+    window.location.href = `menu.html?id=${id}`;
+}
+
+function goBooking(id) {
+    window.location.href = `booking.html?id=${id}`;
+}
+
+window.onload = () => {
+    const historyLink = document.getElementById("historyLink")
+    fetch(`${API}/me`, {
+        credentials: "include"
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.logged_in) {
+            historyLink.style.display = "block"
+        }
+    })
+}
+</script>
 
 </body>
 </html>

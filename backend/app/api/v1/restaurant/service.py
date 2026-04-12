@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from models.menu import Menu
 from models.table import Table
-from models.booking import Booking
+from models.confirmbooking import Booking
 from models.orders import Order
 from models.ordersitem import OrderItem
 
@@ -51,14 +51,15 @@ def get_tables():
         booking = Booking.query.filter_by(
             table_id=t.id,
             status="confirmed"   # chỉ lấy bàn đã đặt
-        ).first()
+        ).order_by(Booking.booking_time.desc()).first()
 
         result.append({
             "id": t.id,
             "name": t.name,
             "capacity": t.capacity,
             "status": t.status,
-            "customer_name": booking.customer_name if booking else None
+            "customer_name": booking.customer_name if booking else None,
+            "customer_count": booking.customer_count if booking else 0
         })
 
     return result

@@ -1,13 +1,26 @@
 from core.extensions import db
 
-class Booking(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    customer_name = db.Column(db.String(100))
-    status = db.Column(db.String(20), default="pending")
-    booking_time = db.Column(db.DateTime)
-    people = db.Column(db.Integer)
-    table_id = db.Column(db.Integer, db.ForeignKey('table.id'))
+class Reservation(db.Model):
+    __tablename__ = "Reservations"
 
+    ReservationID = db.Column(db.Integer, primary_key=True)
+    UserID = db.Column(db.String(100))
+    CustomerName = db.Column(db.String(100), nullable=False)
+    phone = db.Column(db.String(11), nullable=False)
+    RestaurantID = db.Column(
+        db.Integer,
+        db.ForeignKey("Restaurant.RestaurantID"))
+    TableID = db.Column(
+        db.Integer,
+        db.ForeignKey("RestaurantTables.TableID"))
 
+    BookingDate = db.Column(db.Date, nullable=False)
+    BookingTime = db.Column(db.Time, nullable=False)
+    GuestCount = db.Column(db.Integer, nullable=False)
+    Deposit = db.Column(db.Float, nullable=False)
 
-
+    Note = db.Column(db.String(300))
+    Status = db.Column(db.String(50))
+    # relationship
+    restaurant = db.relationship("Restaurant", backref="reservations")
+    table = db.relationship("Table", backref="reservations")

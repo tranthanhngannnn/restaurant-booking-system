@@ -1,96 +1,118 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Đặt bàn</title>
-    <link rel="stylesheet" href="/frontend/static/css/comfirmbooking.css">
+<meta charset="UTF-8">
+<title>Quản lý đặt bàn</title>
+<link rel="stylesheet" href="/frontend/static/css/comfirmbooking.css">
 </head>
 <body>
 
 <div class="container">
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h2>Restaurant</h2>
-        <ul>
-            <li>Dashboard</li>
-            <li>Quản lý bàn</li>
-            <li class="active">Đặt bàn</li>
-        </ul>
-    </div>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h2>🍽️ Restaurant</h2>
+      <ul>
+      <li>Dashboard</li>
+    <a href="table.html">Quản lý bàn</a>
+    <a class="active">Đơn đặt bàn</a>
+    <a href="menu_mgmt.html">Menu</a>
+          </ul>
+  </div>
 
-    <!-- Popup -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <h2>Đặt bàn</h2>
+  <!-- MAIN -->
+  <div class="main">
+    <h2>Danh sách đặt bàn</h2>
 
-            <!-- FORM NẰM NGANG -->
-            <form id="bookingForm" class="form-inline">
-                <input type="hidden" id="tableId" value="1">
+    <table>
+      <thead>
+        <tr>
+          <th>Tên khách</th>
+          <th>SĐT</th>
+          <th>Số người</th>
+          <th>Ngày</th>
+          <th>Giờ</th>
+          <th>Trạng thái</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
 
-                <div class="form-group">
-                    <label>Tên khách</label>
-                    <input type="text" id="name" required>
-                </div>
-
-                <div class="form-group">
-                    <label>SĐT</label>
-                    <input type="text" id="phone" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Số người</label>
-                    <input type="number" id="guests" value="4" readonly>
-                </div>
-
-                <div class="form-group">
-                    <label>Ngày</label>
-                    <input type="date" id="date" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Giờ</label>
-                    <input type="time" id="time" required>
-                </div>
-
-                <div class="btn-group">
-                    <button type="submit">Xác nhận</button>
-                    <button type="button" onclick="closeModal()">Hủy</button>
-                </div>
-            </form>
-
-        </div>
-    </div>
+      <tbody id="booking-list"></tbody>
+    </table>
+  </div>
 
 </div>
 
 <script>
-// Hiển thị popup luôn
-window.onload = function() {
-    document.getElementById("modal").style.display = "flex";
-};
+const API = "http://127.0.0.1:5000/api/v1/restaurant"
 
-function closeModal() {
-    document.getElementById("modal").style.display = "none";
+// load danh sách booking
+async function loadBookings(){
+  try{
+    const res = await fetch(`${API}/bookings`)
+    const data = await res.json()
+
+    let html = ""
+
+    data.forEach(b => {
+      html += `
+        <tr>
+          <td>${b.customer_name}</td>
+          <td>${b.phone || ''}</td>
+          <td>${b.customer_count}</td>
+          <td>${formatDate(b.booking_time)}</td>
+          <td>${formatTime(b.booking_time)}</td>
+          <td class="${b.status}">${b.status}</td>
+          <td>
+            ${
+              b.status === "pending"
+              ? `
+                <button class="btn confirm" onclick="confirmBooking(${b.id})">✔</button>
+                <button class="btn reject" onclick="rejectBooking(${b.id})">✖</button>
+              `
+              : ""
+            }
+          </td>
+        </tr>
+      `
+    })
+
+    document.getElementById("booking-list").innerHTML = html
+
+  }catch(err){
+    alert("Lỗi load booking")
+  }
 }
 
-document.getElementById("bookingForm").addEventListener("submit", function(e) {
-    e.preventDefault();
+// confirm
+async function confirmBooking(id){
+  await fetch(`${API}/confirm_booking/${id}`, {
+    method: "PUT"
+  })
+  loadBookings()
+}
 
-    const data = {
-        tableId: document.getElementById("tableId").value,
-        name: document.getElementById("name").value,
-        phone: document.getElementById("phone").value,
-        guests: document.getElementById("guests").value,
-        date: document.getElementById("date").value,
-        time: document.getElementById("time").value
-    };
+// reject
+async function rejectBooking(id){
+  await fetch(`${API}/reject_booking/${id}`, {
+    method: "PUT"
+  })
+  loadBookings()
+}
 
-    console.log("Đặt bàn:", data);
-    alert("Đặt bàn thành công!");
+// format date
+function formatDate(dt){
+  if(!dt) return ""
+  return dt.split(" ")[0]
+}
 
-    closeModal();
-});
+// format time
+function formatTime(dt){
+  if(!dt) return ""
+  return dt.split(" ")[1]?.slice(0,5)
+}
+
+window.onload = loadBookings
 </script>
 
 </body>

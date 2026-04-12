@@ -41,6 +41,19 @@ def get_menu():
         "visible": m.visible
     } for m in menus])
 
+@restaurant_bp.route('/menu/admin', methods=['GET'])
+def get_menu_admin():
+    menus = Menu.query.all()
+
+    return jsonify([{
+        "id": m.id,
+        "name": m.name,
+        "price": m.price,
+        "image": m.image,
+        "category": m.category,
+        "visible": m.visible
+    } for m in menus])
+
 @restaurant_bp.route('/menu', methods=['POST'])
 def create_food_api():
     data = request.json
@@ -168,17 +181,25 @@ def get_order_by_table(table_id):
         ]
     })
 
-@restaurant_bp.route("/menu/<int:id>/visible", methods=["PUT"])
-def toggle_menu_visibility(id):
+@restaurant_bp.route('/menu/<int:id>/toggle', methods=['PUT'])
+def toggle_menu(id):
     menu = Menu.query.get(id)
     if not menu:
-        return {"error": "Menu not found"}, 404
+        return jsonify({"error":"Not found"}), 404
 
-    data = request.json
-    if "visible" in data:
-        menu.visible = data["visible"]
-    else:
-        menu.visible = not menu.visible  # toggle
-
+    menu.visible = not menu.visible
     db.session.commit()
-    return {"id": menu.id, "visible": menu.visible}
+
+    return jsonify({"message":"updated", "visible": menu.visible})
+
+@restaurant_bp.route('/bookings', methods=['GET'])
+def get_all_bookings_route():
+    return jsonify(get_bookings())
+
+@restaurant_bp.route('/confirm_booking/<int:id>', methods=['PUT'])
+def confirm(id):
+    return jsonify(confirm_booking(id))
+
+@restaurant_bp.route('/reject_booking/<int:id>', methods=['PUT'])
+def reject(id):
+    return jsonify(reject_booking(id))

@@ -166,7 +166,7 @@ body {
 .menu-item button:hover {
     background: #e64a19;
 }
-.menu-item.hidden {
-    opacity: 0.3;
-    filter: grayscale(80%);
+.menu-item.disabled {
+    opacity: 0.4;
+    filter: grayscale(100%)
 }

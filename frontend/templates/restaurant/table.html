@@ -10,11 +10,11 @@
 <div class="container">
   <!-- Sidebar -->
   <div class="sidebar">
-    <h3>🍽️ Restaurant</h3>
+    <h2>🍽️ Restaurant</h2>
     <ul>
       <li>Dashboard</li>
       <li class="active">Quản lý bàn</li>
-      <li>Đặt bàn</li>
+      <a href=comfirmbooking.html>Xác nhận đặt bàn </a>
     </ul>
   </div>
 
@@ -91,10 +91,13 @@ if(t.id % 9 === 0){
       <p>👤 ${t.customer_name || ''}</p>
       <p>${capacity} người</p>
       <div class="actions">
+        <button onclick="editBooking(event, ${t.id}, \`${t.customer_name || ''}\`, ${t.customer_count}, ${capacity})">Sửa</button>
         <button onclick="cancelBooking(event,${t.id})">Hủy</button>
       </div>
     </div>`;
   }
+
+
 
   // fallback (tránh mất bàn)
   return `<div class="card">
@@ -120,6 +123,7 @@ async function loadTables(){
 function openBookingModal(tableId, capacity){
   bookingTableId.value = tableId;
   customerCountInput.value = capacity;
+  customerCountInput.max = capacity;
   customerNameInput.value = '';
   modal.classList.add('show');
   customerNameInput.focus();
@@ -129,12 +133,19 @@ modalClose.onclick = () => modal.classList.remove('show');
 window.onclick = e => { if(e.target === modal) modal.classList.remove('show'); }
 
 // gửi form đặt bàn
-bookingForm.onsubmit = async e => {
+  bookingForm.onsubmit = async e => {
   e.preventDefault();
 
   const id = bookingTableId.value;
   const customer_name = customerNameInput.value.trim();
   const customer_count = parseInt(customerCountInput.value);
+
+  // 🔥 check số người
+  const maxCapacity = Number(customerCountInput.max);
+  if(customer_count > maxCapacity){
+    alert(`Bàn này chỉ tối đa ${maxCapacity} người`);
+    return;
+  }
 
   if(!customer_name || !customer_count || customer_count <= 0){
     alert('Nhập hợp lệ');
@@ -152,9 +163,6 @@ bookingForm.onsubmit = async e => {
       })
     });
 
-    const data = await res.json();
-    console.log(data);
-
     if(!res.ok){
       alert('API lỗi');
       return;
@@ -164,7 +172,6 @@ bookingForm.onsubmit = async e => {
     await loadTables();
 
   } catch(err){
-    console.error(err);
     alert('Không kết nối được server');
   }
 }
@@ -179,6 +186,18 @@ async function cancelBooking(event,id){
     body:JSON.stringify({status:'available',customer_name:'',customer_count:0})
   });
   loadTables();
+}
+
+function editBooking(event, id, name, count, capacity){
+  event.stopPropagation();
+
+  bookingTableId.value = id;
+  customerNameInput.value = name || '';
+
+  customerCountInput.value = count || 1;
+  customerCountInput.max = capacity;
+
+  modal.classList.add('show');
 }
 
 // thêm bàn mới
