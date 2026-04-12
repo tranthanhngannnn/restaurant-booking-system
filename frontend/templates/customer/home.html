@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -13,8 +12,8 @@
 <div class="header">
     <div class="logo">GOLDEN <span>HARVEST</span></div>
     <div class="auth-buttons">
-        <button onclick="showLogin()">Đăng nhập</button>
-        <button onclick="showRegister()">Đăng ký</button>
+        <button onclick="window.location.href='../auth/login.html'">Đăng nhập</button>
+        <button onclick="window.location.href='../auth/register.html'">Đăng ký</button>
     </div>
 </div>
 
@@ -32,35 +31,13 @@
             <a href="search.html">🔍 Tìm kiếm</a>
             <a href="booking.html">📅 Đặt bàn</a>
             <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
-            <a href="#" onclick="logout()" id="logoutMenu" style="display:none;">🚪 Đăng xuất</a>
+            <button onclick="logout()" id="logoutBtn" class="btn-logout" style="display:none;">Đăng xuất</button>
         </div>
 
         <!-- CONTENT -->
         <div class="content">
 
             <h2>Trang chủ</h2>
-
-            <!-- LOGIN POPUP -->
-            <div id="authBox" class="popup" style="display:none;">
-                <div class="popup-content">
-                    <span class="close-btn" onclick="closePopup()">×</span>
-                    <div id="loginForm">
-                        <input id="username" placeholder="Username">
-                        <input id="password" type="password" placeholder="Password">
-                        <button onclick="login()">Đăng nhập</button>
-                        <button onclick="showRegister()">Đăng ký</button>
-                    </div>
-
-                    <div id="registerForm" style="display:none;">
-                        <input id="reg_username" placeholder="Username">
-                        <input id="reg_password" type="password" placeholder="Password">
-                        <input id="reg_email" placeholder="Email">
-                        <input id="reg_phone" placeholder="SĐT">
-                        <button onclick="register()">Tạo tài khoản</button>
-                        <button onclick="showLogin()">Quay lại</button>
-                    </div>
-                </div>
-            </div>
 
             <!-- CARDS -->
             <div class="dashboard">
@@ -88,83 +65,74 @@
 </div>
 
 <script>
-const API = "http://localhost:5000/api"
-//Login
-function login(){
-    const usernameInput = document.getElementById("username").value
-    const passwordInput=document.getElementById("password").value
-    fetch(`${API}/login`, {
-    method: "POST", headers: {"Content-Type": "application/json"},
-    credentials: "include", body: JSON.stringify({
-        username: usernameInput,
-        password: passwordInput })
-    }) .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error)
-            if (data.message) location.reload()
+    const API = "http://127.0.0.1:5000/api"
+
+
+    // LOGOUT
+    function logout() {
+        // Bắt buộc phải xóa token ở frontend để mất trạng thái đăng nhập
+        localStorage.removeItem("token");
+
+        fetch(`${API}/logout`, {
+            credentials: "include"
         })
-}
-// REGISTER
-    function register() {
-        fetch(`${API}/register`, {
-        method: "POST", headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            username: reg_username.value,
-            password: reg_password.value,
-            email: reg_email.value,
-            phone: reg_phone.value
+                .then(() => {
+                    // Chuyển hướng về trang chủ hoặc reload lại trang
+                    window.location.href = "home.html";
+                })
+                .catch(err => {
+                    console.error("Lỗi đăng xuất:", err);
+                    // Dù lỗi API hay không thì cứ reload lại vì token đã bị xóa
+                    window.location.reload();
+                });
+    }
+
+    // CHECK LOGIN
+    window.onload = () => {
+        const token = localStorage.getItem("token");
+        console.log("TOKEN:", token);
+
+        if (!token) return;
+
+        fetch(`${API}/v1/customer/me`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
         })
-    })
-    .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error)
-        }) }
-// LOGOUT
-function logout() {
-    fetch(`${API}/logout`, {
-        credentials: "include"
-    })
-    .then(() => location.reload())
-}
+                .then(res => {
+                    console.log("STATUS:", res.status);
+                    if (!res.ok) {
+                        throw new Error("Token hết hạn hoặc không hợp lệ");
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    console.log("DATA:", data);
 
-// CHECK LOGIN
-window.onload = () => {
-    window.authBox = document.getElementById("authBox")
-    window.loginForm = document.getElementById("loginForm")
-    window.registerForm = document.getElementById("registerForm")
-    window.logoutMenu = document.getElementById("logoutMenu")
-    window.historyLink = document.getElementById("historyLink")
-    window.historyCard = document.getElementById("historyCard")
-    fetch(`${API}/me`, {
-        credentials: "include"
-    })
-    .then(res => res.json())
-    .then(data => {
+                    if (data.logged_in || data.id) {
+                        // Người dùng đã đăng nhập: Ẩn auth-buttons, hiện các chức năng riêng
+                        document.querySelector(".auth-buttons").style.display = "none";
 
-        if (data.logged_in) {
-        //guestUI.style.display = "none"
+                        document.getElementById("logoutBtn").style.display = "block";
+                        document.getElementById("historyLink").style.display = "block";
+                        document.getElementById("historyCard").style.display = "block";
 
-        historyLink.style.display = "block"
-        historyCard.style.display = "block"
-        logoutMenu.style.display = "block"
+                    }
+                })
+                .catch(error => {
+                    console.error("Lỗi xác thực:", error);
+                    // Nếu token sai/hết hạn, xóa đi cho sạch
+                    localStorage.removeItem("token");
+                });
+    }
+
+    // UI SWITCH
+
+    function closePopup() {
+        if (typeof authBox !== 'undefined') {
+            authBox.style.display = "none";
         }
-    })
-}
-// UI SWITCH
-  function showLogin() {
-    authBox.style.display = "flex"
-    loginForm.style.display = "block"
-    registerForm.style.display = "none"
-}
-
-function showRegister() {
-    authBox.style.display = "flex"
-    loginForm.style.display = "none"
-    registerForm.style.display = "block"
-}
-function closePopup() {
-    authBox.style.display = "none"
-}
+    }
 </script>
 
 </body>

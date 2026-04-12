@@ -164,10 +164,8 @@ def admin_delete_restaurant(id):
     if claims.get("role") != "ADMIN":
         return jsonify({"message": "Quyền này của Admin!"}), 403
 
-    success = AdminRestaurantService.delete_restaurant(id)
-    if success:
-        return jsonify({"message": "Xóa thành công!"}), 200
-    return jsonify({"message": "Lỗi khi xóa"}), 404
+    result = AdminRestaurantService.delete_restaurant(id)
+    return jsonify({"message": result["message"]}), result["code"]
 
 
 

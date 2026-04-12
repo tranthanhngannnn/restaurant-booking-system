@@ -7,7 +7,7 @@ class Payment(db.Model):
     ReservationID = db.Column(
         db.Integer,
         db.ForeignKey("Reservations.ReservationID"))
-    Amounts = db.Column(db.Float)
+    Amount = db.Column(db.Float)
     Status = db.Column(db.String(50))
     PaymentMethod = db.Column(db.String(50))
     CreatedAt = db.Column(db.DateTime)

@@ -5,6 +5,7 @@ from core.extensions import db
 from datetime import datetime, timedelta
 from models.payment import Payment
 from models.restaurant import Restaurant
+from flask_jwt_extended import get_jwt_identity
 
 # ================== SEARCH ==================
 def search_restaurant(address, cuisine):
@@ -96,8 +97,15 @@ def create_booking(data):
     #  tính tiền cọc ở backend
     deposit = calculate_deposit(guest_count)
 
+    # Lấy ID từ token (nếu có), nếu không có thì gán là None
+    # Dùng try-except để không bị lỗi nếu khách vãng lai đặt bàn
+    try:
+        user_id = get_jwt_identity()
+    except:
+        user_id = None
+
     reservation = Reservation(
-        UserID=data.get("user_id") if data.get("user_id") else None,
+        UserID=user_id,
         CustomerName=data.get("name"),
         phone=data.get("phone"),
         RestaurantID=int(data.get("restaurant_id")),
@@ -163,7 +171,7 @@ def confirm_payment(reservation_id, amount):
 
     payment = Payment(
         ReservationID=reservation_id,
-        Amounts=float(amount),
+        Amount=float(amount),
         Status="Paid",
         PaymentMethod="QR",
         CreatedAt=datetime.now()
