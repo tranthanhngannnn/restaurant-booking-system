@@ -6,6 +6,12 @@ from core.config import Config
 from flask_cors import CORS
 from models.user import User
 from models.review import Review
+from models.restaurant import Restaurant
+from models.cuisine import Cuisine
+from models.menu import Menu
+from models.tables import Tables
+from models.booking import Reservation
+from models.payment import Payment
 from app.api.v1.auth.routes import auth_bp
 from app.api.v1.admin.routes import admin_bp
 from app.api.v1.restaurant import restaurant_bp
