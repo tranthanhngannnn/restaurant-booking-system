@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý đặt bàn</title>
+<link rel="stylesheet" href="/frontend/static/css/comfirmbooking.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <h2>🍽️ Restaurant</h2>
+      <ul>
+      <li>Dashboard</li>
+    <a href="table.html">Quản lý bàn</a>
+    <a class="active">Đơn đặt bàn</a>
+    <a href="menu_mgmt.html">Menu</a>
+          </ul>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <h2>Danh sách đặt bàn</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Tên khách</th>
+          <th>SĐT</th>
+          <th>Số người</th>
+          <th>Ngày</th>
+          <th>Giờ</th>
+          <th>Trạng thái</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+
+      <tbody id="booking-list"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+const API = "http://127.0.0.1:5000/api/v1/restaurant"
+
+// load danh sách booking
+async function loadBookings(){
+  try{
+    const res = await fetch(`${API}/bookings`)
+    const data = await res.json()
+
+    let html = ""
+
+    data.forEach(b => {
+      html += `
+        <tr>
+          <td>${b.customer_name}</td>
+          <td>${b.phone || ''}</td>
+          <td>${b.customer_count}</td>
+          <td>${formatDate(b.booking_time)}</td>
+          <td>${formatTime(b.booking_time)}</td>
+          <td class="${b.status}">${b.status}</td>
+          <td>
+            ${
+              b.status === "pending"
+              ? `
+                <button class="btn confirm" onclick="confirmBooking(${b.id})">✔</button>
+                <button class="btn reject" onclick="rejectBooking(${b.id})">✖</button>
+              `
+              : ""
+            }
+          </td>
+        </tr>
+      `
+    })
+
+    document.getElementById("booking-list").innerHTML = html
+
+  }catch(err){
+    alert("Lỗi load booking")
+  }
+}
+
+// confirm
+async function confirmBooking(id){
+  await fetch(`${API}/confirm_booking/${id}`, {
+    method: "PUT"
+  })
+  loadBookings()
+}
+
+// reject
+async function rejectBooking(id){
+  await fetch(`${API}/reject_booking/${id}`, {
+    method: "PUT"
+  })
+  loadBookings()
+}
+
+// format date
+function formatDate(dt){
+  if(!dt) return ""
+  return dt.split(" ")[0]
+}
+
+// format time
+function formatTime(dt){
+  if(!dt) return ""
+  return dt.split(" ")[1]?.slice(0,5)
+}
+
+window.onload = loadBookings
+</script>
+
+</body>
+</html>

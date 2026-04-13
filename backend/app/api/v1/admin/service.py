@@ -9,7 +9,7 @@ class AdminUserService:
     def get_all_users():
         users = User.query.all()
         #Chuyển ds object sang list dictionary
-        return [{"id": u.UserID, "username": u.Username, "role": u.Role, "email": u.Email, "phone": u.Phone} for u in users]
+        return [{"id": u.UserID, "username": u.Username, "role": u.Role, "email": u.Email} for u in users]
 
     @staticmethod
     def update_user(user_id, data):
@@ -83,14 +83,10 @@ class CuisineService:
 
 class AdminRestaurantService:
     @staticmethod
-    def get_all_restaurants(status=None):  # Thêm status=None vào đây
-        if status:
-            # Lọc theo đúng cột Status (viết hoa chữ S) trong SQL của bà
-            restaurants = Restaurant.query.filter_by(Status=status).all()
-        else:
-            # Nếu không có status thì mới lấy tất cả
-            restaurants = Restaurant.query.all()
-
+    def get_all_restaurants():
+        #Lấy tất cả danh sách nhà hàng
+        restaurants = Restaurant.query.all()
+        # Chuyển đổi list object sang list dictionary để jsonify được
         return [res.to_dict() for res in restaurants]
 
     @staticmethod

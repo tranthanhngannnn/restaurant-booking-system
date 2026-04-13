@@ -1,10 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Nhà Hàng</title>
+<link rel="stylesheet" href="/frontend/static/css/style.css">
 </head>
 <body>
+
+<h1>Menu Nhà Hàng</h1>
+
+<div class="tab-buttons">
+    <button id="tabLau" class="active">Nhà Hàng Lẩu</button>
+    <button id="tabNuong">Nhà Hàng Nướng</button>
+</div>
+
+<div class="menu-container" id="menuContainer"></div>
+
+<script>
+
+let MENU_DATA = [];
+let currentType = 'lau';
+
+const menuContainer = document.getElementById('menuContainer');
+const tabLau = document.getElementById('tabLau');
+const tabNuong = document.getElementById('tabNuong');
+
+
+// ===== LOAD MENU FROM MYSQL =====
+async function loadMenu() {
+    try {
+        const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu");
+        const data = await res.json();
+
+        MENU_DATA = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            category: item.category,   // "lau" | "nuong"
+            visible: item.visible
+        }));
+
+        renderMenu(currentType);
+
+    } catch (err) {
+        console.error("Load menu error:", err);
+    }
+}
+
+
+// ===== RENDER MENU =====
+function renderMenu(type) {
+    currentType = type;
+    menuContainer.innerHTML = '';
+
+    const filtered = MENU_DATA.filter(item => {
+
+        // lọc theo loại
+        const inCategory =
+            type === 'lau'
+                ? item.category === 'lau'
+                : item.category === 'nuong';
+
+        return inCategory;
+    });
+
+    filtered.forEach(item => {
+
+        const div = document.createElement('div');
+        div.className = 'menu-item';
+
+        // nếu bị ẩn thì làm mờ
+        div.style.opacity = item.visible ? "1" : "0.4";
+
+        div.innerHTML = `
+            <img src="${item.image}" alt="${item.name}">
+            <h3>${item.name}</h3>
+            <p>${Number(item.price).toLocaleString()}₫</p>
+
+            <button class="toggle-btn">
+                ${item.visible ? "Ẩn món" : "Hiện món"}
+            </button>
+        `;
+
+        const btn = div.querySelector('.toggle-btn');
+
+        btn.addEventListener('click', async () => {
+            try {
+                const res = await fetch(
+                    `http://127.0.0.1:5000/api/v1/restaurant/menu/${item.id}/toggle`,
+                    { method: 'PUT' }
+                );
+
+                if (!res.ok) {
+                    alert("Toggle thất bại");
+                    return;
+                }
+
+                const result = await res.json();
+
+                // update DB state về frontend
+                item.visible = result.visible;
+
+                renderMenu(currentType);
+
+            } catch (err) {
+                console.error("Toggle error:", err);
+            }
+        });
+
+        menuContainer.appendChild(div);
+    });
+}
+
+
+// ===== TAB SWITCH =====
+tabLau.onclick = () => {
+    tabLau.classList.add('active');
+    tabNuong.classList.remove('active');
+    renderMenu('lau');
+};
+
+tabNuong.onclick = () => {
+    tabNuong.classList.add('active');
+    tabLau.classList.remove('active');
+    renderMenu('nuong');
+};
+
+
+// ===== INIT =====
+loadMenu();
+
+</script>
 
 </body>
 </html>

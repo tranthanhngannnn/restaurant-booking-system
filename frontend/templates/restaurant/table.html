@@ -1,10 +1,233 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản lý bàn</title>
+<link rel="stylesheet" href="/frontend/static/css/restaurant.css">
 </head>
 <body>
+<div class="container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>🍽️ Restaurant</h2>
+    <ul>
+      <li>Dashboard</li>
+      <li class="active">Quản lý bàn</li>
+      <a href=comfirmbooking.html>Xác nhận đặt bàn </a>
+    </ul>
+  </div>
 
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h2>Quản lý bàn</h2>
+      <button onclick="addTable()">+ Thêm bàn</button>
+    </div>
+
+    <div class="tables-container">
+      <div class="side" id="left-side"></div>
+      <div class="side" id="right-side"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal đặt bàn -->
+<div id="booking-modal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="modal-close">&times;</span>
+    <h3>Đặt bàn</h3>
+    <form id="booking-form">
+      <input type="hidden" id="booking-table-id">
+      <label>Tên khách:</label>
+      <input type="text" id="customer-name" required>
+      <label>Số người:</label>
+      <input type="number" id="customer-count" min="1" required>
+      <button type="submit">Đặt</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ===== JavaScript gộp chung =====
+const API = "http://127.0.0.1:5000/api/v1/restaurant/tables";
+
+const modal = document.getElementById('booking-modal');
+const modalClose = document.getElementById('modal-close');
+const bookingForm = document.getElementById('booking-form');
+const bookingTableId = document.getElementById('booking-table-id');
+const customerNameInput = document.getElementById('customer-name');
+const customerCountInput = document.getElementById('customer-count');
+
+
+
+
+// render bàn
+function renderTable(t){
+  let capacity = t.capacity;
+  let extraClass = "";
+
+// bàn đôi (bội số của 9)
+if(t.id % 9 === 0){
+  capacity = 8;
+  extraClass = "double";
+}
+
+  // bàn trống
+  if(t.status === 'available'){
+    return `<div class="card available ${extraClass}" onclick="openBookingModal(${t.id},${capacity})">
+      <div class="icon">🍽️</div>
+      <h3>Bàn ${t.id}</h3>
+      <p>Trống</p>
+      <p>${capacity} người</p>
+    </div>`;
+  }
+
+  // bàn đã đặt / đang dùng
+  if(t.status === 'reserved' || t.status === 'confirmed'){
+    return `<div class="card reserved ${extraClass}" onclick="openOrder(${t.id})">
+      <div class="icon">🍽️</div>
+      <h3>Bàn ${t.id}</h3>
+      <p>👤 ${t.customer_name || ''}</p>
+      <p>${capacity} người</p>
+      <div class="actions">
+        <button onclick="editBooking(event, ${t.id}, \`${t.customer_name || ''}\`, ${t.customer_count}, ${capacity})">Sửa</button>
+        <button onclick="cancelBooking(event,${t.id})">Hủy</button>
+      </div>
+    </div>`;
+  }
+
+
+
+  // fallback (tránh mất bàn)
+  return `<div class="card">
+    <h3>Bàn ${t.id}</h3>
+    <p>Không rõ trạng thái</p>
+  </div>`;
+}
+
+// load dữ liệu
+async function loadTables(){
+  try {
+    const res = await fetch(API);
+    const data = await res.json();
+    const mid = Math.ceil(data.length/2);
+    document.getElementById('left-side').innerHTML = data.slice(0, mid).map(renderTable).join('');
+    document.getElementById('right-side').innerHTML = data.slice(mid).map(renderTable).join('');
+  } catch(err) {
+    alert('Lỗi tải dữ liệu bàn');
+  }
+}
+
+// mở modal đặt bàn
+function openBookingModal(tableId, capacity){
+  bookingTableId.value = tableId;
+  customerCountInput.value = capacity;
+  customerCountInput.max = capacity;
+  customerNameInput.value = '';
+  modal.classList.add('show');
+  customerNameInput.focus();
+}
+
+modalClose.onclick = () => modal.classList.remove('show');
+window.onclick = e => { if(e.target === modal) modal.classList.remove('show'); }
+
+// gửi form đặt bàn
+  bookingForm.onsubmit = async e => {
+  e.preventDefault();
+
+  const id = bookingTableId.value;
+  const customer_name = customerNameInput.value.trim();
+  const customer_count = parseInt(customerCountInput.value);
+
+  // 🔥 check số người
+  const maxCapacity = Number(customerCountInput.max);
+  if(customer_count > maxCapacity){
+    alert(`Bàn này chỉ tối đa ${maxCapacity} người`);
+    return;
+  }
+
+  if(!customer_name || !customer_count || customer_count <= 0){
+    alert('Nhập hợp lệ');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/${id}/status`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        status:'reserved',
+        customer_name,
+        customer_count
+      })
+    });
+
+    if(!res.ok){
+      alert('API lỗi');
+      return;
+    }
+
+    modal.classList.remove('show');
+    await loadTables();
+
+  } catch(err){
+    alert('Không kết nối được server');
+  }
+}
+
+// hủy đặt bàn
+async function cancelBooking(event,id){
+  event.stopPropagation();
+  if(!confirm('Hủy đặt bàn này?')) return;
+  await fetch(`${API}/${id}/status`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({status:'available',customer_name:'',customer_count:0})
+  });
+  loadTables();
+}
+
+function editBooking(event, id, name, count, capacity){
+  event.stopPropagation();
+
+  bookingTableId.value = id;
+  customerNameInput.value = name || '';
+
+  customerCountInput.value = count || 1;
+  customerCountInput.max = capacity;
+
+  modal.classList.add('show');
+}
+
+// thêm bàn mới
+async function addTable(){
+  const capacity = parseInt(prompt('Nhập số chỗ ngồi:'));
+  if(!capacity || capacity<=0){ alert('Số chỗ không hợp lệ'); return; }
+  try {
+    // 🔥 lấy danh sách bàn hiện tại
+    const res = await fetch(API);
+    const tables = await res.json();
+
+    // 🔥 tạo số bàn mới (tự tăng)
+    const newNumber = tables.length + 1;
+
+  await fetch(API,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:'ban ${newNumber}',capacity,seats:capacity,status:'available',restaurant_id:1})
+  });
+  loadTables();
+
+}catch(err){
+    alert("Lỗi thêm bàn");
+    }
+}
+function openOrder(id){
+  window.location.href = `./orders.html?table_id=${id}` ;
+}
+window.onload = loadTables;
+
+</script>
 </body>
 </html>

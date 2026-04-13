@@ -1,10 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+<meta charset="UTF-8">
+<title>Order</title>
+<link rel="stylesheet" href="/frontend/static/css/style.css">
 </head>
 <body>
+
+<div class="container">
+  <h2 class="title">🍽️ Bàn <span id="table-id"></span></h2>
+
+  <div class="tab-buttons">
+    <button class="active" onclick="changeTab('lau', event)">Lẩu</button>
+    <button onclick="changeTab('nuong', event)">Nướng</button>
+  </div>
+
+  <div class="layout">
+
+    <div class="menu">
+      <h3>Menu</h3>
+      <div id="menu-list" class="menu-container"></div>
+    </div>
+
+    <div class="order-box">
+      <h3>Danh sách món</h3>
+      <ul id="order-list"></ul>
+
+      <div class="total">
+        Tổng: <span id="total">0</span> đ
+      </div>
+
+      <div class="actions">
+        <button class="create-btn" onclick="createOrder()">Gửi order</button>
+        <button class="pay-btn" onclick="payOrder()">Thanh toán</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+// ===== TABLE ID =====
+const tableId = new URLSearchParams(window.location.search).get("table_id");
+document.getElementById("table-id").innerText = tableId;
+
+// ===== STATE =====
+let currentTab = 'lau';
+let MENU_DATA = [];
+let order = [];
+
+// ===== LOAD MENU FROM MYSQL =====
+async function loadMenu(){
+  const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu");
+  MENU_DATA = await res.json();
+  renderMenu();
+}
+
+// ===== RENDER MENU =====
+function renderMenu(){
+  const menuDiv = document.getElementById("menu-list");
+  menuDiv.innerHTML = "";
+
+  const filtered = MENU_DATA.filter(item => {
+
+    if(item.visible === false) return false;
+
+    return item.category === currentTab;
+  });
+
+  filtered.forEach(item => {
+
+    const div = document.createElement("div");
+    div.className = "menu-item";
+
+    div.innerHTML = `
+      <img src="${item.image}">
+      <h3>${item.name}</h3>
+      <p>${item.price.toLocaleString()}đ</p>
+
+      <button onclick="addItem('${item.id}', '${item.name}', ${item.price}, '${item.image}')">
+        Thêm
+      </button>
+    `;
+
+    menuDiv.appendChild(div);
+  });
+}
+
+// ===== CHANGE TAB =====
+function changeTab(tab, e){
+  currentTab = tab;
+  renderMenu();
+  renderOrder();
+
+  document.querySelectorAll(".tab-buttons button")
+    .forEach(b => b.classList.remove("active"));
+
+  e.target.classList.add("active");
+}
+
+// ===== ADD ITEM =====
+function addItem(food_id, name, price, image){
+
+  const item = order.find(i => i.food_id === food_id);
+
+  if(item){
+    item.qty++;
+  } else {
+    order.push({
+      food_id,
+      name,
+      price,
+      qty: 1,
+      image
+    });
+  }
+
+  renderOrder();
+}
+
+// ===== RENDER ORDER =====
+function renderOrder(){
+
+  const list = document.getElementById("order-list");
+  list.innerHTML = "";
+
+  let total = 0;
+
+  order.forEach(i => {
+    total += i.price * i.qty;
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;margin-right:10px;">
+      ${i.name} x${i.qty} - ${i.price * i.qty}đ
+    `;
+
+    list.appendChild(li);
+  });
+
+  document.getElementById("total").innerText = total;
+}
+
+// ===== CREATE ORDER =====
+async function createOrder(){
+
+  if(order.length === 0){
+    alert("Chưa có món");
+    return;
+  }
+
+  const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      table_id: parseInt(tableId),
+      items: order.map(i => ({
+        food_id: i.food_id,
+        qty: i.qty
+      }))
+    })
+  });
+
+  if(res.ok){
+    alert("Đã gửi order");
+  } else {
+    alert("Lỗi gửi order");
+  }
+}
+
+// ===== PAY =====
+async function payOrder(){
+  await fetch(`http://127.0.0.1:5000/api/v1/restaurant/orders/pay/${tableId}`, {
+    method: "PUT"
+  });
+
+  alert("Thanh toán xong");
+  window.location.href = "table.html";
+}
+
+// ===== INIT =====
+window.onload = loadMenu;
+
+</script>
 
 </body>
 </html>

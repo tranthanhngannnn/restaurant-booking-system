@@ -7,7 +7,6 @@
 
     <link rel="stylesheet" href="../../static/css/customer.css">
 </head>
-
 <body>
 
 <!-- HEADER -->
@@ -19,7 +18,6 @@
     <div class="overlay"></div>
 
     <div class="main-layout">
-
         <!-- SIDEBAR -->
         <div class="sidebar">
             <a href="home.html">🏠 Trang chủ</a>
@@ -28,12 +26,9 @@
             <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
 
         </div>
-
         <!-- CONTENT -->
         <div class="content">
-
             <h2>Đặt bàn</h2>
-
             <select id="restaurantSelect" onchange="changeRestaurant(this.value)">
                 <option value="">-- Chọn nhà hàng --</option>
             </select>
@@ -45,12 +40,9 @@
 
             <input id="nameInput" placeholder="Họ tên"><br>
             <input id="phoneInput" placeholder="SĐT"><br>
-
-            <input id="dateInput" type="date">
+            <input id="dateInput" type="date"><br>
             <input id="timeInput" type="time"><br>
-
             <input id="peopleInput" type="number" placeholder="Số người"><br>
-
             <textarea id="noteInput" placeholder="Ghi chú"></textarea><br>
 
             <button onclick="check()">Kiểm tra bàn</button>
@@ -92,7 +84,7 @@
 </div>
 
 <script>
-const API = "http://localhost:5000/api"
+const API = "http://127.0.0.1:5000/api/v1/customer"
 
 let params = new URLSearchParams(window.location.search)
 let restaurant_id = params.get("restaurant_id") || params.get("id")
@@ -136,7 +128,6 @@ window.onload = function() {
         }
     })
 }
-
 // CHANGE RESTAURANT
 function changeRestaurant(id) {
     restaurant_id = id
@@ -172,11 +163,10 @@ function check() {
     const date = dateInput.value
     const time = timeInput.value
     const people = peopleInput.value
-
     const open = timeInput.min
     const close = timeInput.max
 
-    // VALIDATION
+    // ===== VALIDATION =====
     if (!name || !phone || !date || !time || !people) {
         alert("Vui lòng nhập đầy đủ thông tin!")
         return
@@ -192,43 +182,70 @@ function check() {
         return
     }
 
+    if (name.length < 2) {
+        alert("Tên phải có ít nhất 2 ký tự")
+        return
+    }
+
+    if (!/^(0)[0-9]{9}$/.test(phone)) {
+        alert("SĐT phải bắt đầu bằng 0 và gồm 10 số")
+        return
+    }
+
+    const today = new Date().toISOString().split("T")[0]
+    if (date < today) {
+        alert("Không được chọn ngày trong quá khứ")
+        return
+    }
+
     const timeVal = toMinutes(time)
     const openVal = toMinutes(open)
     const closeVal = toMinutes(close)
-
     if (timeVal < openVal || timeVal > closeVal) {
         alert(`Chỉ được đặt từ ${open} đến ${close}`)
         return
     }
 
-    // CALL API
-    fetch(`${API}/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`)
+    const peopleNum = Number(people)
+    if (!Number.isInteger(peopleNum) || peopleNum < 1 || peopleNum > 10) {
+        alert("Chỉ được đặt từ 1-10 khách")
+        return
+    }
+    // ===== CALL API =====
+    fetch(`${API}/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`, {
+        credentials: "include"
+    })
     .then(async res => {
         const data = await res.json()
-
         if (!res.ok) {
             alert(data.error || "Có lỗi xảy ra!")
             return
         }
-
         let html = ""
-        data.forEach(t => {
-            html += `<button onclick="selectTable(${t.TableID})">
+        if (data.length === 0) {
+            html = "<p>Không còn bàn trống</p>"
+        } else {
+            data.forEach(t => {
+                html += `
+                    <button onclick="selectTable(${t.TableID})">
                         Bàn ${t.TableID} (${t.Capacity})
-                     </button>`
-        })
-
+                    </button>
+                `
+            })
+        }
         tables.innerHTML = html
+    })
+    .catch(err => {
+        console.error(err)
+        alert("Lỗi kết nối server")
     })
 }
 
-// SELECT TABLE
 function selectTable(id) {
     selectedTable = id
     createBooking()
 }
 
-// CREATE BOOKING
 function createBooking() {
 
     fetch(`${API}/book`, {

@@ -23,4 +23,4 @@ class Reservation(db.Model):
     Status = db.Column(db.String(50))
     # relationship
     restaurant = db.relationship("Restaurant", backref="reservations")
-    table = db.relationship("Table", backref="reservations")
+    table = db.relationship("Tables", backref="reservations")

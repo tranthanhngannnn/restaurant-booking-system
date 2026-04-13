@@ -1,11 +1,15 @@
-from core.extensions import ma
-from models.booking import Reservation   # sửa đúng path
+from marshmallow import Schema, fields
 
-class BookingSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Reservation
-        load_instance = True
+class BookingSchema(Schema):
+    id = fields.Int(dump_only=True)
+    people = fields.Int(required=True)
 
-    RestaurantName = ma.Function(lambda obj: obj.restaurant.RestaurantName if obj.restaurant else "")
-    TableNumber = ma.Function(lambda obj: obj.table.TableNumber if obj.table else "")
-bookings_schema = BookingSchema(many=True)
+    customer_name = fields.Str(required=True)
+    status = fields.Str(dump_only=True)
+
+    table_id = fields.Int(required=True)
+
+    booking_time = fields.DateTime(
+        required=True,
+        format="%Y-%m-%d %H:%M"
+    )

@@ -1,5 +1,5 @@
-from models.menu import Food
-from models.table import Table
+from models.food import Food
+from models.tables import Tables
 from models.booking import Reservation
 from core.extensions import db
 from datetime import datetime, timedelta
@@ -20,7 +20,7 @@ def search_restaurant(address, cuisine):
 
     result = []
     for r in restaurants:
-        empty_tables = Table.query.filter_by(
+        empty_tables = Tables.query.filter_by(
             RestaurantID=r.RestaurantID,
             Status="Trống"
         ).count()
@@ -43,9 +43,9 @@ def get_menu(restaurant_id):
     return [{
         "FoodName": f.FoodName,
         "Price": float(f.Price),
-        "Description": f.Description
+        "Description": f.Description,
+        "Image": f.Image
     } for f in foods]
-
 
 # ================== CHECK TABLE ==================
 def check_table(restaurant_id, date, time, people):
@@ -53,7 +53,7 @@ def check_table(restaurant_id, date, time, people):
     booking_date = datetime.strptime(date, "%Y-%m-%d").date()
     booking_time = datetime.strptime(time, "%H:%M").time()
 
-    tables = Table.query.filter_by(RestaurantID=restaurant_id).all()
+    tables = Tables.query.filter_by(RestaurantID=restaurant_id).all()
     result = []
 
     for t in tables:
@@ -76,48 +76,64 @@ def check_table(restaurant_id, date, time, people):
 
 # ================== CREATE BOOKING ==================
 def create_booking(data):
-    cancel_expired_bookings()  # chuyển sang đây
+    cancel_expired_bookings()
 
-    if not data.get("name"):
-        return {"error": "Customer name is required"}
+    # Validate bắt buộc
+    if not data.get("name") or not data.get("phone"):
+        return {"error": "Tên và SĐT là bắt buộc"}
 
-    # chống double booking
+    try:
+        guest_count = int(data.get("people"))
+        if guest_count < 1 or guest_count > 10:
+            return {"error": "Chỉ được đặt từ 1-10 khách"}
+    except:
+        return {"error": "Số khách không hợp lệ"}
+
+    table_id = data.get("table_id")
+    table = Tables.query.get(table_id)
+    if not table:
+        return {"error": "Bàn không tồn tại"}
+
+    # Check double booking
+    booking_date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+    booking_time = datetime.strptime(data.get("time"), "%H:%M").time()
     exist = Reservation.query.filter(
-        Reservation.TableID == int(data.get("table_id")),
-        Reservation.BookingDate == data.get("date"),
-        Reservation.BookingTime == data.get("time"),
+        Reservation.TableID == table_id,
+        Reservation.BookingDate == booking_date,
+        Reservation.BookingTime == booking_time,
         Reservation.Status.in_(["Pending", "Confirmed"])
     ).first()
-
     if exist:
         return {"error": "Bàn đã được đặt"}
 
-    guest_count = int(data.get("people"))
-    #  tính tiền cọc ở backend
+    # Tính tiền cọc
     deposit = calculate_deposit(guest_count)
 
     reservation = Reservation(
-        UserID=data.get("user_id") if data.get("user_id") else None,
+        UserID=data.get("user_id"),
         CustomerName=data.get("name"),
         phone=data.get("phone"),
         RestaurantID=int(data.get("restaurant_id")),
-        TableID=int(data.get("table_id")),
-        BookingDate=data.get("date"),
-        BookingTime=data.get("time"),
+        TableID=table_id,
+        BookingDate=booking_date,
+        BookingTime=booking_time,
         GuestCount=guest_count,
         Deposit=deposit,
         Status="Pending"
     )
 
-    db.session.add(reservation)
-    db.session.commit()
+    try:
+        db.session.add(reservation)
+        db.session.commit()
+    except:
+        db.session.rollback()
+        return {"error": "Đặt bàn thất bại"}
 
     qr = generate_vietqr(reservation.Deposit, reservation.ReservationID)
 
-    return { "reservation_id": reservation.ReservationID,
-             "qr":qr,
-             "deposit": deposit }
-
+    return {"reservation_id": reservation.ReservationID,
+            "qr": qr,
+            "deposit": deposit}
 
 def get_all_restaurants():
     restaurants = Restaurant.query.all()
@@ -126,22 +142,15 @@ def get_all_restaurants():
         {
             "RestaurantID": r.RestaurantID,
             "RestaurantName": r.RestaurantName,
-            "Opentime": r.Opentime.strftime("%H:%M"),
-            "Closetime": r.Closetime.strftime("%H:%M")
+            "Opentime": r.Opentime.strftime("%H:%M") if r.Opentime else None ,
+            "Closetime": r.Closetime.strftime("%H:%M") if r.Closetime else None
         }
         for r in restaurants
     ]
 
 def get_restaurant_by_id(restaurant_id):
     r = Restaurant.query.get(restaurant_id)
-    if not r:
-        return {}
-    return {
-        "RestaurantID": r.RestaurantID,
-        "RestaurantName": r.RestaurantName,
-        "Opentime": r.Opentime.strftime("%H:%M"),
-        "Closetime": r.Closetime.strftime("%H:%M")
-    }
+    return r.to_dict() if r else {}
 
 
 # ================== PAYMENT ==================

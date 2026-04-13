@@ -8,5 +8,3 @@ class Cuisine(db.Model):
     CuisineName = db.Column(db.String(100), nullable=False, unique=True)
     Status = db.Column(db.String(50), nullable=True)
 
-    def __repr__(self):
-        return f'<Cuisine {self.CuisineName}>'

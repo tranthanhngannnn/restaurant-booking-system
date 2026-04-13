@@ -2,7 +2,6 @@ from core.extensions import db
 
 class Payment(db.Model):
     __tablename__ = "Payments"
-
     PaymentID = db.Column(db.Integer, primary_key=True)
     ReservationID = db.Column(
         db.Integer,

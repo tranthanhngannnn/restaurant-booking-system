@@ -87,15 +87,8 @@
     </div>
 </div>
 
-
-
 <script>
-   // const logoutMenu = document.getElementById("logoutMenu")
-  //  const authBox = document.getElementById("authBox")
-   // const loginForm = document.getElementById("loginForm")
-   // const registerForm = document.getElementById("registerForm")
-
-const API = "http://localhost:5000/api"
+const API = "http://127.0.0.1:5000/api/v1/customer"
 //Login
 function login(){
     const usernameInput = document.getElementById("username").value
@@ -105,11 +98,18 @@ function login(){
     credentials: "include", body: JSON.stringify({
         username: usernameInput,
         password: passwordInput })
-    }) .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error)
-            if (data.message) location.reload()
+        }) .then(async res => {
+        const data = await res.json().catch(() => null)
+        if (!res.ok) {
+            throw new Error(data?.error || "Lỗi server")
+        }
+        return data
         })
+        .then(data => {
+            alert(data.message)
+            location.reload()
+        })
+        .catch(err => alert(err.message))
 }
 // REGISTER
     function register() {
@@ -122,10 +122,13 @@ function login(){
             phone: reg_phone.value
         })
     })
-    .then(res => res.json())
-        .then(data => {
-            alert(data.message || data.error)
-        }) }
+     .then(async res => {
+     const data = await res.json().catch(() => null)
+     if (!res.ok) throw new Error(data?.error || "Lỗi")
+     return data
+      })
+      .then(data => alert(data.message))
+      .catch(err => alert(err.message)) }
 // LOGOUT
 function logout() {
     fetch(`${API}/logout`, {
