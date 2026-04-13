@@ -1,5 +1,5 @@
 from models.food import Food
-from models.table import Table
+from models.tables import Tables
 from models.booking import Reservation
 from core.extensions import db
 from datetime import datetime, timedelta
@@ -20,7 +20,7 @@ def search_restaurant(address, cuisine):
 
     result = []
     for r in restaurants:
-        empty_tables = Table.query.filter_by(
+        empty_tables = Tables.query.filter_by(
             RestaurantID=r.RestaurantID,
             Status="Trống"
         ).count()
@@ -53,7 +53,7 @@ def check_table(restaurant_id, date, time, people):
     booking_date = datetime.strptime(date, "%Y-%m-%d").date()
     booking_time = datetime.strptime(time, "%H:%M").time()
 
-    tables = Table.query.filter_by(RestaurantID=restaurant_id).all()
+    tables = Tables.query.filter_by(RestaurantID=restaurant_id).all()
     result = []
 
     for t in tables:
@@ -90,7 +90,7 @@ def create_booking(data):
         return {"error": "Số khách không hợp lệ"}
 
     table_id = data.get("table_id")
-    table = Table.query.get(table_id)
+    table = Tables.query.get(table_id)
     if not table:
         return {"error": "Bàn không tồn tại"}
 
@@ -142,22 +142,15 @@ def get_all_restaurants():
         {
             "RestaurantID": r.RestaurantID,
             "RestaurantName": r.RestaurantName,
-            "Opentime": r.Opentime.strftime("%H:%M"),
-            "Closetime": r.Closetime.strftime("%H:%M")
+            "Opentime": r.Opentime.strftime("%H:%M") if r.Opentime else None ,
+            "Closetime": r.Closetime.strftime("%H:%M") if r.Closetime else None
         }
         for r in restaurants
     ]
 
 def get_restaurant_by_id(restaurant_id):
     r = Restaurant.query.get(restaurant_id)
-    if not r:
-        return {}
-    return {
-        "RestaurantID": r.RestaurantID,
-        "RestaurantName": r.RestaurantName,
-        "Opentime": r.Opentime.strftime("%H:%M"),
-        "Closetime": r.Closetime.strftime("%H:%M")
-    }
+    return r.to_dict() if r else {}
 
 
 # ================== PAYMENT ==================

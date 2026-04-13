@@ -51,6 +51,7 @@ def get_menu_admin():
         "price": m.price,
         "image": m.image,
         "category": m.category,
+
         "visible": m.visible
     } for m in menus])
 
@@ -129,7 +130,7 @@ def create_order():
     for item in data["items"]:
         existing = OrderItem.query.filter_by(
             order_id=order.id,
-            menu_id=item["menu_id"]
+            food_id=item["food_id"]
         ).first()
 
         if existing:
@@ -137,7 +138,7 @@ def create_order():
         else:
             oi = OrderItem(
                 order_id=order.id,
-                menu_id=item["menu_id"],
+                food_id=item["food_id"],
                 quantity=item["qty"]
             )
             db.session.add(oi)
@@ -175,7 +176,7 @@ def get_order_by_table(table_id):
         "id": order.id,
         "items": [
             {
-                "menu_id": i.menu_id,
+                "food_id": i.food_id,
                 "qty": i.quantity
             } for i in items
         ]

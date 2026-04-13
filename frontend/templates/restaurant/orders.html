@@ -66,7 +66,7 @@ function renderMenu(){
 
     if(item.visible === false) return false;
 
-    return item.category === currentTab; // 👈 FIX QUAN TRỌNG
+    return item.category === currentTab;
   });
 
   filtered.forEach(item => {
@@ -79,7 +79,7 @@ function renderMenu(){
       <h3>${item.name}</h3>
       <p>${item.price.toLocaleString()}đ</p>
 
-      <button onclick="addItem(${item.id}, '${item.name}', ${item.price}, '${item.image}')">
+      <button onclick="addItem('${item.id}', '${item.name}', ${item.price}, '${item.image}')">
         Thêm
       </button>
     `;
@@ -101,15 +101,15 @@ function changeTab(tab, e){
 }
 
 // ===== ADD ITEM =====
-function addItem(menu_id, name, price, image){
+function addItem(food_id, name, price, image){
 
-  const item = order.find(i => i.menu_id === menu_id);
+  const item = order.find(i => i.food_id === food_id);
 
   if(item){
     item.qty++;
   } else {
     order.push({
-      menu_id,
+      food_id,
       name,
       price,
       qty: 1,
@@ -157,7 +157,7 @@ async function createOrder(){
     body: JSON.stringify({
       table_id: parseInt(tableId),
       items: order.map(i => ({
-        menu_id: i.menu_id,
+        food_id: i.food_id,
         qty: i.qty
       }))
     })

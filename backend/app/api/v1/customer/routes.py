@@ -117,8 +117,8 @@ def book():
     restaurant_id = data.get("restaurant_id")
 
     # Check table tồn tại và thuộc restaurant
-    table = Table.query.get(table_id)
-    if not table or table.RestaurantID != int(restaurant_id):
+    tables = Tables.query.get(table_id)
+    if not tables or tables.RestaurantID != int(restaurant_id):
         return jsonify({"error": "Bàn không hợp lệ"}), 400
 
     # Check ngày đặt không quá khứ

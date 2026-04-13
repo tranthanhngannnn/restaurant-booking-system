@@ -2,6 +2,7 @@ from core import create_app, db
 from models.restaurant import Restaurant
 from models.table import Table
 from sqlalchemy import text
+from datetime import time
 
 app = create_app()
 
@@ -14,7 +15,11 @@ def seed_restaurants():
     ]
 
     restaurants = [
-        Restaurant(RestaurantName=name)
+        Restaurant(RestaurantName=name,
+                   Opentime=time(8, 0),
+                   Closetime=time(22, 0)
+                   )
+
         for name in data
     ]
 
