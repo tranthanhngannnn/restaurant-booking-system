@@ -1,49 +1,17 @@
 from flask import Blueprint, session, request, jsonify
 from .service import *
-from werkzeug.security import generate_password_hash, check_password_hash
 from models.review import Review
 from core.extensions import db
 from models.user import User
 from models.tables import Tables
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.booking import Reservation
 from models.restaurant import Restaurant
 from datetime import datetime
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/api/v1/customer")
 
-@customer_bp.route("/register", methods=["POST"])
-def register():
-    data = request.json
-    existing_user = User.query.filter_by(Username=data["username"]).first()
-    if existing_user:
-        return jsonify({"error": "Username đã tồn tại"}), 400
-    new_user = User(
-        Username=data["username"],
-        Password=generate_password_hash(data["password"]),
-        Email=data.get("email"),
-        Phone=data.get("phone"),
-        Role="CUSTOMER"
-    )
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({"message": "Đăng ký thành công"})
 
-@customer_bp.route("/login", methods=["POST"])
-def login():
-    data = request.json
-    if not data: return jsonify({"error": "Không có dữ liệu"}), 400
-    username = data.get("username")
-    password = data.get("password")
-    user = User.query.filter_by(Username=username).first()
-    if not user or not check_password_hash(user.Password, password):
-        return jsonify({"error": "Sai tài khoản mật khẩu"}), 400
-    session["user_id"] = user.UserID
-    return jsonify({"message": "Đăng nhập thành công", "role": user.Role})
-
-@customer_bp.route("/logout")
-def logout():
-    session.clear()
-    return jsonify({"message": "Đã đăng xuất"})
 
 @customer_bp.route("/search")
 def search():
@@ -115,6 +83,8 @@ def check_review_api():
     return jsonify({"reviewed": False})
 
 @customer_bp.route("/me")
-def get_me():
-    if "user_id" in session: return jsonify({"logged_in": True})
-    return jsonify({"logged_in": False})
+@jwt_required()
+def get_current_user():
+    user_id = get_jwt_identity()
+    # có thể query DB để lấy thêm tên user nếu muốn
+    return jsonify({"logged_in": True, "user_id": user_id})
