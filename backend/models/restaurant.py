@@ -1,5 +1,5 @@
 from core.extensions import db
-from datetime import datetime
+from datetime import time
 
 
 class Restaurant(db.Model):

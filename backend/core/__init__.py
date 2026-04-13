@@ -6,16 +6,6 @@ from core.config import Config
 from flask_cors import CORS
 from models.user import User
 from models.review import Review
-from models.restaurant import Restaurant
-from models.cuisine import Cuisine
-from models.menu import Menu
-from models.tables import Tables
-from models.booking import Reservation
-from models.payment import Payment
-from app.api.v1.auth.routes import auth_bp
-from app.api.v1.admin.routes import admin_bp
-from app.api.v1.restaurant import restaurant_bp
-from app.api.v1.customer.routes import customer_bp
 
 
 def create_app():
@@ -29,10 +19,10 @@ def create_app():
 
     # Cấu hình Database & Security
     app.config.from_object(Config)
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+    app.config['SECRET_KEY'] = '123456'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/restaurant_booking'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+    app.config['JWT_SECRET_KEY'] = '6a2c53c83b86197f722e555454742656a926b1ae6de96f27'
     app.secret_key = "super_secret_key"
 
     # khởi tạo extensions
@@ -40,8 +30,15 @@ def create_app():
     ma.init_app(app)
     login_manager.init_app(app)
     jwt.init_app(app)
-    CORS(app, supports_credentials=True,origins=["http://127.0.0.1:5500", "http://localhost:5500"])
+    CORS(app, supports_credentials=True, origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500"
+    ])
 
+    from app.api.v1.auth.routes import auth_bp
+    from app.api.v1.admin.routes import admin_bp
+    from app.api.v1.restaurant import restaurant_bp
+    from app.api.v1.customer.routes import customer_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')

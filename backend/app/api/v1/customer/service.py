@@ -1,4 +1,4 @@
-from models.food import Food
+from models.menu import Menu
 from models.tables import Tables
 from models.booking import Reservation
 from core.extensions import db
@@ -38,7 +38,7 @@ def search_restaurant(address, cuisine):
 
 # ================== MENU ==================
 def get_menu(restaurant_id):
-    foods = Food.query.filter_by(RestaurantID=restaurant_id).all()
+    foods = Menu.query.filter_by(RestaurantID=restaurant_id).all()
 
     return [{
         "FoodName": f.FoodName,
@@ -142,15 +142,22 @@ def get_all_restaurants():
         {
             "RestaurantID": r.RestaurantID,
             "RestaurantName": r.RestaurantName,
-            "Opentime": r.Opentime.strftime("%H:%M") if r.Opentime else None ,
-            "Closetime": r.Closetime.strftime("%H:%M") if r.Closetime else None
+            "Opentime": r.Opentime.strftime("%H:%M"),
+            "Closetime": r.Closetime.strftime("%H:%M")
         }
         for r in restaurants
     ]
 
 def get_restaurant_by_id(restaurant_id):
     r = Restaurant.query.get(restaurant_id)
-    return r.to_dict() if r else {}
+    if not r:
+        return {}
+    return {
+        "RestaurantID": r.RestaurantID,
+        "RestaurantName": r.RestaurantName,
+        "Opentime": r.Opentime.strftime("%H:%M"),
+        "Closetime": r.Closetime.strftime("%H:%M")
+    }
 
 
 # ================== PAYMENT ==================

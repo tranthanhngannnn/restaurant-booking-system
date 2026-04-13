@@ -1,13 +1,19 @@
 from core.extensions import db
 
 class Menu(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    price = db.Column(db.Float)
-    image = db.Column(db.String(255))
-    category = db.Column(db.String(50))
-    description = db.Column(db.Text)
-    visible = db.Column(db.Boolean, default=True)
-    status = db.Column(db.String(20), default='active')
+    __tablename__ = "Menu"
+    MenuID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    FoodName = db.Column(db.String(100), nullable=False)
+    Price = db.Column(db.Float, nullable=False)
+    Description = db.Column(db.String(255))
+    Image = db.Column(db.String(255))
+    Category = db.Column(db.String(50))
+    Visible = db.Column(db.Boolean, default=True)
+    Status = db.Column(db.String(20), default='active')
+    
+    RestaurantID = db.Column(
+        db.Integer,
+        db.ForeignKey("Restaurant.RestaurantID")
+    )
 
-
+    restaurant = db.relationship("Restaurant", backref="foods")
