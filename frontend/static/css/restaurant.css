@@ -1,9 +1,8 @@
 /* Khóa cuộn trang chính khi mở modal */
 body.modal-open {
     overflow: hidden;
-    /* Bù đắp độ rộng thanh cuộn để tránh nháy layout */
+    /*  */
 }
-
 .app-modal-overlay {
     position: fixed;
     inset: 0;
