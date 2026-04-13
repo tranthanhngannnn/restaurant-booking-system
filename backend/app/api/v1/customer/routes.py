@@ -5,6 +5,7 @@ from core.extensions import db
 from models.user import User
 from models.tables import Tables
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from .service import search_restaurant, get_all_restaurants
 from models.booking import Reservation
 from models.restaurant import Restaurant
 from datetime import datetime
@@ -37,6 +38,7 @@ def check():
     return jsonify(check_table(restaurant_id, date, time, people))
 
 @customer_bp.route("/book", methods=["POST"])
+@jwt_required(optional=True)
 def book():
     data = request.json
     if not data.get("name") or not data.get("phone"):
@@ -54,15 +56,35 @@ def book():
         return jsonify(result), 400
     return jsonify(result)
 
-@customer_bp.route("/history")
-def get_history_route():
-    user_id = session.get("user_id")
-    if not user_id: return jsonify([])
-    return jsonify(get_history(user_id))
+@customer_bp.route("/restaurants", methods=["GET"])
+def get_restaurants_api():
+    # Gọi hàm bên service và trả về JSON cho frontend
+    restaurants = get_all_restaurants()
+    return jsonify(restaurants)
 
+@customer_bp.route("/restaurant/<int:id>", methods=["GET"])
+def get_restaurant_info(id):
+    # Trả thông tin chi tiết nhà hàng cho Frontend hiển thị giờ
+    data = get_restaurant_by_id(id)
+    if "error" in data:
+        return jsonify(data), 404
+    return jsonify(data)
+
+# API thanh toán đặt cọc
+@customer_bp.route("/payment", methods=["POST"])
+def payment():
+    data = request.json
+
+    return jsonify(confirm_payment(
+        data.get("reservation_id"),
+        data.get("amount")
+    ))
+
+#lưu đánh giá
 @customer_bp.route("/review", methods=["POST"])
+@jwt_required()
 def create_review():
-    user_id = session.get("user_id")
+    user_id = get_jwt_identity()
     if not user_id: return jsonify({"error": "Chưa đăng nhập"}), 401
     data = request.json
     new_review = Review(
@@ -76,14 +98,34 @@ def create_review():
     return jsonify({"message": "Review thành công"})
 
 @customer_bp.route("/review/check", methods=["GET"])
+@jwt_required()
 def check_review_api():
-    user_id = session.get("user_id")
-    if not user_id: return jsonify({"reviewed": False})
-    restaurant_id = request.args.get("restaurant_id")
-    review = Review.query.filter_by(UserID=user_id, RestaurantID=restaurant_id).first()
+    reservation_id = request.args.get("reservation_id")
+    if not reservation_id:
+        return jsonify({"reviewed": False})
+
+    review = Review.query.filter_by(ReservationID=reservation_id).first()
+
     if review:
-        return jsonify({"reviewed": True, "rating": review.Rating, "comment": review.Comment})
-    return jsonify({"reviewed": False})
+        return jsonify({"reviewed": True, "rating": review.Rating, "comment": review.Comment}), 200
+    return jsonify({"reviewed": False}), 200
+
+
+@customer_bp.route("/history", methods=["GET"])
+@jwt_required()
+def get_history_api():
+    # 1. Lấy ID từ Token
+    user_id = get_jwt_identity()
+    print(f"👉 [DEBUG] UserID từ Token: {user_id}", flush=True) #nháp
+
+    keyword = request.args.get("keyword", "")
+
+    print(f"👉 [DEBUG] Keyword từ Frontend: {keyword}", flush=True)
+
+    # 3. Truyền cả ID và SĐT vào service
+    data = get_history(user_id, keyword)
+
+    return jsonify(data), 200
 
 @customer_bp.route("/me")
 @jwt_required()

@@ -6,6 +6,7 @@ class Review(db.Model):
     ReviewID = db.Column(db.Integer, primary_key=True)
     UserID = db.Column(db.Integer, db.ForeignKey("users.UserID"), nullable=False)
     RestaurantID = db.Column(db.Integer, db.ForeignKey("Restaurant.RestaurantID"), nullable=False)
+    ReservationID = db.Column(db.Integer, nullable=True)
 
     Rating = db.Column(db.Integer, nullable=False)
     Comment = db.Column(db.String(500), nullable=True)

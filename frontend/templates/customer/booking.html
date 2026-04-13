@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -84,248 +83,220 @@
 </div>
 
 <script>
-const API = "http://127.0.0.1:5000/api/v1/customer"
+    const API = "http://127.0.0.1:5000/api/v1/customer"
 
-let params = new URLSearchParams(window.location.search)
-let restaurant_id = params.get("restaurant_id") || params.get("id")
+    let params = new URLSearchParams(window.location.search)
+    let restaurant_id = params.get("restaurant_id") || params.get("id")
 
-let selectedTable = null
-let reservationId = null
-let bookingData = {}
+    let selectedTable = null
+    let reservationId = null
+    let bookingData = {}
 
-// LOAD
-window.onload = function() {
-    const historyLink = document.getElementById("historyLink")
+    // LOAD
+    window.onload = function () {
+        const historyLink = document.getElementById("historyLink")
 
-    fetch(`${API}/me`, {
-        credentials: "include"
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.logged_in) {
-            historyLink.style.display = "block"
-        }
-    })
-    fetch(`${API}/restaurants`)
-    .then(res => res.json())
-    .then(data => {
-        restaurantSelect.innerHTML = `<option value="">-- Chọn nhà hàng --</option>`
-
-        data.forEach(r => {
-            const option = document.createElement("option")
-            option.value = r.RestaurantID
-            option.textContent = r.RestaurantName
-
-            if (restaurant_id && r.RestaurantID == restaurant_id) {
-                option.selected = true
-            }
-
-            restaurantSelect.appendChild(option)
+        fetch(`${API}/me`, {
+            credentials: "include"
         })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        historyLink.style.display = "block"
+                    }
+                })
+        fetch(`${API}/restaurants`)
+                .then(res => res.json())
+                .then(data => {
+                    restaurantSelect.innerHTML = `<option value="">-- Chọn nhà hàng --</option>`
 
-        if (restaurant_id) {
-            loadRestaurantInfo(restaurant_id)
-        }
-    })
-}
-// CHANGE RESTAURANT
-function changeRestaurant(id) {
-    restaurant_id = id
-    loadRestaurantInfo(id)
-}
+                    data.forEach(r => {
+                        const option = document.createElement("option")
+                        option.value = r.RestaurantID
+                        option.textContent = r.RestaurantName
 
-// LOAD INFO
-function loadRestaurantInfo(id) {
-    fetch(`${API}/restaurant/${id}`)
-    .then(res => res.json())
-    .then(data => {
-        const open = data.Opentime.substring(0,5)
-        const close = data.Closetime.substring(0,5)
+                        if (restaurant_id && r.RestaurantID == restaurant_id) {
+                            option.selected = true
+                        }
 
-        timeInput.min = open
-        timeInput.max = close
+                        restaurantSelect.appendChild(option)
+                    })
 
-        openTime.innerText = open
-        closeTime.innerText = close
-    })
-}
-
-// TIME HELPER
-function toMinutes(t) {
-    const [h, m] = t.split(":").map(Number)
-    return h * 60 + m
-}
-
-// CHECK TABLE
-function check() {
-    const name = nameInput.value.trim()
-    const phone = phoneInput.value.trim()
-    const date = dateInput.value
-    const time = timeInput.value
-    const people = peopleInput.value
-    const open = timeInput.min
-    const close = timeInput.max
-
-    // ===== VALIDATION =====
-    if (!name || !phone || !date || !time || !people) {
-        alert("Vui lòng nhập đầy đủ thông tin!")
-        return
+                    if (restaurant_id) {
+                        loadRestaurantInfo(restaurant_id)
+                    }
+                })
     }
 
-    if (!restaurant_id) {
-        alert("Vui lòng chọn nhà hàng!")
-        return
+    // CHANGE RESTAURANT
+    function changeRestaurant(id) {
+        restaurant_id = id
+        loadRestaurantInfo(id)
     }
 
-    if (!open || !close) {
-        alert("Chưa load giờ nhà hàng!")
-        return
+    // LOAD INFO
+    function loadRestaurantInfo(id) {
+        fetch(`${API}/restaurant/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    const open = data.Opentime.substring(0, 5)
+                    const close = data.Closetime.substring(0, 5)
+
+                    timeInput.min = open
+                    timeInput.max = close
+
+                    openTime.innerText = open
+                    closeTime.innerText = close
+                })
     }
 
-    if (name.length < 2) {
-        alert("Tên phải có ít nhất 2 ký tự")
-        return
+    // TIME HELPER
+    function toMinutes(t) {
+        const [h, m] = t.split(":").map(Number)
+        return h * 60 + m
     }
 
-    if (!/^(0)[0-9]{9}$/.test(phone)) {
-        alert("SĐT phải bắt đầu bằng 0 và gồm 10 số")
-        return
-    }
+    // CHECK TABLE
+    function check() {
+        const name = nameInput.value.trim()
+        const phone = phoneInput.value.trim()
+        const date = dateInput.value
+        const time = timeInput.value
+        const people = peopleInput.value
+        const open = timeInput.min
+        const close = timeInput.max
 
-    const today = new Date().toISOString().split("T")[0]
-    if (date < today) {
-        alert("Không được chọn ngày trong quá khứ")
-        return
-    }
 
-    const timeVal = toMinutes(time)
-    const openVal = toMinutes(open)
-    const closeVal = toMinutes(close)
-    if (timeVal < openVal || timeVal > closeVal) {
-        alert(`Chỉ được đặt từ ${open} đến ${close}`)
-        return
-    }
-
-    const peopleNum = Number(people)
-    if (!Number.isInteger(peopleNum) || peopleNum < 1 || peopleNum > 10) {
-        alert("Chỉ được đặt từ 1-10 khách")
-        return
-    }
-    // ===== CALL API =====
-    fetch(`${API}/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`, {
-        credentials: "include"
-    })
-    .then(async res => {
-        const data = await res.json()
-        if (!res.ok) {
-            alert(data.error || "Có lỗi xảy ra!")
+        // VALIDATION
+        if (!name || !phone || !date || !time || !people) {
+            alert("Vui lòng nhập đầy đủ thông tin!")
             return
         }
-        let html = ""
-        if (data.length === 0) {
-            html = "<p>Không còn bàn trống</p>"
-        } else {
-            data.forEach(t => {
-                html += `
-                    <button onclick="selectTable(${t.TableID})">
+
+        if (!restaurant_id) {
+            alert("Vui lòng chọn nhà hàng!")
+            return
+        }
+        if (!open || !close) {
+            alert("Chưa load giờ nhà hàng!")
+            return
+        }
+        const timeVal = toMinutes(time)
+        const openVal = toMinutes(open)
+        const closeVal = toMinutes(close)
+
+        if (timeVal < openVal || timeVal > closeVal) {
+            alert(`Chỉ được đặt từ ${open} đến ${close}`)
+            return
+        }
+
+        // CALL API
+        fetch(`${API}/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`)
+                .then(async res => {
+                    const data = await res.json()
+
+                    if (!res.ok) {
+                        alert(data.error || "Có lỗi xảy ra!")
+                        return
+                    }
+
+                    let html = ""
+                    data.forEach(t => {
+                        html += `<button onclick="selectTable(${t.TableID})">
                         Bàn ${t.TableID} (${t.Capacity})
-                    </button>
-                `
-            })
-        }
-        tables.innerHTML = html
-    })
-    .catch(err => {
-        console.error(err)
-        alert("Lỗi kết nối server")
-    })
-}
+                     </button>`
+                    })
 
-function selectTable(id) {
-    selectedTable = id
-    createBooking()
-}
+                    tables.innerHTML = html
+                })
+    }
 
-function createBooking() {
+    // SELECT TABLE
+    function selectTable(id) {
+        selectedTable = id
+        createBooking()
+    }
 
-    fetch(`${API}/book`, {
+    // CREATE BOOKING
+    function createBooking() {
+
+        fetch(`${API}/book`, {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            credentials: "include",
+            headers: {"Content-Type": "application/json",
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            },
             body: JSON.stringify({
-            name: nameInput.value,
-            phone: phoneInput.value,
-            restaurant_id,
-            table_id: selectedTable,
-            date: dateInput.value,
-            time: timeInput.value,
-            people: peopleInput.value,
-            note: noteInput.value
+                name: nameInput.value,
+                phone: phoneInput.value,
+                restaurant_id,
+                table_id: selectedTable,
+                date: dateInput.value,
+                time: timeInput.value,
+                people: peopleInput.value,
+                note: noteInput.value
+            })
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        reservationId = data.reservation_id
-        bookingData = data
-        openPayment()
-    })
-}
+                .then(res => res.json())
+                .then(data => {
+                    reservationId = data.reservation_id
+                    bookingData = data
+                    openPayment()
+                })
+    }
 
-// PAYMENT
-function openPayment() {
-    paymentBox.style.display = "flex"
+    // PAYMENT
+    function openPayment() {
+        paymentBox.style.display = "flex"
+        resId.innerText = reservationId
+        cusName.innerText = nameInput.value
+        cusPhone.innerText = phoneInput.value
+        cusDate.innerText = dateInput.value
+        cusTime.innerText = timeInput.value
+        cusPeople.innerText = peopleInput.value
+        depositText.innerText = bookingData.deposit + " VND"
+        qrImg.src = bookingData.qr
+    }
 
-    resId.innerText = reservationId
-    cusName.innerText = nameInput.value
-    cusPhone.innerText = phoneInput.value
-    cusDate.innerText = dateInput.value
-    cusTime.innerText = timeInput.value
-    cusPeople.innerText = peopleInput.value
+    function closePayment() {
+        paymentBox.style.display = "none"
+    }
 
-    depositText.innerText = bookingData.deposit + " VND"
-    qrImg.src = bookingData.qr
-}
-
-function closePayment() {
-    paymentBox.style.display = "none"
-}
-
-// CONFIRM
-function confirmPayment() {
-    fetch(`${API}/payment`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify({
-            reservation_id: reservationId,
-            amount: bookingData.deposit
+    // CONFIRM
+    function confirmPayment() {
+        fetch(`${API}/payment`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}, credentials: "omit",
+            body: JSON.stringify({
+                reservation_id: reservationId,
+                amount: bookingData.deposit
+            })
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error)
-            return
-        }
-        closePayment()
-        showSuccess()
-    })
-}
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error)
+                        return
+                    }
+                    closePayment()
+                    showSuccess()
+                })
+    }
 
-// SUCCESS
-function showSuccess() {
-    successBox.style.display = "block"
-}
+    // SUCCESS
+    function showSuccess() {
+        successBox.style.display = "block"
+    }
 
-function goHome() {
-    window.location.href = "home.html"
-}
-function logout() {
-    fetch(`${API}/logout`, {
-        credentials: "include"
-    })
-    .then(() => location.reload())
-}
+    function goHome() {
+        window.location.href = "home.html"
+    }
+
+    function logout() {
+        fetch(`${API}/logout`, {
+            credentials: "include"
+        })
+                .then(() => location.reload())
+    }
 </script>
 
 </body>
