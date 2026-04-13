@@ -1,10 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Menu</title>
+    <link rel="stylesheet" href="../../static/css/customer.css">
 </head>
 <body>
+
+<button onclick="goHome()">Đóng</button>
+<h2>Menu nhà hàng</h2>
+
+<div id="menu" class="menu-grid"></div>
+
+<button onclick="goBooking()">Đặt bàn</button>
+<script src="../../static/js/menu_data.js"></script>
+<script>
+const params = new URLSearchParams(window.location.search)
+const id = params.get("id")
+
+if (!id) {
+    document.getElementById("menu").innerHTML = "<p>Lỗi: không có nhà hàng</p>"
+} else {
+            let html = ""
+            const filtered = MENU_DATA.filter(m => m.restaurant_id == id)
+            filtered.forEach(m => {
+                html += `
+                <div class="food-item">
+                    <img src="${m.image}" class="food-img">
+                    <h3>${m.name}</h3>
+                    <p>💰 ${m.price} VND</p>
+                    <div class="desc">${m.description || ""}</div>
+                </div>
+                `
+            })
+            document.getElementById("menu").innerHTML = html
+  /*  fetch(`http://127.0.0.1:5000/api/menu/${id}`)
+    .then(res => res.json())
+    .then(data => {
+        let html = ""
+
+        if (data.length === 0) {
+            html = "<p>Chưa có món ăn</p>"
+        }
+
+              data.forEach(m => {
+            html += `
+            <div class="food-item">
+                <img src="${m.Image || 'https://via.placeholder.com/150'}" class="food-img">
+                <h3>${m.FoodName}</h3>
+                <p>💰 ${m.Price} VND</p>
+                <p>${m.Description || ""}</p>
+            </div>
+            `
+        })
+
+        document.getElementById("menu").innerHTML = html
+    })*/
+
+}
+
+function goBooking() {
+    window.location.href = `booking.html?id=${id}`
+}
+
+function goHome() {
+    window.location.href = `search.html`
+}
+</script>
 
 </body>
 </html>

@@ -5,6 +5,9 @@ from app.api.v1.admin.service import CuisineService
 from app.api.v1.admin.service import AdminRestaurantService
 from app.api.v1.admin.service import AdminUserService
 from app.api.v1.restaurant.service import RestaurantService
+from models.restaurant import Restaurant
+
+
 
 #Quản Lý Users
 #Xem danh sách User
@@ -127,7 +130,12 @@ def approve_restaurant(id):
 #Xem danh sách nhà hàng
 @admin_bp.route('/restaurants', methods=['GET'])
 def get_all():
-    restaurants = AdminRestaurantService.get_all_restaurants()
+    status = request.args.get('status')
+    if status:
+        restaurants = AdminRestaurantService.get_all_restaurants(status=status)
+    else:
+        # Nếu không truyền status thì lấy hết tất cả
+        restaurants = AdminRestaurantService.get_all_restaurants()
     return jsonify(restaurants), 200
 
 #Admin Sửa thông tin nhà hàng
@@ -156,10 +164,8 @@ def admin_delete_restaurant(id):
     if claims.get("role") != "ADMIN":
         return jsonify({"message": "Quyền này của Admin!"}), 403
 
-    success = AdminRestaurantService.delete_restaurant(id)
-    if success:
-        return jsonify({"message": "Xóa thành công!"}), 200
-    return jsonify({"message": "Lỗi khi xóa"}), 404
+    result = AdminRestaurantService.delete_restaurant(id)
+    return jsonify({"message": result["message"]}), result["code"]
 
 
 

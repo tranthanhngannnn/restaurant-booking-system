@@ -9,7 +9,7 @@ class AdminUserService:
     def get_all_users():
         users = User.query.all()
         #Chuyển ds object sang list dictionary
-        return [{"id": u.UserID, "username": u.Username, "role": u.Role, "email": u.Email} for u in users]
+        return [{"id": u.UserID, "username": u.Username, "role": u.Role, "email": u.Email, "phone": u.Phone} for u in users]
 
     @staticmethod
     def update_user(user_id, data):
@@ -83,11 +83,15 @@ class CuisineService:
 
 class AdminRestaurantService:
     @staticmethod
-    def get_all_restaurants():
-        #Lấy tất cả danh sách nhà hàng
-        restaurants = Restaurant.query.all()
-        # Chuyển đổi list object sang list dictionary để jsonify được
-        return [res.to_dict() for res in restaurants]
+    def get_all_restaurants(status=None):  # Thêm status=None vào đây
+        query = Restaurant.query
+        if status:
+            query = query.filter(Restaurant.status == status)
+        else:
+            # Nếu không chọn status cụ thể, thì mặc định bỏ qua 'Ngưng hoạt động'
+            query = query.filter(Restaurant.status != 'Ngưng hoạt động')
+
+        return [r.to_dict() for r in query.all()]
 
     @staticmethod
     def update_restaurant(restaurant_id, data, image=None):
@@ -117,10 +121,12 @@ class AdminRestaurantService:
 
         if not restaurant:
             return False
+        #đổi status="ngưng hoạt động" để xóa mềm
+        restaurant.status = 'Ngưng hoạt động'
 
-        db.session.delete(restaurant)
+
         db.session.commit()
-        return True
+        return {"message": "Đã ẩn nhà hàng thành công, dữ liệu vẫn được lưu trữ!", "code": 200}
 
     @staticmethod
     def approve(restaurant_id):
