@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -52,68 +51,68 @@
 </div>
 
 <script>
-const API = "http://127.0.0.1:5000/api/v1/customer"
+    const API = "http://127.0.0.1:5000/api/v1/customer"
 
-function search() {
-    const address = document.getElementById("address").value;
-    const cuisine = document.getElementById("cuisine").value;
+    function search() {
+        const address = document.getElementById("address").value;
+        const cuisine = document.getElementById("cuisine").value;
 
-    fetch(`${API}/search?address=${encodeURIComponent(address)}&cuisine=${cuisine}`)
-        .then(res => res.json())
-        .then(data => {
-            let html = "";
+        fetch(`${API}/search?address=${encodeURIComponent(address)}&cuisine=${cuisine}`)
+                .then(res => res.json())
+                .then(data => {
+                    let html = "";
 
-            if (data.length === 0) {
-                html = "<p>Không tìm thấy nhà hàng</p>";
-            }
+                    if (data.length === 0) {
+                        html = "<p>Không tìm thấy nhà hàng</p>";
+                    }
 
-            data.forEach(r => {
-                html += `
-                    <div style="border:1px solid #ccc; margin:10px; padding:10px">
-                        <h3>${r.RestaurantName}</h3>
-                        <p>📍 ${r.Address}</p>
-                        <p>📞 ${r.Phone}</p>
-                        <p>${r.Available}</p>
+                    data.forEach(r => {
+                        html += `
+                        <div style="border:1px solid #ccc; margin:10px; padding:10px">
+                            <h3>${r.RestaurantName}</h3>
+                            <p>📍 ${r.Address}</p>
+                            <p>📞 ${r.Phone}</p>
+                            <p>${r.Available}</p>
 
-                        <button onclick="goMenu(${r.RestaurantID})">
-                            Xem chi tiết
-                        </button>
+                            <button onclick="goMenu(${r.RestaurantID})">
+                                Xem chi tiết
+                            </button>
 
-                        <button onclick="goBooking(${r.RestaurantID})">
-                            Đặt bàn
-                        </button>
-                    </div>
-                `;
-            });
+                            <button onclick="goBooking(${r.RestaurantID})">
+                                Đặt bàn
+                            </button>
+                        </div>
+                    `;
+                    });
 
-            document.getElementById("result").innerHTML = html;
+                    document.getElementById("result").innerHTML = html;
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Lỗi gọi API");
+                });
+    }
+
+    function goMenu(id) {
+        window.location.href = `menu.html?id=${id}`;
+    }
+
+    function goBooking(id) {
+        window.location.href = `booking.html?id=${id}`;
+    }
+
+    window.onload = () => {
+        const historyLink = document.getElementById("historyLink")
+        fetch(`${API}/me`, {
+            credentials: "include"
         })
-        .catch(err => {
-            console.error(err);
-            alert("Lỗi gọi API");
-        });
-}
-
-function goMenu(id) {
-    window.location.href = `menu.html?id=${id}`;
-}
-
-function goBooking(id) {
-    window.location.href = `booking.html?id=${id}`;
-}
-
-window.onload = () => {
-    const historyLink = document.getElementById("historyLink")
-    fetch(`${API}/me`, {
-        credentials: "include"
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.logged_in) {
-            historyLink.style.display = "block"
-        }
-    })
-}
+                .then(res => res.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        historyLink.style.display = "block"
+                    }
+                })
+    }
 </script>
 
 </body>

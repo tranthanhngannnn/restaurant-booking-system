@@ -17,7 +17,10 @@ customer_bp = Blueprint("customer", __name__, url_prefix="/api/v1/customer")
 def search():
     address = request.args.get("address")
     cuisine = request.args.get("cuisine")
-    return jsonify(search_restaurant(address, cuisine))
+
+    # Gọi service lấy dữ liệu từ DB
+    restaurants = search_restaurant(address, cuisine)  # trả về list dict
+    return jsonify(restaurants)
 
 @customer_bp.route("/menu/<int:id>")
 def menu(id):
