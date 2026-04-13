@@ -13,7 +13,6 @@ from datetime import datetime
 customer_bp = Blueprint("customer", __name__, url_prefix="/api/v1/customer")
 
 
-
 @customer_bp.route("/search")
 def search():
     address = request.args.get("address")
@@ -23,9 +22,11 @@ def search():
     restaurants = search_restaurant(address, cuisine)  # trả về list dict
     return jsonify(restaurants)
 
+
 @customer_bp.route("/menu/<int:id>")
 def menu(id):
     return jsonify(get_menu(id))
+
 
 @customer_bp.route("/check")
 def check():
@@ -37,13 +38,14 @@ def check():
         return jsonify({"error": "Vui lòng nhập đầy đủ thông tin"}), 400
     return jsonify(check_table(restaurant_id, date, time, people))
 
+
 @customer_bp.route("/book", methods=["POST"])
 @jwt_required(optional=True)
 def book():
     data = request.json
     if not data.get("name") or not data.get("phone"):
         return jsonify({"error": "Tên và SĐT là bắt buộc"}), 400
-    
+
     table_id = data.get("table_id")
     restaurant_id = data.get("restaurant_id")
     table = Tables.query.get(table_id)
@@ -56,11 +58,13 @@ def book():
         return jsonify(result), 400
     return jsonify(result)
 
+
 @customer_bp.route("/restaurants", methods=["GET"])
 def get_restaurants_api():
     # Gọi hàm bên service và trả về JSON cho frontend
     restaurants = get_all_restaurants()
     return jsonify(restaurants)
+
 
 @customer_bp.route("/restaurant/<int:id>", methods=["GET"])
 def get_restaurant_info(id):
@@ -69,6 +73,7 @@ def get_restaurant_info(id):
     if "error" in data:
         return jsonify(data), 404
     return jsonify(data)
+
 
 # API thanh toán đặt cọc
 @customer_bp.route("/payment", methods=["POST"])
@@ -80,23 +85,39 @@ def payment():
         data.get("amount")
     ))
 
-#lưu đánh giá
+
+# gửi đánh giá
 @customer_bp.route("/review", methods=["POST"])
 @jwt_required()
 def create_review():
     user_id = get_jwt_identity()
     if not user_id: return jsonify({"error": "Chưa đăng nhập"}), 401
     data = request.json
-    new_review = Review(
-        UserID=user_id,
-        RestaurantID=data["RestaurantID"],
-        Rating=data.get("Rating"),
-        Comment=data.get("Comment", "")
-    )
+    reservation_id = data.get("ReservationID")
+
+    # Tìm xem cái ID đơn hàng này đã từng được đánh giá chưa?
+    existing_review = Review.query.filter_by(ReservationID=reservation_id).first()
+
+    if existing_review:
+        # NẾU CÓ RỒI -> Cập nhật lại (Sửa)
+        existing_review.Rating = data.get("Rating")
+        existing_review.Comment = data.get("Comment", "")
+        db.session.commit()
+        return jsonify({"message": "Cập nhật đánh giá thành công!"})
+    else:
+        new_review = Review(
+            UserID=user_id,
+            RestaurantID=data["RestaurantID"],
+            ReservationID=data.get("ReservationID"),
+            Rating=data.get("Rating"),
+            Comment=data.get("Comment", "")
+        )
     db.session.add(new_review)
     db.session.commit()
-    return jsonify({"message": "Review thành công"})
+    return jsonify({"message": "Đã gửi đánh giá thành công!"})
 
+
+# lưu đánh giá
 @customer_bp.route("/review/check", methods=["GET"])
 @jwt_required()
 def check_review_api():
@@ -104,7 +125,7 @@ def check_review_api():
     if not reservation_id:
         return jsonify({"reviewed": False})
 
-    review = Review.query.filter_by(ReservationID=reservation_id).first()
+    review = Review.query.filter_by(ReservationID=int(reservation_id)).first()
 
     if review:
         return jsonify({"reviewed": True, "rating": review.Rating, "comment": review.Comment}), 200
@@ -116,16 +137,13 @@ def check_review_api():
 def get_history_api():
     # 1. Lấy ID từ Token
     user_id = get_jwt_identity()
-    print(f"👉 [DEBUG] UserID từ Token: {user_id}", flush=True) #nháp
-
     keyword = request.args.get("keyword", "")
 
-    print(f"👉 [DEBUG] Keyword từ Frontend: {keyword}", flush=True)
-
-    # 3. Truyền cả ID và SĐT vào service
+    #Truyền cả ID và SĐT vào service
     data = get_history(user_id, keyword)
 
     return jsonify(data), 200
+
 
 @customer_bp.route("/me")
 @jwt_required()

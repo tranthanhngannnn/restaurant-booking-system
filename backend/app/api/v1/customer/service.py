@@ -259,7 +259,7 @@ def get_history(user_id, keyword):
         Reservation.UserID == str(user_id)
     )
 
-    # ✅ Nếu có keyword thì filter thêm
+    # Nếu có keyword thì filter thêm
     if keyword:
         # 1. Tạo một list các điều kiện filter
         filters = [Reservation.CustomerName.ilike(f"%{keyword}%")]
@@ -278,6 +278,7 @@ def get_history(user_id, keyword):
         result.append({
             "ReservationID": r.ReservationID,
             "RestaurantName": restaurant_name,
+            "RestaurantID": r.RestaurantID,
             "CustomerName": r.CustomerName,
             "BookingDate": str(r.BookingDate) if r.BookingDate else "",
             "BookingTime": str(r.BookingTime) if r.BookingTime else "",

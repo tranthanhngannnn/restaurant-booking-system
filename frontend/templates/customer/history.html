@@ -50,7 +50,6 @@
             <div id="reviewBox" class="popup" style="display:none;">
                 <div class="popup-content">
                     <h3>⭐ Đánh giá</h3>
-                    <h3>⭐ Đánh giá <span id="displayRestaurantName" style="color: #ff9800;"></span></h3>
 
                     <input type="hidden" id="restaurantId">
                     <input type="hidden" id="reservationId">
@@ -72,7 +71,7 @@
 </div>
 
 <script>
-    // Đổi lại 127.0.0.1 để chống lỗi CORS
+
     const API = "http://127.0.0.1:5000";
 
     let bookings = [];
@@ -80,7 +79,6 @@
     window.onload = () => {
         const token = localStorage.getItem("token");
 
-        // 1. Kiểm tra nhanh: Không có token trong máy thì khỏi load gì hết
         if (!token) {
             alert("Bạn chưa đăng nhập!");
             window.location.href = "../auth/login.html";
@@ -89,13 +87,12 @@
         fetch(`${API}/api/v1/customer/me`, {
             method: "GET",
             headers: {
-                "Authorization": "Bearer " + token, // <--- TRÌNH THẺ TẠI ĐÂY
+                "Authorization": "Bearer " + token,
                 "Content-Type": "application/json"
             }
         })
                 .then(res => {
                     if (!res.ok) {
-                        // Vé giả hoặc hết hạn -> Đuổi ra ngoài, tịch thu vé cũ
                         alert("Phiên đăng nhập hết hạn hoặc Token sai. Vui lòng đăng nhập lại!");
                         localStorage.removeItem("token");
                         window.location.href = "../auth/login.html";
@@ -104,11 +101,11 @@
                     return res.json();
                 })
                 .then(data => {
-                    // Check thành công, cho phép hiện Lịch sử
+                    // Check token thành công, cho phép hiện Lịch sử
                     const historyLink = document.getElementById("historyLink");
                     if (historyLink) historyLink.style.display = "block";
 
-                    // Gọi hàm tải dữ liệu, truyền cái token xuống luôn cho tiện
+                    // Gọi hàm tải dữ liệu, truyền cái token xuống luôn
                     loadHistory(token);
 
                     const searchInput = document.getElementById("searchInput");
@@ -186,7 +183,7 @@
                         </div>
                     </div>`;
                 } else {
-                    reviewHtml = `<button onclick="event.stopPropagation(); openReview(${b.RestaurantID || b.restaurant_id}, ${b.ReservationID},'${b.RestaurantName}')">⭐ Đánh giá</button>`;
+                    reviewHtml = `<button onclick="event.stopPropagation(); openReview(${b.RestaurantID || b.restaurant_id}, ${b.ReservationID})">⭐ Đánh giá</button>`;
                 }
             }
 
@@ -210,15 +207,14 @@
         if (historyContainer) historyContainer.innerHTML = html;
     }
 
-    // --- CÁC HÀM NÀY PHẢI NẰM ĐỘC LẬP BÊN NGOÀI, KHÔNG ĐƯỢC NHÉT VÀO TRONG RENDERTABLE ---
 
     async function handleClick(status, restaurantID, reservationID) {
         if (status === "Confirmed") {
             const reviewData = await checkReview(reservationID);
-            if (reviewData.reviewed) {
-                return; // KHÔNG MỞ LẠI
-            }
-            openReview(restaurantID, reservationID);
+
+            // Mở popup lên, ném luôn sao và nhận xét cũ vào (nếu có)
+            openReview(restaurantID, reservationID, reviewData.rating, reviewData.comment);
+
         } else if (status === "Cancelled") {
             alert("Đơn đã bị hủy");
         } else {
@@ -244,15 +240,19 @@
     let currentReviewReservationID = null;
     let currentReviewRestaurantID = null;
 
-    function openReview(restaurantID, reservationID) {
+    function openReview(restaurantID, reservationID, oldRating, oldComment) {
         const reviewBox = document.getElementById("reviewBox");
-        const rIdInput = document.getElementById("restaurantId");
-        const resIdInput = document.getElementById("reservationId");
-
         if (reviewBox) reviewBox.style.display = "flex";
-        if (nameDisplay) nameDisplay.innerText = restaurantName; // Hiển thị tên lên popup
+
         currentReviewRestaurantID = restaurantID;
         currentReviewReservationID = reservationID;
+
+        // Điền dữ liệu cũ lên form (Không có thì để trống bắt tự nhập)
+        const ratingInput = document.getElementById("rating");
+        const commentInput = document.getElementById("comment");
+
+        if (ratingInput) ratingInput.value = oldRating || "";
+        if (commentInput) commentInput.value = oldComment || "";
     }
 
     function closeReview() {
@@ -284,7 +284,7 @@
             },
             body: JSON.stringify({
                 RestaurantID: parseInt(currentReviewRestaurantID),
-                ReservationID: parseInt(currentReviewReservationID), // <--- CHẮC CHẮN 100% CÓ SỐ
+                ReservationID: parseInt(currentReviewReservationID),
                 Rating: parseInt(ratingInput ? ratingInput.value : 5),
                 Comment: commentInput ? commentInput.value : ""
             })
