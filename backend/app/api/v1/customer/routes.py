@@ -53,6 +53,7 @@ def book():
         return jsonify({"error": "Bàn không hợp lệ"}), 400
 
     data["user_id"] = session.get("user_id")
+    data["status"] = "Pending" #Ép cứng trạng thái là Pending (đợi duyệt)
     result = create_booking(data)
     if "error" in result:
         return jsonify(result), 400
