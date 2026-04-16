@@ -21,8 +21,16 @@ tables_schema = TableSchema(many=True)
 booking_schema = BookingSchema()
 bookings_schema = BookingSchema(many=True)
 
-def get_all_menu():
-    return menus_schema.dump(Menu.query.all())
+def get_all_menu(restaurant_id):
+    menus = Food.query.filter_by(RestaurantID=restaurant_id).all()
+
+    return [{
+        "id": f.FoodID,
+        "name": f.FoodName,
+        "price": float(f.Price) if f.Price else 0,
+        "description": f.Description,
+        "image": f.Image
+    } for f in menus]
 
 def create_food(data):
     food = Menu(

@@ -12,5 +12,7 @@ class Food(db.Model):
 
     Price = db.Column(db.Float)
     Description = db.Column(db.String(255))
-    Image = db.Column(db.String(255))
+    Image_URL = db.Column("Image_URL",db.String(255))
     restaurant = db.relationship("Restaurant", backref="foods")
+    Visible = db.Column(db.Boolean, default=True)
+    Category = db.Column(db.String(50))

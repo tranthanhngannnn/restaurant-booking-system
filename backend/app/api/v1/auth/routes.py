@@ -13,7 +13,8 @@ def register():
         "password": request.form.get('password'),
         "email": request.form.get('email'),
         "phone": request.form.get('phone'),
-        "role": request.form.get('role')
+        "role": request.form.get('role'),
+        "restaurant_id": request.form.get('restaurant_id')
     }
 
     # Đẩy data qua Service xử lý

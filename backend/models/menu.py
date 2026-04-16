@@ -9,6 +9,7 @@ class Menu(db.Model):
     category = db.Column(db.String(50))
     description = db.Column(db.Text)
     visible = db.Column(db.Boolean, default=True)
+    RestaurantID = db.Column(db.Integer, nullable=True)
     status = db.Column(db.String(20), default='active')
 
 

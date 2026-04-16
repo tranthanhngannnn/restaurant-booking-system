@@ -1,109 +1,134 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Menu Nhà Hàng</title>
-<link rel="stylesheet" href="../../static/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Nhà Hàng</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
 
 <h1>Menu Nhà Hàng</h1>
 
-<div class="tab-buttons">
-    <button id="tabLau" class="active">Nhà Hàng Lẩu</button>
-    <button id="tabNuong">Nhà Hàng Nướng</button>
-</div>
-
 <div class="menu-container" id="menuContainer"></div>
 
 <script>
 
-let MENU_DATA = [];
-let currentType = 'lau';
-
-const menuContainer = document.getElementById('menuContainer');
-const tabLau = document.getElementById('tabLau');
-const tabNuong = document.getElementById('tabNuong');
+    let MENU_DATA = [];
 
 
-// ===== LOAD MENU FROM MYSQL =====
-async function loadMenu() {
-    try {
-        const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu");
-        const data = await res.json();
+    const menuContainer = document.getElementById('menuContainer');
 
-        MENU_DATA = data.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            image: item.image,
-            category: item.category,   // "lau" | "nuong"
-            visible: item.visible
-        }));
 
-        renderMenu(currentType);
 
-    } catch (err) {
-        console.error("Load menu error:", err);
+    // ===== LOAD MENU FROM MYSQL =====
+    async function loadMenu() {
+    const token = localStorage.getItem('token');
+
+        // Nếu không có token, thoát ra trang đăng nhập luôn
+        if (!token) {
+            alert("Bạn chưa đăng nhập!");
+            window.location.href = "login.html";
+            return;
+        }
+
+        try {
+            const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu/admin", {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!res.ok) {
+                if (res.status === 401 || res.status === 403) {
+                    alert("Bạn không có quyền truy cập hoặc phiên đăng nhập đã hết hạn!");
+                    return;
+                }
+                throw new Error("Lỗi server");
+            }
+
+            const data = await res.json();
+
+            MENU_DATA = data.map(item => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                image: item.image,
+                category: item.category,
+                visible: item.Visible
+            }));
+
+            renderMenu(MENU_DATA);
+
+        } catch (err) {
+            console.error("Load menu error:", err);
+        }
     }
-}
 
 
-// ===== RENDER MENU =====
-function renderMenu(type) {
-    currentType = type;
+    // ===== RENDER MENU =====
+function renderMenu(dataToRender) {
+    const menuContainer = document.getElementById('menuContainer');
+    if (!menuContainer) return;
+    console.log("Số lượng món Backend trả về:", dataToRender.length); // Thêm dòng này
+    console.log("Danh sách món nè:", dataToRender);
+
     menuContainer.innerHTML = '';
 
-    const filtered = MENU_DATA.filter(item => {
+    // Kiểm tra nếu dataToRender bị rỗng thì không làm gì cả
+    if (!dataToRender) return;
 
-        // lọc theo loại
-        const inCategory =
-            type === 'lau'
-                ? item.category === 'lau'
-                : item.category === 'nuong';
-
-        return inCategory;
-    });
-
-    filtered.forEach(item => {
-
+    dataToRender.forEach(item => {
         const div = document.createElement('div');
         div.className = 'menu-item';
 
-        // nếu bị ẩn thì làm mờ
-        div.style.opacity = item.visible ? "1" : "0.4";
+        // 🔍 KIỂM TRA: Nếu Backend trả về "Visible" (V hoa) thì Ngân dùng item.Visible nhé
+        const isVisible = item.Visible !== false;
+
+        div.style.opacity = isVisible ? "1" : "0.4";
 
         div.innerHTML = `
-            <img src="${item.image}" alt="${item.name}">
+            <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}">
             <h3>${item.name}</h3>
             <p>${Number(item.price).toLocaleString()}₫</p>
 
             <button class="toggle-btn">
-                ${item.visible ? "Ẩn món" : "Hiện món"}
+                ${isVisible ? "Ẩn món" : "Hiện món"}
             </button>
         `;
 
         const btn = div.querySelector('.toggle-btn');
-
         btn.addEventListener('click', async () => {
             try {
+                const token = localStorage.getItem('token');
+                // Dùng item.id hoặc item.FoodID tùy theo Backend trả về id hay FoodID
+                const foodId = item.id || item.FoodID;
+
                 const res = await fetch(
-                    `http://127.0.0.1:5000/api/v1/restaurant/menu/${item.id}/toggle`,
-                    { method: 'PUT' }
+                    `http://127.0.0.1:5000/api/v1/restaurant/menu/${foodId}/toggle`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
                 );
 
                 if (!res.ok) {
-                    alert("Toggle thất bại");
+                    alert("Thao tác thất bại!");
                     return;
                 }
 
                 const result = await res.json();
 
-                // update DB state về frontend
-                item.visible = result.visible;
+                // Cập nhật lại đúng tên biến Visible
+                item.Visible = result.Visible;
 
-                renderMenu(currentType);
+                // PHẢI TRUYỀN dataToRender VÀO ĐÂY ĐỂ VẼ LẠI
+                renderMenu(dataToRender);
 
             } catch (err) {
                 console.error("Toggle error:", err);
@@ -113,24 +138,9 @@ function renderMenu(type) {
         menuContainer.appendChild(div);
     });
 }
+    // ===== INIT =====
+    loadMenu();
 
-
-// ===== TAB SWITCH =====
-tabLau.onclick = () => {
-    tabLau.classList.add('active');
-    tabNuong.classList.remove('active');
-    renderMenu('lau');
-};
-
-tabNuong.onclick = () => {
-    tabNuong.classList.add('active');
-    tabLau.classList.remove('active');
-    renderMenu('nuong');
-};
-
-
-// ===== INIT =====
-loadMenu();
 
 </script>
 

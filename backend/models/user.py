@@ -10,6 +10,7 @@ class User(db.Model, UserMixin):
     Email = db.Column(db.String(100))
     Phone = db.Column(db.String(11))
     Role = db.Column(db.String(50), nullable=False)
+    RestaurantID = db.Column(db.Integer, nullable=True)
 
     def check_password(self, password):
         return self.Password == password

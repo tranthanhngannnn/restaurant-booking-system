@@ -29,7 +29,8 @@
         <form id="registerForm">
             <form action="/registerRequest" method="POST">
                 <div class="input-box">
-                    <input type="text" class="input-field" placeholder="Tên đăng nhập" name="username" required>
+                    <input type="text" class="input-field" placeholder="Tên đăng nhập" name="username" id="user"
+                           required>
                     <i class="bx bx-user"></i>
                 </div>
 
@@ -56,12 +57,19 @@
                 </div>
 
                 <div class="input-box">
-                    <select name="role" class="input-field"
-                            style="background: rgba(255, 255, 255, 0.2); border: none; padding-left: 50px;">
+                    <select name="role" id="roleSelect" class="input-field" onchange="toggleRestaurantDropdown()">
+                        style="background: rgba(255, 255, 255, 0.2); border: none; padding-left: 50px;">
                         <option value="CUSTOMER" style="color: black;">Khách hàng</option>
                         <option value="STAFF" style="color: black;">Nhân viên</option>
                     </select>
                     <i class="bx bx-briefcase-alt-2"></i>
+                </div>
+
+                <div class="input-box" id="restaurantDiv" style="display: none; margin-top: 25px;">
+                    <select id="restaurantSelect" name="restaurant_id" class="input-field" style="...">
+                        <option value="">-- Chọn Nhà Hàng --</option>
+                    </select>
+                    <i class="bx bx-store-alt"></i>
                 </div>
 
                 <div class="input-box">
@@ -89,6 +97,20 @@
 
         // 2. Lấy data
         const formData = new FormData(registerForm);
+        const username = document.getElementById('user').value; // Kiểm tra xem id ô username là 'user' hay 'username' nhé
+        const password = pass;
+        const role = document.getElementById('roleSelect').value;
+        const restaurant_id = document.getElementById('restaurantSelect').value;
+
+        // Lấy giá trị ra, kiểm tra nếu có thì nhét lại vào FormData
+        const resId = document.getElementById('restaurantSelect').value;
+        if (resId && resId !== "") {
+        // delete cái cũ (nếu có) và append cái đã chắc chắn có giá trị vào
+            formData.set('restaurant_id', resId);
+        } else {
+             formData.delete('restaurant_id'); // Nếu là khách thì xóa luôn cho sạch
+        }
+
 
         try {
             const response = await fetch('http://127.0.0.1:5000/api/v1/auth/registerRequest', {
@@ -110,6 +132,37 @@
             alert("Không kết nối được với Server Flask!");
         }
     });
+
+    // Hàm ẩn/hiện ô chọn nhà hàng dựa vào Role
+async function toggleRestaurantDropdown() {
+    const role = document.getElementById("roleSelect").value;
+    const resDiv = document.getElementById("restaurantDiv");
+    const select = document.getElementById("restaurantSelect");
+
+    if (role === "STAFF") {
+        resDiv.style.display = "block";
+
+        // Chỉ load nếu dropdown đang trống (để tránh load đi load lại)
+        if (select.options.length <= 1) {
+            try {
+                const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/list");
+                const data = await res.json();
+
+                data.forEach(r => {
+                    const option = document.createElement("option");
+                    option.value = r.id; // ID này sẽ khớp với RestaurantID trong DB
+                    option.textContent = r.name;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error("Không lấy được danh sách nhà hàng:", err);
+            }
+        }
+    } else {
+        resDiv.style.display = "none";
+    }
+}
+
 </script>
 </body>
 </html>
