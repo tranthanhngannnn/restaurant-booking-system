@@ -104,8 +104,16 @@
 
     // load dữ liệu
     async function loadTables() {
+    const token = localStorage.getItem('token'); // Lấy token đã lưu lúc login
+
+    const res = await fetch('http://127.0.0.1:5000/api/v1/restaurant/tables', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
         try {
-            const res = await fetch(API);
             const data = await res.json();
             const mid = Math.ceil(data.length / 2);
             document.getElementById('left-side').innerHTML = data.slice(0, mid).map(renderTable).join('');

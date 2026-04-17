@@ -53,8 +53,8 @@ def get_menu_res_admin(res_id):
     return result
 
 #DÀNH CHO ORDER MÓN
-def get_res_menu(res_id):
-    menus = Food.query.filter_by(RestaurantID=res_id, Visible=True).all()
+def get_res_menu(restaurant_id):
+    menus = Food.query.filter_by(RestaurantID=restaurant_id, Visible=True).all()
 
     try:
         from image import MENU_DATA
@@ -110,8 +110,8 @@ def delete_food(id):
     return {"msg": "Deleted"}
 
 
-def get_tables():
-    all_tables = Tables.query.all()
+def get_tables(res_id):
+    all_tables = Tables.query.filter_by(RestaurantID=res_id).all()
     result = []
 
     for t in all_tables:
@@ -184,8 +184,9 @@ def create_booking(data):
     }
 
 
-def get_bookings():
-    return bookings_schema.dump(Reservation.query.all())
+def get_bookings(res_id):
+    query = Reservation.query.filter_by(RestaurantID=res_id).order_by(Reservation.BookingTime.desc()).all()
+    return bookings_schema.dump(query)
 
 
 def confirm_booking(id):

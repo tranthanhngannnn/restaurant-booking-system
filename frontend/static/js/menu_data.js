@@ -22,7 +22,7 @@ const MENU_DATA = [
    { id: "BTM", name: 'Bạch Tuộc Mini', restaurant_id: 2, category_id: 2, price: 85000, description:'Bạch tuộc mini tươi giòn thích hợp nướng', image: '/static/images/Food/Nuong/bachtuocmini.jpg' },
    { id: "SDMH", name: 'Sò Điệp Mỡ Hành', restaurant_id: 2, category_id: 6, price: 85000, description:'Sò điệp tươi nướng mỡ hành thơm béo', image: '/static/images/Food/Nuong/sodiepnuongmohanh.jpg' },
    { id: "SNMO", name: 'Sườn Non Ướp Mật Ong', restaurant_id: 2, category_id: 6, price: 120000, description:'Sườn non tẩm mật ong nướng thơm ngọt', image: '/static/images/Food/Nuong/suonnonuopmatong.jpg' },
-   { id: "RSAK", name: 'Rau Sống Ăn Kèm', restaurant_id: 2, category_id: 5, price: 90000, description:'Rau sống tươi ăn kèm các món nướng', image: '/static/images/Food/Nuong/rausongankem' },
+   { id: "RSAK", name: 'Rau Sống Ăn Kèm', restaurant_id: 2, category_id: 5, price: 90000, description:'Rau sống tươi ăn kèm các món nướng', image: '/static/images/Food/Nuong/rausongankem.jpg' },
    { id: "CMN", name: 'Combo Nấm', restaurant_id: 2, category_id: 1, price: 100000, description:'Combo nhiều loại nấm tươi ăn kèm món nướng', image: '/static/images/Food/Nuong/combonam.png' },
    { id: "TNST", name: 'Tôm Nướng Sa Tế', restaurant_id: 2, category_id: 6, price: 240000, description:'Tôm tươi nướng sa tế cay thơm', image: '/static/images/Food/Nuong/tomnuongsate.jpg' },
    { id: "NVH", name: 'Nạc Vai Heo', restaurant_id: 2, category_id: 5, price: 100000, description:'Thịt nạc vai heo mềm, thích hợp nướng BBQ', image: '/static/images/Food/Nuong/nacvaiheo.jpg' },

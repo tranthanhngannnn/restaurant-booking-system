@@ -35,14 +35,19 @@ def update_table_status(id):
 
 #dành cho KH
 @restaurant_bp.route('/menu', methods=['GET'])
+@jwt_required()
 def get_menu_api():
     # Lấy ID nhà hàng từ tham số truyền lên
-    res_id = request.args.get('restaurant_id')
-    if res_id:
-        res_id = int(res_id)
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    res_id = user_info.RestaurantID
 
-    result = get_res_menu(int(res_id))
-    return jsonify(result)
+    try:
+        menu_data = get_res_menu(res_id)
+        return jsonify(menu_data)
+    except Exception as e:
+        return jsonify({"message": f"Lỗi server: {str(e)}"}), 500
+
 
 #dành cho nhân viên
 @restaurant_bp.route('/menu/admin', methods=['GET'])
@@ -84,8 +89,14 @@ def delete_food_api(id):
     return jsonify(delete_food(id))
 
 @restaurant_bp.route('/tables', methods=['GET'])
+@jwt_required()
 def get_tables_api():
-    return jsonify(get_tables())
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    # Lấy đúng ID nhà hàng của người đang đăng nhập
+    res_id = user_info.RestaurantID
+    tables = get_tables(res_id)
+    return jsonify(tables)
 
 @restaurant_bp.route('/tables', methods=['POST'])
 def create_table_api():
@@ -96,14 +107,20 @@ def add_booking():
     return jsonify(create_booking(request.json))
 
 @restaurant_bp.route('/bookings', methods=['GET'])
+@jwt_required()
 def get_bookings_api():
-    return jsonify(get_bookings())
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    data = get_bookings(user_info.RestaurantID)
+    return jsonify(data)
 
 @restaurant_bp.route('/bookings/<int:id>/confirm', methods=['POST'])
+@jwt_required()
 def confirm_booking_api(id):
     return jsonify(confirm_booking(id))
 
 @restaurant_bp.route('/bookings/<int:id>/reject', methods=['POST'])
+@jwt_required()
 def reject_booking_api(id):
     return jsonify(reject_booking(id))
 

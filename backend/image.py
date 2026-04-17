@@ -55,10 +55,10 @@ MENU_DATA = [
     },
     {
     "name": "Hải Sản Tổng Hợp",
-"category": "lau",
-"price": 150000,
-"image": "/static/images/Food/Lau/haisantonghop.jpg",
-"stock": 10
+    "category": "lau",
+    "price": 150000,
+    "image": "/static/images/Food/Lau/haisantonghop.jpg",
+    "stock": 10
 },
 {
         "name": "Combo Rau Nấm",
@@ -125,49 +125,49 @@ MENU_DATA = [
         "image": "/static/images/Food/Nuong/bachtuocmini.jpg",
         "stock": 10
     },
-{
+    {
         "name": "Sò Điệp Mỡ Hành",
         "category": "nuong",
         "price": 85000,
-        "image": "static/images/Food/Nuong/sodiepnuongmohanh.jpg",
+        "image": "/static/images/Food/Nuong/sodiepnuongmohanh.jpg",
         "stock": 10
     },
-{
+    {
         "name": "Sườn Non Ướp Mật Ong",
         "category": "nuong",
         "price": 120000,
         "image": "/static/images/Food/Nuong/suonnonuopmatong.jpg",
         "stock": 10
     },
-{
+    {
         "name": "Rau Sống Ăn Kèm",
         "category": "nuong",
         "price": 90000,
-        "image": "/static/images/Food/Nuong/rausongankem",
+        "image": "/static/images/Food/Nuong/rausongankem.jpg",
         "stock": 10
     },
-{
+    {
         "name": "Combo Nấm",
         "category": "nuong",
         "price": 100000,
         "image": "/static/images/Food/Nuong/combonam.png",
         "stock": 10
     },
-{
-        "name": "Tôm Nướng Sa ế",
+    {
+        "name": "Tôm Nướng Sa Tế",
         "category": "nuong",
         "price": 240000,
         "image": "/static/images/Food/Nuong/tomnuongsate.jpg",
         "stock": 10
     },
-{
+    {
         "name": "Nạc Vai Heo",
         "category": "nuong",
         "price": 100000,
         "image": "/static/images/Food/Nuong/nacvaiheo.jpg",
         "stock": 10
     },
-{
+    {
         "name": "Trái Cây Tổng Hợp",
         "category": "nuong",
         "price": 100000,
