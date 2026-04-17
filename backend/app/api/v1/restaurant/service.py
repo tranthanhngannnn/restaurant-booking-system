@@ -1,13 +1,13 @@
 from models.restaurant import Restaurant
 from core.extensions import db
 from datetime import datetime, timedelta
-
+from models.food import Food
 from models.menu import Menu
 from models.tables import Tables
 from models.booking import Reservation
 from models.orders import Order
 from models.ordersitem import OrderItem
-
+from models.food import Food
 from schemas.menu_schema import MenuSchema
 from schemas.table_schema import TableSchema
 from schemas.booking_schema import BookingSchema
@@ -21,16 +21,70 @@ tables_schema = TableSchema(many=True)
 booking_schema = BookingSchema()
 bookings_schema = BookingSchema(many=True)
 
-def get_all_menu(restaurant_id):
-    menus = Food.query.filter_by(RestaurantID=restaurant_id).all()
 
-    return [{
-        "id": f.FoodID,
-        "name": f.FoodName,
-        "price": float(f.Price) if f.Price else 0,
-        "description": f.Description,
-        "image": f.Image
-    } for f in menus]
+#DÀNH CHO MENU NHÂN VIÊN
+def get_menu_res_admin(res_id):
+    try:
+        from image import MENU_DATA #tránh lỗi vòng lặp lúc khởi động
+    except ImportError:
+        from backend.image import MENU_DATA
+
+    menus = Food.query.filter_by(RestaurantID=res_id).all() #LẤY ĐÚNG MENU CỦA NHÀ HÀNG ĐÓ
+
+    result = []
+    for m in menus:
+        # 1. Mặc định lấy ảnh từ DB (nếu có)
+        image_url = m.Image_URL if m.Image_URL else ""
+
+        if not image_url:
+            for item in MENU_DATA:
+                if item['name'] == m.FoodName:  # So khớp theo tên món ăn
+                    image_url = item['image']
+                    break
+
+        result.append({
+            "id": m.FoodID,
+            "name": m.FoodName,
+            "price": float(m.Price) if m.Price else 0,
+            "image": image_url,
+            "restaurant_id": m.RestaurantID,
+            "Visible": m.Visible
+        })
+    return result
+
+#DÀNH CHO ORDER MÓN
+def get_res_menu(res_id):
+    menus = Food.query.filter_by(RestaurantID=res_id, Visible=True).all()
+
+    try:
+        from image import MENU_DATA
+    except ImportError:
+        from backend.image import MENU_DATA
+
+    result = []
+    for m in menus:
+        # 1. Khai báo image_url ngay đầu vòng lặp cho mỗi món
+        image_url = m.Image_URL if hasattr(m, 'Image_URL') and m.Image_URL else ""
+
+        # 2. Nếu DB trống, đi tìm trong MENU_DATA (vẫn nằm TRONG vòng lặp for m)
+        if not image_url:
+            for item in MENU_DATA:
+                if item['name'] == m.FoodName:
+                    image_url = item['image']
+                    break
+
+        # 3. Add món đó vào list result
+        result.append({
+            "id": m.FoodID,
+            "name": m.FoodName,
+            "price": float(m.Price) if m.Price else 0,
+            "image": image_url,
+            "category": m.Category if hasattr(m, 'Category') else "",
+            "description": m.Description if hasattr(m, 'Description') else "",
+            "Visible": m.Visible
+        })
+    return result
+
 
 def create_food(data):
     food = Menu(
@@ -45,6 +99,7 @@ def create_food(data):
     db.session.commit()
     return menu_schema.dump(food)
 
+
 def delete_food(id):
     food = Menu.query.get(id)
     if not food:
@@ -53,6 +108,7 @@ def delete_food(id):
     db.session.delete(food)
     db.session.commit()
     return {"msg": "Deleted"}
+
 
 def get_tables():
     all_tables = Tables.query.all()
@@ -75,11 +131,12 @@ def get_tables():
 
     return result
 
+
 def create_table(data):
     existing = Tables.query.filter_by(TableNumber=data.get('TableNumber')).first()
     if existing:
         return {"error": "Table already exists"}
-    
+
     table = Tables(
         TableNumber=data.get('TableNumber'),
         Capacity=int(data.get('Capacity', 4) or 4),
@@ -92,6 +149,7 @@ def create_table(data):
         "message": "Table created",
         "data": table_schema.dump(table)
     }
+
 
 def create_booking(data):
     try:
@@ -125,8 +183,10 @@ def create_booking(data):
         "data": booking_schema.dump(booking)
     }
 
+
 def get_bookings():
     return bookings_schema.dump(Reservation.query.all())
+
 
 def confirm_booking(id):
     booking = Reservation.query.get(id)
@@ -139,12 +199,14 @@ def confirm_booking(id):
     db.session.commit()
     return booking_schema.dump(booking)
 
+
 def reject_booking(id):
     b = Reservation.query.get(id)
     if not b: return {"error": "Not found"}
     b.Status = "Rejected"
     db.session.commit()
     return booking_schema.dump(b)
+
 
 def update_table_status_service(id, data):
     table = Tables.query.get(id)
@@ -154,6 +216,7 @@ def update_table_status_service(id, data):
     db.session.commit()
     return table_schema.dump(table)
 
+
 def delete_booking(id):
     booking = Reservation.query.get(id)
     if not booking: return {"error": "Not found"}
@@ -161,9 +224,11 @@ def delete_booking(id):
     db.session.commit()
     return {"msg": "Deleted"}
 
+
 def get_booking_by_table_service(id):
     bookings = Reservation.query.filter_by(TableID=id).all()
     return bookings_schema.dump(bookings)
+
 
 class RestaurantService:
     @staticmethod

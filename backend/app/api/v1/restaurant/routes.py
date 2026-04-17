@@ -9,8 +9,6 @@ from models.ordersitem import OrderItem
 from core.extensions import db
 from models.user import User
 from app.api.v1.restaurant.service import RestaurantService
-
-
 from .service import *
 
 restaurant_bp = Blueprint('restaurant', __name__)
@@ -43,36 +41,7 @@ def get_menu_api():
     if res_id:
         res_id = int(res_id)
 
-    menus = Food.query.filter_by(RestaurantID=res_id).all()
-
-    try:
-        from image import MENU_DATA
-    except ImportError:
-        from backend.image import MENU_DATA
-
-    result = []
-    for m in menus:
-        # 1. Khai báo image_url ngay đầu vòng lặp cho mỗi món
-        # Dùng m.Image_URL (nếu DB Ngân là Image_URL) hoặc m.Image
-        image_url = m.Image_URL if hasattr(m, 'Image_URL') and m.Image_URL else ""
-
-        # 2. Nếu DB trống, đi tìm trong MENU_DATA (vẫn nằm TRONG vòng lặp for m)
-        if not image_url:
-            for item in MENU_DATA:
-                if item['name'] == m.FoodName:
-                    image_url = item['image']
-                    break
-
-        # 3. Add món đó vào list result
-        result.append({
-            "id": m.FoodID,
-            "name": m.FoodName,
-            "price": float(m.Price) if m.Price else 0,
-            "image": image_url,
-            "category": m.Category if hasattr(m, 'Category') else "",
-            "description": m.Description if hasattr(m, 'Description') else ""
-        })
-
+    result = get_res_menu(int(res_id))
     return jsonify(result)
 
 #dành cho nhân viên
@@ -90,33 +59,13 @@ def get_menu_admin():
     # Kiểm tra xem nhân viên này đã được phân công về nhà hàng nào chưa
     if not user_info or not user_info.RestaurantID:
         return jsonify({"message": "Nhân viên này chưa được phân công nhà hàng!"}), 400
+
     try:
-        from image import MENU_DATA #tránh lỗi vòng lặp lúc khởi động
-    except ImportError:
-        from backend.image import MENU_DATA
+        menu_data = get_menu_res_admin(user_info.RestaurantID)
+        return jsonify(menu_data)
+    except Exception as e:
+        return jsonify({"message": f"Lỗi server: {str(e)}"}), 500
 
-    restaurant_id = user_info.RestaurantID
-    menus = Food.query.filter_by(RestaurantID=restaurant_id).all() #LẤY ĐÚNG MENU CỦA NHÀ HÀNG ĐÓ
-
-    result = []
-    for m in menus:
-        # 1. Mặc định lấy ảnh từ DB (nếu có)
-        image_url = m.Image_URL if m.Image_URL else ""
-
-        if not image_url:
-            for item in MENU_DATA:
-                if item['name'] == m.FoodName:  # So khớp theo tên món ăn
-                    image_url = item['image']
-                    break
-
-        result.append({
-            "id": m.FoodID,
-            "name": m.FoodName,
-            "price": float(m.Price) if m.Price else 0,
-            "image": image_url,
-            "restaurant_id": m.RestaurantID
-        })
-    return jsonify(result)
 
 @restaurant_bp.route('/list', methods=['GET'])
 def get_restaurant_list():

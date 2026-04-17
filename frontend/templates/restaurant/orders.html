@@ -59,28 +59,36 @@
     }
 
     // 3. Hàm Vẽ Menu
-    function renderMenu(dataToRender) {
-        const menuContainer = document.getElementById('menu-list');
-        if (!menuContainer) return;
+    function renderMenu(dataToRender, CuisineID) {
+    const menuContainer = document.getElementById('menu-list');
+    if (!menuContainer) return;
 
-        const html = dataToRender.map(item => {
-            const findImage = (typeof MENU_DATA !== 'undefined') ? MENU_DATA.find(m => m.name === item.name) : null;
-            const finalImage = findImage ? findImage.image : (item.image || 'https://via.placeholder.com/150');
-
-            return `
-                <div class="menu-item">
-                    <div class="item-image">
-                        <img src="${finalImage}" onerror="this.src='https://via.placeholder.com/150'">
-                    </div>
-                    <div class="item-info">
-                        <h3>${item.name}</h3>
-                        <p class="price">${item.price.toLocaleString()}đ</p>
-                        <button class="btn-add" onclick="addItem('${item.id}', '${item.name}', ${item.price}, '${finalImage}')">Thêm</button>
-                    </div>
-                </div>`;
-        }).join('');
-        menuContainer.innerHTML = html;
+    const html = dataToRender.map(item => {
+    console.log("Số lượng món nhận được:", dataToRender.length);
+    console.log("Dữ liệu chi tiết:", dataToRender);
+       let subFolder = "Lau";
+    if (item.CuisineID === 2 || (typeof CuisineID !== 'undefined' && CuisineID === 2)) {
+        subFolder = "Nuong";
     }
+
+        // 2. Ép đường dẫn về static local
+        // Tên file ảnh lấy từ item.image
+        const finalImage = item.image;
+
+        return `
+            <div class="menu-item">
+                <div class="item-image">
+                    <img src="${finalImage}" onerror="this.onerror=null;this.src='https://via.placeholder.com/150?text=No+Image';">
+                </div>
+                <div class="item-info">
+                    <h3>${item.name}</h3>
+                    <p class="price">${item.price.toLocaleString()}đ</p>
+                    <button class="btn-add" onclick="addItem('${item.id}', '${item.name}', ${item.price}, '${finalImage}')">Thêm</button>
+                </div>
+            </div>`;
+    }).join('');
+    menuContainer.innerHTML = html;
+}
 
     // 4. Hàm Thêm Món
     function addItem(food_id, name, price, image) {

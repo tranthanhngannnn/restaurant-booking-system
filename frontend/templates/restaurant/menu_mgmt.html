@@ -84,10 +84,8 @@ function renderMenu(dataToRender) {
         const div = document.createElement('div');
         div.className = 'menu-item';
 
-        // 🔍 KIỂM TRA: Nếu Backend trả về "Visible" (V hoa) thì Ngân dùng item.Visible nhé
-        const isVisible = item.Visible !== false;
-
-        div.style.opacity = isVisible ? "1" : "0.4";
+        const currentVisible = item.visible !== false;
+        div.style.opacity = currentVisible ? "1" : "0.4";
 
         div.innerHTML = `
             <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}">
@@ -95,15 +93,14 @@ function renderMenu(dataToRender) {
             <p>${Number(item.price).toLocaleString()}₫</p>
 
             <button class="toggle-btn">
-                ${isVisible ? "Ẩn món" : "Hiện món"}
+                ${currentVisible ? "Ẩn món" : "Hiện món"}
             </button>
         `;
 
         const btn = div.querySelector('.toggle-btn');
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', async (e) => {
             try {
                 const token = localStorage.getItem('token');
-                // Dùng item.id hoặc item.FoodID tùy theo Backend trả về id hay FoodID
                 const foodId = item.id || item.FoodID;
 
                 const res = await fetch(
@@ -117,27 +114,29 @@ function renderMenu(dataToRender) {
                     }
                 );
 
-                if (!res.ok) {
-                    alert("Thao tác thất bại!");
-                    return;
+                if (res.ok) {
+                    const result = await res.json();
+
+                    // 1. Cập nhật dữ liệu vào biến
+                    item.visible = result.visible;
+
+                    // 2. Sửa TRỰC TIẾP trên giao diện cái ô này thôi, không load lại cả trang
+                    div.style.opacity = item.visible ? "1" : "0.4";
+                    btn.innerText = item.visible ? "Ẩn món" : "Hiện món";
+
+                    console.log(`Món ${item.name} giờ là: ${item.visible ? 'Hiện' : 'Ẩn'}`);
+                } else {
+                    alert("Thao tác thất bại rồi Ngân!");
                 }
-
-                const result = await res.json();
-
-                // Cập nhật lại đúng tên biến Visible
-                item.Visible = result.Visible;
-
-                // PHẢI TRUYỀN dataToRender VÀO ĐÂY ĐỂ VẼ LẠI
-                renderMenu(dataToRender);
-
             } catch (err) {
-                console.error("Toggle error:", err);
+                console.error("Lỗi Toggle:", err);
             }
         });
 
         menuContainer.appendChild(div);
     });
 }
+
     // ===== INIT =====
     loadMenu();
 
