@@ -244,12 +244,10 @@ def cancel_expired_bookings():
 
 # ================== HISTORY ==================
 def get_history(user_id, keyword):
-    print(f"--- DEBUG: Đang tìm lịch sử cho UserID: '{user_id}' (Kiểu: {type(user_id)}) ---")
-    print(f"---- DEBUG: UserID={user_id}, Keyword={keyword} ----")
-
     if not user_id:
         return []
 
+    # Chỉ lấy các booking thuộc về user đang đăng nhập
     query = db.session.query(
         Reservation,
         Restaurant.RestaurantName
@@ -259,19 +257,16 @@ def get_history(user_id, keyword):
         Reservation.UserID == str(user_id)
     )
 
-    # Nếu có keyword thì filter thêm
+    # Nếu có keyword (tìm theo tên khách hoặc ID booking)
     if keyword:
-        # 1. Tạo một list các điều kiện filter
         filters = [Reservation.CustomerName.ilike(f"%{keyword}%")]
-
-        # 2. Nếu keyword là số thì mới cho phép tìm theo ID
         if keyword.isdigit():
             filters.append(Reservation.ReservationID == int(keyword))
-
-        # 3. Áp dụng filter bằng or_
+        
         query = query.filter(or_(*filters))
 
     results = query.order_by(Reservation.ReservationID.desc()).all()
+
 
     result = []
     for r, restaurant_name in results:

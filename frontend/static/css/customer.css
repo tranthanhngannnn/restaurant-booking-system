@@ -424,7 +424,9 @@ table th {
    max-height: 80vh;
    overflow-y: auto;
    position: relative;
+   text-align: center;
 }
+
 .popup-content input,
 .popup-content textarea {
    width: 100%;

@@ -11,6 +11,8 @@ from models.food import Food
 from schemas.menu_schema import MenuSchema
 from schemas.table_schema import TableSchema
 from schemas.booking_schema import BookingSchema
+import os
+from werkzeug.utils import secure_filename
 
 menu_schema = MenuSchema()
 menus_schema = MenuSchema(many=True)
@@ -86,28 +88,6 @@ def get_res_menu(restaurant_id):
     return result
 
 
-def create_food(data):
-    food = Menu(
-        FoodName=data.get('FoodName'),
-        Price=data.get('Price'),
-        Description=data.get('Description'),
-        Image=data.get('Image'),
-        Category=data.get('Category'),
-        RestaurantID=data.get('RestaurantID')
-    )
-    db.session.add(food)
-    db.session.commit()
-    return menu_schema.dump(food)
-
-
-def delete_food(id):
-    food = Menu.query.get(id)
-    if not food:
-        return {"error": "Food not found"}
-
-    db.session.delete(food)
-    db.session.commit()
-    return {"msg": "Deleted"}
 
 
 def get_tables(res_id):
@@ -229,6 +209,103 @@ def delete_booking(id):
 def get_booking_by_table_service(id):
     bookings = Reservation.query.filter_by(TableID=id).all()
     return bookings_schema.dump(bookings)
+
+def create_food(data, res_id):
+    try:
+        import random
+        import string
+        
+        # Tạo FoodID ngẫu nhiên 5 ký tự (vì trong model là String(5))
+        food_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        while Food.query.get(food_id):
+            food_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+
+        food = Food(
+            FoodID=food_id,
+            FoodName=data.get("name"),
+            Price=data.get("price"),
+            Image_URL=data.get("image"),
+            Category=data.get("category"),
+            RestaurantID=res_id,
+            Visible=True
+        )
+
+        db.session.add(food)
+        db.session.commit()
+
+        print(f"ĐÃ THÊM MÓN: {food.FoodName} (ID: {food.FoodID})")
+
+        return {
+            "msg": "Thêm thành công",
+            "id": food.FoodID
+        }
+
+    except Exception as e:
+        db.session.rollback()
+        print("LỖI DB KHI THÊM MÓN:", e)
+        return {"error": str(e)}
+
+
+def delete_food(id):
+    food = Food.query.get(id)
+    if not food:
+        return {"error": "Food not found"}
+
+    db.session.delete(food)
+    db.session.commit()
+    return {"msg": "Deleted"}
+
+def update_food(id, data):
+    food = Food.query.get(id)
+
+    if not food:
+        return {"error": "Food not found"}
+
+    # cập nhật dữ liệu (sử dụng đúng tên field của model Food)
+    if data.get("name"):
+        food.FoodName = data.get("name")
+    
+    if data.get("price"):
+        food.Price = data.get("price")
+        
+    if data.get("category"):
+        food.Category = data.get("category")
+
+    # Xử lý hình ảnh
+    image_file = data.get("image_file")
+    if image_file and image_file.filename != '':
+        filename = secure_filename(image_file.filename)
+        # Đường dẫn lưu file (Dựa vào cấu trúc thư mục của bạn)
+        # backend/app/api/v1/restaurant/service.py -> frontend/static/images
+        upload_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../frontend/static/images"))
+        
+        if not os.path.exists(upload_path):
+            os.makedirs(upload_path)
+            
+        file_path = os.path.join(upload_path, filename)
+        image_file.save(file_path)
+        
+        # Lưu đường dẫn tương đối để frontend hiển thị
+        food.Image_URL = f"/static/images/{filename}"
+    elif data.get("image"):
+        # Nếu gửi link ảnh trực tiếp (như cũ)
+        food.Image_URL = data.get("image")
+
+    # Nếu không có image_file và không có data.get("image"), 
+    # thì food.Image_URL vẫn giữ nguyên giá trị cũ.
+
+    db.session.commit()
+
+    return {
+        "msg": "Updated",
+        "data": {
+            "id": food.FoodID,
+            "name": food.FoodName,
+            "price": food.Price,
+            "image": food.Image_URL,
+            "category": food.Category
+        }
+    }
 
 
 class RestaurantService:

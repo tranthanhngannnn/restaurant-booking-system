@@ -84,11 +84,33 @@ def get_restaurant_list():
         for r in restaurants
     ])
 
-@restaurant_bp.route('/menu', methods=['POST'])
-def create_food_api():
-    return jsonify(create_food(request.json))
 
-@restaurant_bp.route('/menu/<int:id>', methods=['DELETE'])
+@restaurant_bp.route('/menu', methods=['POST'])
+@jwt_required()
+def create_food_api():
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+
+    if not user_info or not user_info.RestaurantID:
+        return jsonify({"message": "Nhân viên chưa được phân công nhà hàng!"}), 400
+
+    return jsonify(create_food(request.json, user_info.RestaurantID))
+
+
+@restaurant_bp.route('/menu/<id>', methods=['PUT'])
+def update_food_api(id):
+    if request.is_json:
+        data = request.json
+    else:
+        # Xử lý form-data (gửi từ frontend khi có file)
+        data = request.form.to_dict()
+        image_file = request.files.get('image')
+        if image_file:
+            data['image_file'] = image_file
+            
+    return jsonify(update_food(id, data))
+
+@restaurant_bp.route('/menu/<id>', methods=['DELETE'])
 def delete_food_api(id):
     return jsonify(delete_food(id))
 
