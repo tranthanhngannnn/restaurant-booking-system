@@ -133,19 +133,30 @@
     }
 
     // 6. Gửi Order
-     async function createOrder() {
-        if (order.length === 0) return alert("Chưa có món");
+     async function createOrder(){
+           if(order.length === 0){
+            alert("Chưa có món");
+            return;
+            }
+
         const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ table_id: parseInt(tableId), items: order.map(i => ({ food_id: i.food_id, qty: i.qty })) })
-        });
-        if (res.ok) {
-        alert("Đã gửi order");
-        order = [];
-        renderOrder();
-        }
-    }
+         method: "POST",
+         headers: {"Content-Type":"application/json"},
+         body: JSON.stringify({
+         table_id: parseInt(tableId),
+         items: order.map(i => ({
+         food_id: i.food_id,
+         qty: i.qty
+      }))
+    })
+  });
+
+  if(res.ok){
+    alert("Đã gửi order");
+  } else {
+    alert("Lỗi gửi order");
+  }
+}
 
     // Load lại Order đã lưu nếu có
     function loadSavedOrder() {

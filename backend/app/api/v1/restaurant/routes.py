@@ -125,8 +125,15 @@ def get_tables_api():
     return jsonify(tables)
 
 @restaurant_bp.route('/tables', methods=['POST'])
+@jwt_required()
 def create_table_api():
-    return jsonify(create_table(request.json))
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    # Lấy đúng ID nhà hàng của người đang đăng nhập
+    res_id = user_info.RestaurantID
+    data = request.json
+    return jsonify(create_table(data, res_id))
+
 
 @restaurant_bp.route("/bookings", methods=["POST"])
 def add_booking():

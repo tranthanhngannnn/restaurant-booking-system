@@ -112,7 +112,7 @@ def get_tables(res_id):
     return result
 
 
-def create_table(data):
+def create_table(data, res_id):
     existing = Tables.query.filter_by(TableNumber=data.get('TableNumber')).first()
     if existing:
         return {"error": "Table already exists"}
@@ -121,7 +121,7 @@ def create_table(data):
         TableNumber=data.get('TableNumber'),
         Capacity=int(data.get('Capacity', 4) or 4),
         Status=data.get('Status', 'Available'),
-        RestaurantID=data.get('RestaurantID')
+        RestaurantID=res_id
     )
     db.session.add(table)
     db.session.commit()

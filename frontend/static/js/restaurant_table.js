@@ -1,12 +1,7 @@
 const TABLE_API = "http://127.0.0.1:5000/api/v1/restaurant/tables";
 
-const modal = document.getElementById("booking-modal");
-const modalClose = document.getElementById("modal-close");
-const bookingForm = document.getElementById("booking-form");
-const bookingTableId = document.getElementById("booking-table-id");
-const customerNameInput = document.getElementById("customer-name");
-const customerCountInput = document.getElementById("customer-count");
 const messageBox = document.getElementById("restaurant-page-message");
+
 const tablePanel = document.getElementById("table-management-panel");
 const logoutButton = document.getElementById("logoutButton");
 const navButtons = document.querySelectorAll("[data-panel-target]");
@@ -23,6 +18,7 @@ function getAuthHeaders(includeJson = true) {
     return headers;
 }
 
+//hiển thị thông báo
 function showPageMessage(message, type = "info") {
     if (!messageBox) return;
     messageBox.hidden = false;
@@ -30,6 +26,7 @@ function showPageMessage(message, type = "info") {
     messageBox.className = `staff-restaurant-message ${type}`;
 }
 
+//ẩn thông báo
 function clearPageMessage() {
     if (!messageBox) return;
     messageBox.hidden = true;
@@ -37,6 +34,7 @@ function clearPageMessage() {
     messageBox.className = "staff-restaurant-message";
 }
 
+//đăng kí nhà hàng mới
 function setActivePanel(panelName) {
     if (panelName === "register") {
         window.location.href = "register_restaurant.html";
@@ -56,6 +54,7 @@ function setActivePanel(panelName) {
     }
 }
 
+
 function renderTableCard(table) {
     let capacity = table.capacity;
     let extraClass = "";
@@ -66,13 +65,14 @@ function renderTableCard(table) {
     }
 
     if (table.status === "available" || table.status === "Trống" || table.status === "Available") {
-        return `<div class="card available ${extraClass}" onclick="openBookingModal(${table.id}, ${capacity})">
+        return `<div class="card available ${extraClass}">
             <div class="icon">🍽️</div>
             <h3>Bàn ${table.id}</h3>
             <p>Trống</p>
             <p>${capacity} người</p>
         </div>`;
     }
+
 
     if (table.status === "Reserved" || table.status === "Confirmed") {
         return `<div class="card reserved ${extraClass}" onclick="openOrder(${table.id})">
@@ -81,11 +81,11 @@ function renderTableCard(table) {
             <p>👤 ${table.customer_name || ""}</p>
             <p>${capacity} người</p>
             <div class="actions">
-                <button onclick="editBooking(event, ${table.id}, '${table.customer_name || ""}', ${table.customer_count || 1}, ${capacity})">Sửa</button>
                 <button onclick="cancelBooking(event, ${table.id})">Hủy</button>
             </div>
         </div>`;
     }
+
 
     return `<div class="card ${extraClass}">
         <div class="icon">🍽️</div>
@@ -114,15 +114,6 @@ async function loadTables() {
     }
 }
 
-
-function openBookingModal(tableId, capacity) {
-    bookingTableId.value = tableId;
-    customerCountInput.value = capacity;
-    customerCountInput.max = capacity;
-    customerNameInput.value = "";
-    modal.classList.add("show");
-    customerNameInput.focus();
-}
 
 async function updateTableStatus(tableId, payload) {
     const response = await fetch(`${TABLE_API}/${tableId}/status`, {
@@ -155,15 +146,9 @@ async function cancelBooking(event, id) {
     }
 }
 
-function editBooking(event, id, name, count, capacity) {
-    event.stopPropagation();
-    bookingTableId.value = id;
-    customerNameInput.value = name || "";
-    customerCountInput.value = count || 1;
-    customerCountInput.max = capacity;
-    modal.classList.add("show");
-}
 
+
+// thêm bàn mới
 async function addTable() {
     const capacity = parseInt(prompt("Nhập số chỗ ngồi:"), 10);
     if (!capacity || capacity <= 0) {
@@ -172,6 +157,7 @@ async function addTable() {
     }
 
     try {
+        // 1. Lấy danh sách bàn hiện tại để tính số bàn mới (tự tăng)
         const listResponse = await fetch(TABLE_API, {
             method: "GET",
             headers: getAuthHeaders(true)
@@ -179,6 +165,7 @@ async function addTable() {
         const tables = await listResponse.json();
         const newNumber = tables.length + 1;
 
+        // 2. Gửi request POST thêm bàn mới
         const createResponse = await fetch(TABLE_API, {
             method: "POST",
             headers: getAuthHeaders(true),
@@ -189,20 +176,27 @@ async function addTable() {
             })
         });
 
-        if (!createResponse.ok) {
-            throw new Error("Không thêm được bàn mới.");
+        if (createResponse.ok) {
+            showPageMessage("Đã thêm bàn mới thành công!", "success");
+            await loadTables(); // Reload lại danh sách bàn trên giao diện
+        } else {
+            const errorData = await createResponse.json();
+            throw new Error(errorData.error || "Không thêm được bàn mới.");
         }
 
-        await loadTables();
-        showPageMessage("Đã thêm bàn mới.", "success");
-    } catch (error) {
-        showPageMessage(error.message || "Lỗi thêm bàn.", "error");
+    } catch (err) {
+        console.error("Lỗi addTable:", err);
+        showPageMessage(err.message || "Lỗi hệ thống khi thêm bàn.", "error");
     }
 }
 
-function openOrder(id) {
-    window.location.href = `./orders.html?table_id=${id}`;
+
+
+function openOrder(id){
+  window.location.href = `./orders.html?table_id=${id}` ;
 }
+window.onload = loadTables;
+
 
 
 function handleLogout() {
@@ -212,45 +206,7 @@ function handleLogout() {
     window.location.href = "../auth/login.html";
 }
 
-bookingForm.onsubmit = async (event) => {
-    event.preventDefault();
 
-    const id = bookingTableId.value;
-    const customerName = customerNameInput.value.trim();
-    const customerCount = parseInt(customerCountInput.value, 10);
-    const maxCapacity = Number(customerCountInput.max);
-
-    if (customerCount > maxCapacity) {
-        showPageMessage(`Bàn này chỉ tối đa ${maxCapacity} người.`, "error");
-        return;
-    }
-
-    if (!customerName || !customerCount || customerCount <= 0) {
-        showPageMessage("Vui lòng nhập thông tin đặt bàn hợp lệ.", "error");
-        return;
-    }
-
-    try {
-        await updateTableStatus(id, {
-            Status: "Reserved",
-            customer_name: customerName,
-            customer_count: customerCount
-        });
-
-        modal.classList.remove("show");
-        await loadTables();
-        showPageMessage("Đặt bàn thành công.", "success");
-    } catch (error) {
-        showPageMessage(error.message || "Không kết nối được server.", "error");
-    }
-};
-
-modalClose.onclick = () => modal.classList.remove("show");
-window.onclick = (event) => {
-    if (event.target === modal) {
-        modal.classList.remove("show");
-    }
-};
 
 navButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -260,9 +216,9 @@ navButtons.forEach((button) => {
 
 if (logoutButton) logoutButton.addEventListener("click", handleLogout);
 
-window.openBookingModal = openBookingModal;
+
 window.cancelBooking = cancelBooking;
-window.editBooking = editBooking;
+
 window.addTable = addTable;
 window.openOrder = openOrder;
 
