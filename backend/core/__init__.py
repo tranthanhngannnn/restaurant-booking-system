@@ -43,6 +43,11 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
     app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurant')
     app.register_blueprint(customer_bp, url_prefix="/api/v1/customer")
+    app.add_url_rule(
+        '/api/v1/restaurants/registerRestaurant',
+        view_func=app.view_functions['restaurant.staff_register_restaurant'],
+        methods=['POST']
+    )
 
     @login_manager.user_loader
     def load_user(user_id):

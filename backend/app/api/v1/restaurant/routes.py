@@ -23,7 +23,11 @@ def staff_register_restaurant():
         "RestaurantName": request.form.get('RestaurantName'),
         "Address": request.form.get('Address'),
         "Phone": request.form.get('Phone'),
+        "Email": request.form.get('Email'),
         "CuisineID": request.form.get('CuisineID'),
+        "Opentime": request.form.get('Opentime'),
+        "Closetime": request.form.get('Closetime'),
+        "description": request.form.get('description'),
         "UserID": get_jwt_identity()
     }
     result, status = RestaurantService.create(data, is_admin=False)

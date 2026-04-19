@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Quản Lý Nhà Hàng</title>
     <link rel="stylesheet" href="../../static/css/admin.css">
-    <link rel="stylesheet" href="../../static/css/restaurant.css">
 </head>
 <body>
 <header class="admin-header">
@@ -19,37 +18,46 @@
             <a href="restaurants.html" class="nav-item">Restaurants</a>
             <a href="cuisine.html" class="nav-item">Cuisine</a>
             <a href="users.html" class="nav-item">Users</a>
+            <a href="report.html" class="nav-item">Report</a>
         </nav>
 
         <button onclick="handleLogout()" class="btn-logout">Đăng xuất</button>
     </div>
 </header>
-<div class="res-container">
-    <div class="header">
-        <h2>Quản Lý Nhà Hàng</h2>
+
+<main class="res-container admin-restaurants-shell">
+    <div class="admin-restaurants-toolbar">
+        <div>
+            <h2>Quản Lý Nhà Hàng</h2>
+            <p>Hiển thị đầy đủ danh sách nhà hàng và xử lý duyệt yêu cầu đang chờ.</p>
+        </div>
         <button class="btn-add" onclick="prepareAdd()">+ Thêm Nhà Hàng</button>
     </div>
 
-    <table class="res-table">
-        <thead>
-        <tr>
-            <th>ID Nhà Hàng</th>
-            <th>Tên Nhà Hàng</th>
-            <th>Địa Chỉ</th>
-            <th>Liên hệ</th>
-            <th>Email</th>
-            <th>Thời Gian Mở</th>
-            <th>Thời Gian Đóng</th>
-            <th>Descripton</th>
-            <th>Chủ Nhà Hàng</th>
-            <th>Ẩm thực</th>
-            <th>Trạng thái</th>
-            <th class="res-col-action">Thao tác</th>
-        </tr>
-        </thead>
-        <tbody id="res-list-body"></tbody>
-    </table>
-</div>
+    <div id="restaurant-admin-message" class="admin-restaurants-message" hidden></div>
+
+    <div class="table-responsive">
+        <table class="res-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên Nhà Hàng</th>
+                <th>Địa Chỉ</th>
+                <th>Liên hệ</th>
+                <th>Email</th>
+                <th>Mở cửa</th>
+                <th>Đóng cửa</th>
+                <th>Mô tả</th>
+                <th>Chủ Nhà Hàng</th>
+                <th>Ẩm thực</th>
+                <th>Trạng thái</th>
+                <th class="res-col-action">Thao tác</th>
+            </tr>
+            </thead>
+            <tbody id="res-list-body"></tbody>
+        </table>
+    </div>
+</main>
 
 <div id="appModalWrapper" class="app-modal-overlay" onclick="handleOverlayClick(event)">
     <div class="app-modal-window">
@@ -91,9 +99,11 @@
                     </div>
                     <div class="app-form-group">
                         <label for="res-status">Trạng thái:</label>
-                        <select id="res-status">
-                            <option value="ACTIVE">Hoạt động</option>
-                            <option value="INACTIVE">Ngưng hoạt động</option>
+                        <select id="res-status" name="status">
+                            <option value="Đang hoạt động">Hoạt động</option>
+                            <option value="Ngưng hoạt động">Ngưng hoạt động</option>
+                            <option value="Đang chờ duyệt">Đang chờ duyệt</option>
+                            <option value="Từ chối">Từ chối</option>
                         </select>
                     </div>
                     <div class="app-form-group admin-only" id="adminFieldContainer">
@@ -119,12 +129,55 @@
     </div>
 </div>
 
+<div id="approvalModal" class="admin-approval-modal" onclick="handleApprovalOverlayClick(event)">
+    <div class="admin-approval-window">
+        <div class="admin-approval-header">
+            <div>
+                <p class="admin-approval-kicker">Pending approval</p>
+                <h3>Duyệt nhà hàng</h3>
+            </div>
+            <button type="button" class="admin-approval-close" onclick="closeApprovalModal()">&times;</button>
+        </div>
+
+        <div class="admin-approval-body">
+            <div class="admin-approval-summary">
+                <div class="admin-approval-item">
+                    <span>Tên nhà hàng</span>
+                    <strong id="approval-restaurant-name">-</strong>
+                </div>
+                <div class="admin-approval-item">
+                    <span>Chủ nhà hàng</span>
+                    <strong id="approval-restaurant-user">-</strong>
+                </div>
+                <div class="admin-approval-item">
+                    <span>Loại ẩm thực</span>
+                    <strong id="approval-restaurant-cuisine">-</strong>
+                </div>
+                <div class="admin-approval-item">
+                    <span>Trạng thái hiện tại</span>
+                    <strong id="approval-restaurant-status">-</strong>
+                </div>
+            </div>
+
+            <div class="admin-approval-note">
+                <label for="approval-note">Ghi chú duyệt</label>
+                <textarea id="approval-note" rows="4" placeholder="Ghi chú nội bộ nếu cần..."></textarea>
+            </div>
+        </div>
+
+        <div class="admin-approval-actions">
+            <button type="button" class="admin-approval-reject" id="approvalRejectButton">Từ chối</button>
+            <button type="button" class="admin-approval-approve" id="approvalApproveButton">Duyệt</button>
+        </div>
+    </div>
+</div>
+
 <script src="../../static/js/restaurants.js"></script>
 <script>
-    // Logic đăng xuất
     function handleLogout() {
         if (confirm("Bạn có chắc muốn đăng xuất không?")) {
             localStorage.removeItem('token');
+            localStorage.removeItem('role');
             window.location.href = "../auth/login.html";
         }
     }
