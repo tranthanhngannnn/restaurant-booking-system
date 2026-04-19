@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký nhà hàng</title>
+    <link rel="stylesheet" href="../../static/css/restaurant.css">
+    <link rel="stylesheet" href="../../static/css/admin.css">
+</head>
+<body>
+<div class="container">
+    <div class="sidebar staff-restaurant-sidebar">
+        <div class="staff-restaurant-sidebar-top">
+            <h2>Restaurant</h2>
+            <ul>
+                <li>
+                    <button type="button" class="staff-restaurant-nav-button" data-panel-target="tables">
+                        Quản lý bàn
+                    </button>
+                </li>
+                <li>
+                    <a href="comfirmbooking.html" class="staff-restaurant-nav-link">Xác nhận đặt bàn</a>
+                </li>
+                <li>
+                    <button type="button" class="staff-restaurant-nav-button is-active" data-panel-target="register">
+                        Đăng ký nhà hàng
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="staff-restaurant-sidebar-bottom">
+            <button type="button" id="logoutButton" class="staff-restaurant-logout">
+                Đăng xuất
+            </button>
+        </div>
+    </div>
+
+    <div class="main">
+        <div id="restaurant-page-message" class="staff-restaurant-message" hidden></div>
+
+        <!-- SectionTable Management removed here -->
+
+        <section id="restaurant-registration-panel" class="staff-restaurant-panel">
+            <div class="staff-restaurant-form-shell">
+                <div class="staff-restaurant-form-header">
+                    <div>
+                        <p class="staff-restaurant-eyebrow">Restaurant onboarding</p>
+                        <h2>Đăng ký nhà hàng mới</h2>
+                        <p>Điền đầy đủ thông tin để gửi yêu cầu cho admin duyệt nhà hàng.</p>
+                    </div>
+                </div>
+
+                <form id="restaurant-register-form" class="staff-restaurant-form-grid">
+                    <div class="staff-restaurant-field">
+                        <label for="register-restaurant-name">Tên nhà hàng</label>
+                        <input id="register-restaurant-name" name="RestaurantName" type="text" required>
+                    </div>
+
+                    <div class="staff-restaurant-field">
+                        <label for="register-restaurant-address">Địa chỉ</label>
+                        <input id="register-restaurant-address" name="Address" type="text" required>
+                    </div>
+
+                    <div class="staff-restaurant-field">
+                        <label for="register-restaurant-phone">SĐT</label>
+                        <input id="register-restaurant-phone" name="Phone" type="text" required>
+                    </div>
+
+                    <div class="staff-restaurant-field">
+                        <label for="register-restaurant-email">Email</label>
+                        <input id="register-restaurant-email" name="Email" type="email" required>
+                    </div>
+
+                    <div class="staff-restaurant-field">
+                        <label for="register-restaurant-cuisine">Loại ẩm thực</label>
+                        <select id="register-restaurant-cuisine" name="CuisineID" required>
+                            <option value="">Đang tải loại ẩm thực...</option>
+                        </select>
+                    </div>
+
+                    <div class="staff-restaurant-field">
+                        <label for="register-restaurant-open">Giờ mở cửa</label>
+                        <input id="register-restaurant-open" name="Opentime" type="time" required>
+                    </div>
+
+                    <div class="staff-restaurant-field">
+                        <label for="register-restaurant-close">Giờ đóng cửa</label>
+                        <input id="register-restaurant-close" name="Closetime" type="time" required>
+                    </div>
+
+                    <div class="staff-restaurant-field staff-restaurant-field-full">
+                        <label for="register-restaurant-description">Mô tả nhà hàng</label>
+                        <textarea id="register-restaurant-description" name="description" rows="5" required></textarea>
+                    </div>
+
+                    <div class="staff-restaurant-actions staff-restaurant-field-full">
+                        <button type="button" id="register-cancel-button" class="staff-restaurant-secondary">
+                            Hủy
+                        </button>
+                        <button type="submit" id="register-submit-button" class="staff-restaurant-primary">
+                            Đăng ký
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script src="../../static/js/register_restaurant.js"></script>
+</body>
+</html>
