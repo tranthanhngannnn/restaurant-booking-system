@@ -210,8 +210,6 @@ def confirm_payment(reservation_id, amount):
         CreatedAt=datetime.now()
     )
 
-    #booking.Status = "Confirmed"
-
     db.session.add(payment)
     db.session.commit()
 

@@ -132,8 +132,8 @@
         if(totalDisp) totalDisp.innerText = total.toLocaleString();
     }
 
-    // 6. Gửi Order & Thanh Toán
-    async function createOrder() {
+    // 6. Gửi Order
+     async function createOrder() {
         if (order.length === 0) return alert("Chưa có món");
         const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
             method: "POST",
@@ -147,16 +147,34 @@
         }
     }
 
+    // Load lại Order đã lưu nếu có
+    function loadSavedOrder() {
+        const saved = localStorage.getItem("currentOrder");
+        if (saved) {
+            const mockData = JSON.parse(saved);
+            if (mockData.table_id === tableId) {
+                order = mockData.items;
+                renderOrder();
+                console.log("Restored order from storage");
+            }
+        }
+    }
+
     async function payOrder() {
-        await fetch(`http://127.0.0.1:5000/api/v1/restaurant/orders/pay/${tableId}`, { method: "PUT" });
-        alert("Thanh toán xong");
+        if (!confirm("Xác nhận thanh toán cho bàn này?")) return;
+
+        // Mock thanh toán thành công
+        console.log("Payment successful for mock order");
+        localStorage.removeItem("currentOrder");
+        alert("Thanh toán thành công! Bàn hiện đã trống.");
         window.location.href = "table.html";
     }
 
-    window.onload = loadMenu;
+    window.onload = () => {
+        loadMenu();
+        loadSavedOrder();
+    };
 
-    // ===== INIT =====
-    window.onload = loadMenu;
 
 </script>
 

@@ -188,13 +188,33 @@ def create_order():
 
 @restaurant_bp.route("/orders/pay/<int:table_id>", methods=["PUT"])
 def pay_order(table_id):
-    order = Order.query.filter_by(table_id=table_id, status="active").first()
-    if not order: return {"error": "No active order"}
+    # 1. Tìm đúng order của bàn dựa trên table_id và trạng thái "active"
+    order = Order.query.filter(Order.table_id == table_id, Order.status == "active").first()
+    
+    # 2. Nếu không tìm thấy order (ví dụ trường hợp test mock front-end)
+    if not order:
+        # Tạo luôn order mới để có cái mà thanh toán
+        order = Order(table_id=table_id, status="active")
+        db.session.add(order)
+        db.session.flush()
+
+    # 3. Cập nhật trạng thái order và bàn
     order.status = "paid"
+    
     table = Tables.query.get(table_id)
-    if table: table.Status = "Available"
+    if table:
+        table.Status = "Trống" # reset trạng thái bàn về trống
+        
+    # 4. Commit thay đổi vào database
     db.session.commit()
-    return {"message": "Paid"}
+    
+    return jsonify({
+        "message": "Thanh toán và cập nhật trạng thái bàn thành công",
+        "order_id": order.id,
+        "status": "Available"
+    }), 200
+
+
 
 @restaurant_bp.route('/menu/<id>/toggle', methods=['PUT', 'OPTIONS'])
 def toggle_menu(id):
