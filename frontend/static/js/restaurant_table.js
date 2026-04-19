@@ -191,12 +191,10 @@ async function addTable() {
 }
 
 
-
 function openOrder(id){
   window.location.href = `./orders.html?table_id=${id}` ;
 }
 window.onload = loadTables;
-
 
 
 function handleLogout() {
@@ -205,7 +203,6 @@ function handleLogout() {
     localStorage.removeItem("role");
     window.location.href = "../auth/login.html";
 }
-
 
 
 navButtons.forEach((button) => {
