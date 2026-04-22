@@ -7,7 +7,7 @@
 ## 1. Công việc đã hoàn thành
 |     Thành viên          |    MSSV    |                                    Công việc                                                                   |                                                           Link Commit/PR                                       |
 |-------------------------|------------|----------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| Trần Thanh Ngân         | 2254050041 | Hoàn thiện frontend module Admin (BE+FE Báo Cáo)                                                               | https://github.com/tranthanhngannnn/restaurant-booking-system/commit/26215a5dd7fd6282b5da7d1f1b4f1b3a83cd87d3  |
+| Trần Thanh Ngân         | 2254050041 | Hoàn thiện frontend module Admin (BE+FE Báo Cáo) & Merge Code                                                  | https://github.com/tranthanhngannnn/restaurant-booking-system/commit/26215a5dd7fd6282b5da7d1f1b4f1b3a83cd87d3  |
 | Nguyễn Thị Hạnh Quyên   | 2254050056 |                                                                                                                |                                                                                                                |
 | Nguyễn Huỳnh Hoàng Thái | 2351050160 | Hoàn thiện frontend module Restaurant (FE CRUD Bàn)                                                            | https://github.com/tranthanhngannnn/restaurant-booking-system/commit/a90037453363a0bb11f1a8871b9e62377ddd59c4  |                                                                                                             |
 
