@@ -1,14 +1,14 @@
 from flask import request, jsonify, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from models.menu import Menu
-from models.tables import Tables
-from models.booking import Reservation
-from models.orders import Order
-from models.food import Food
-from models.ordersitem import OrderItem
-from core.extensions import db
-from models.user import User
-from app.api.v1.restaurant.service import RestaurantService
+from backend.models.menu import Menu
+from backend.models.tables import Tables
+from backend.models.booking import Reservation
+from backend.models.orders import Order
+from backend.models.food import Food
+from backend.models.ordersitem import OrderItem
+from backend.core.extensions import db
+from backend.models.user import User
+from backend.app.api.v1.restaurant.service import RestaurantService
 from .service import *
 
 restaurant_bp = Blueprint('restaurant', __name__)

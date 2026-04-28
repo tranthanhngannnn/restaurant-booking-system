@@ -29,7 +29,7 @@
             <header>Đăng nhập</header>
         </div>
 
-        <form action="/login" method="POST">
+        <form onsubmit="return false;">
             <div class="input-box">
                 <input type="text" class="input-field" placeholder="Tên đăng nhập" name="username">
                 <i class="bx bx-user"></i>
@@ -64,6 +64,7 @@
                 // Lưu token vào máy để các trang sau kiểm tra quyền đăng nhập
                 localStorage.setItem('token', result.access_token);
                 localStorage.setItem('role', result.role);
+                localStorage.setItem('user_id', result.user_info?.id)
 
                 alert("Đăng nhập thành công!");
 

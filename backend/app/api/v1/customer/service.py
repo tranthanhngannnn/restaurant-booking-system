@@ -1,10 +1,10 @@
-from models.menu import Menu
-from models.tables import Tables
-from models.booking import Reservation
-from core.extensions import db
+from backend.models.menu import Menu
+from backend.models.tables import Tables
+from backend.models.booking import Reservation
+from backend.core.extensions import db
 from datetime import datetime, timedelta
-from models.payment import Payment
-from models.restaurant import Restaurant
+from backend.models.payment import Payment
+from backend.models.restaurant import Restaurant
 from flask_jwt_extended import get_jwt_identity
 from flask_login import current_user
 from sqlalchemy import or_
@@ -85,20 +85,28 @@ def create_booking(data):
     cancel_expired_bookings()
 
     # 2. Rút trích tất cả dữ liệu từ cục 'data' frontend gửi lên
-    customer_name = data.get("name")
-    phone = data.get("phone")
-    restaurant_id = data.get("restaurant_id")
-    table_id = data.get("table_id")
-    booking_date = data.get("date")
-    booking_time = data.get("time")
-    people_str = data.get("people")
+    try:
+        customer_name = data.get("name")
+        phone = data.get("phone")
+        restaurant_id = int(data.get("restaurant_id"))
+        table_id = int(data.get("table_id"))
+        people_str = int(data.get("people"))
+
+        booking_date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+        booking_time = datetime.strptime(data.get("time"), "%H:%M").time()
+    except:
+        return {"error": "Dữ liệu không hợp lệ"}
 
     # 3. Bẫy lỗi dữ liệu trống
     if not customer_name:
-        return {"error": "Customer name is required"}
+        return {"error": "Thiếu tên khách"}
+    if not phone:
+        return {"error": "Thiếu số điện thoại"}
+    table = Tables.query.get(table_id)
+    if not table or table.RestaurantID != restaurant_id:
+        return {"error": "Bàn không hợp lệ"}
     if not table_id or not restaurant_id:
         return {"error": "Thiếu thông tin nhà hàng hoặc bàn"}
-
     # Ép kiểu dữ liệu để so sánh trong SQL
     table_id = int(table_id)
     guest_count = int(people_str)

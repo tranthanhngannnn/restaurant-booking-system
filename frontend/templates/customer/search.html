@@ -103,8 +103,10 @@
 
     window.onload = () => {
         const historyLink = document.getElementById("historyLink")
-        fetch(`${API}/me`, {
-            credentials: "include"
+       fetch(`${API}/me`, {
+            headers: {
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            }
         })
                 .then(res => res.json())
                 .then(data => {

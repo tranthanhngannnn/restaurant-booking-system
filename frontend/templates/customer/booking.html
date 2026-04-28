@@ -97,7 +97,10 @@
         const historyLink = document.getElementById("historyLink")
 
         fetch(`${API}/me`, {
-            credentials: "include"
+            //credentials: "include"
+            headers: {
+        "Authorization": "Bearer " + localStorage.getItem("token")
+    }
         })
                 .then(res => res.json())
                 .then(data => {
@@ -168,8 +171,22 @@
 
 
         // VALIDATION
+
         if (!name || !phone || !date || !time || !people) {
             alert("Vui lòng nhập đầy đủ thông tin!")
+            return
+        }
+        if (!/^0\d{9}$/.test(phone)) {
+            alert("SĐT phải gồm 10 số và bắt đầu bằng 0")
+            return
+        }
+
+        // DATE quá khứ
+        const now = new Date()
+        const inputDate = new Date(date + "T" + time)
+
+        if (inputDate < now) {
+            alert("Không thể đặt ngày trong quá khứ")
             return
         }
 
@@ -189,6 +206,7 @@
             alert(`Chỉ được đặt từ ${open} đến ${close}`)
             return
         }
+
 
         // CALL API
         fetch(`${API}/check?restaurant_id=${restaurant_id}&date=${date}&time=${time}&people=${people}`)
@@ -218,11 +236,11 @@
     }
 
     // CREATE BOOKING
-    function createBooking() {
-
+        function createBooking() {
         fetch(`${API}/book`, {
             method: "POST",
-            headers: {"Content-Type": "application/json",
+            headers: {
+                "Content-Type": "application/json",
                 "Authorization": "Bearer " + localStorage.getItem("token")
             },
             body: JSON.stringify({
@@ -236,12 +254,18 @@
                 note: noteInput.value
             })
         })
-                .then(res => res.json())
-                .then(data => {
-                    reservationId = data.reservation_id
-                    bookingData = data
-                    openPayment()
-                })
+        .then(async res => {
+            const data = await res.json()
+            if (!res.ok) {
+                alert(data.error || "Có lỗi xảy ra!")
+                return
+            }
+
+            // chỉ chạy khi SUCCESS
+            reservationId = data.reservation_id
+            bookingData = data
+            openPayment()
+        })
     }
 
     // PAYMENT
@@ -265,21 +289,24 @@
     function confirmPayment() {
         fetch(`${API}/payment`, {
             method: "POST",
-            headers: {"Content-Type": "application/json"}, credentials: "omit",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + localStorage.getItem("token")
+            },
             body: JSON.stringify({
                 reservation_id: reservationId,
                 amount: bookingData.deposit
             })
         })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error)
-                        return
-                    }
-                    closePayment()
-                    showSuccess()
-                })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error)
+                return
+            }
+            closePayment()
+            showSuccess()
+        })
     }
 
     // SUCCESS
@@ -293,10 +320,8 @@
     }
 
     function logout() {
-        fetch(`${API}/logout`, {
-            credentials: "include"
-        })
-                .then(() => location.reload())
+           localStorage.removeItem("token")
+    window.location.href = "home.html"
     }
 </script>
 
