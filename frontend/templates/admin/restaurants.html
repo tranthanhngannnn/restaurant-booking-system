@@ -1,10 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Quản Lý Nhà Hàng</title>
+    <link rel="stylesheet" href="../../static/css/admin.css">
 </head>
 <body>
+<header class="admin-header">
+    <div class="header-left">
+        <a href="homepage.html" style="text-decoration: none;">
+            <h1 class="logo">GOLDEN <span>HARVEST</span></h1>
+        </a>
+    </div>
 
+    <div class="header-right">
+        <nav class="admin-nav">
+            <a href="restaurants.html" class="nav-item">Restaurants</a>
+            <a href="cuisine.html" class="nav-item">Cuisine</a>
+            <a href="users.html" class="nav-item">Users</a>
+            <a href="report.html" class="nav-item">Report</a>
+        </nav>
+
+        <button onclick="handleLogout()" class="btn-logout">Đăng xuất</button>
+    </div>
+</header>
+
+<main class="res-container admin-restaurants-shell">
+    <div class="admin-restaurants-toolbar">
+        <div>
+            <h2>Quản Lý Nhà Hàng</h2>
+            <p>Hiển thị đầy đủ danh sách nhà hàng và xử lý duyệt yêu cầu đang chờ.</p>
+        </div>
+        <button class="btn-add" onclick="prepareAdd()">+ Thêm Nhà Hàng</button>
+    </div>
+
+    <div id="restaurant-admin-message" class="admin-restaurants-message" hidden></div>
+
+    <div class="table-responsive">
+        <table class="res-table">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tên Nhà Hàng</th>
+                <th>Địa Chỉ</th>
+                <th>Liên hệ</th>
+                <th>Email</th>
+                <th>Mở cửa</th>
+                <th>Đóng cửa</th>
+                <th>Mô tả</th>
+                <th>Chủ Nhà Hàng</th>
+                <th>Ẩm thực</th>
+                <th>Trạng thái</th>
+                <th class="res-col-action">Thao tác</th>
+            </tr>
+            </thead>
+            <tbody id="res-list-body"></tbody>
+        </table>
+    </div>
+</main>
+
+<div id="appModalWrapper" class="app-modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="app-modal-window">
+        <div class="app-modal-header">
+            <h3 id="appModalTitle">Đăng ký Nhà Hàng</h3>
+        </div>
+
+        <div class="app-modal-body">
+            <form id="appResForm">
+                <input type="hidden" id="form-res-id" value="">
+                <div class="app-form-grid">
+                    <div class="app-form-group">
+                        <label for="res-name">Tên nhà hàng:</label>
+                        <input type="text" id="res-name" name="RestaurantName" required>
+                    </div>
+                    <div class="app-form-group">
+                        <label for="res-address">Địa chỉ:</label>
+                        <input type="text" id="res-address" name="Address" required>
+                    </div>
+                    <div class="app-form-group">
+                        <label for="res-phone">Điện thoại:</label>
+                        <input type="text" id="res-phone" name="Phone">
+                    </div>
+                    <div class="app-form-group">
+                        <label for="res-email">Email:</label>
+                        <input type="email" id="res-email" name="Email">
+                    </div>
+                    <div class="app-form-group">
+                        <label for="res-open">Giờ mở cửa:</label>
+                        <input type="time" id="res-open" name="Opentime">
+                    </div>
+                    <div class="app-form-group">
+                        <label for="res-close">Giờ đóng cửa:</label>
+                        <input type="time" id="res-close" name="Closetime">
+                    </div>
+                    <div class="app-form-group app-full-width">
+                        <label for="res-desc">Mô tả:</label>
+                        <textarea id="res-desc" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="app-form-group">
+                        <label for="res-status">Trạng thái:</label>
+                        <select id="res-status" name="status">
+                            <option value="Đang hoạt động">Hoạt động</option>
+                            <option value="Ngưng hoạt động">Ngưng hoạt động</option>
+                            <option value="Đang chờ duyệt">Đang chờ duyệt</option>
+                            <option value="Từ chối">Từ chối</option>
+                        </select>
+                    </div>
+                    <div class="app-form-group admin-only" id="adminFieldContainer">
+                        <label for="res-user">Chủ nhà hàng:</label>
+                        <select id="res-user" name="UserID">
+                            <option value="">-- Chọn chủ nhà hàng --</option>
+                        </select>
+                    </div>
+                    <div class="app-form-group app-full-width">
+                        <label for="res-cuisine">Loại ẩm thực:</label>
+                        <select id="res-cuisine" name="CuisineID">
+                            <option value="">-- Chọn loại ẩm thực --</option>
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="app-modal-actions">
+            <button type="button" class="app-btn-cancel" onclick="closeResModal()">Hủy</button>
+            <button type="submit" form="appResForm" class="app-btn-save">Lưu dữ liệu</button>
+        </div>
+    </div>
+</div>
+
+<div id="approvalModal" class="admin-approval-modal" onclick="handleApprovalOverlayClick(event)">
+    <div class="admin-approval-window">
+        <div class="admin-approval-header">
+            <div>
+                <p class="admin-approval-kicker">Pending approval</p>
+                <h3>Duyệt nhà hàng</h3>
+            </div>
+            <button type="button" class="admin-approval-close" onclick="closeApprovalModal()">&times;</button>
+        </div>
+
+        <div class="admin-approval-body">
+            <div class="admin-approval-summary">
+                <div class="admin-approval-item">
+                    <span>Tên nhà hàng</span>
+                    <strong id="approval-restaurant-name">-</strong>
+                </div>
+                <div class="admin-approval-item">
+                    <span>Chủ nhà hàng</span>
+                    <strong id="approval-restaurant-user">-</strong>
+                </div>
+                <div class="admin-approval-item">
+                    <span>Loại ẩm thực</span>
+                    <strong id="approval-restaurant-cuisine">-</strong>
+                </div>
+                <div class="admin-approval-item">
+                    <span>Trạng thái hiện tại</span>
+                    <strong id="approval-restaurant-status">-</strong>
+                </div>
+            </div>
+
+            <div class="admin-approval-note">
+                <label for="approval-note">Ghi chú duyệt</label>
+                <textarea id="approval-note" rows="4" placeholder="Ghi chú nội bộ nếu cần..."></textarea>
+            </div>
+        </div>
+
+        <div class="admin-approval-actions">
+            <button type="button" class="admin-approval-reject" id="approvalRejectButton">Từ chối</button>
+            <button type="button" class="admin-approval-approve" id="approvalApproveButton">Duyệt</button>
+        </div>
+    </div>
+</div>
+
+<script src="../../static/js/restaurants.js"></script>
+<script>
+    function handleLogout() {
+        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            window.location.href = "../auth/login.html";
+        }
+    }
+</script>
 </body>
 </html>

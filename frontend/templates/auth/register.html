@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="../../static/css/auth.css">
+    <title>GOLDEN HARVEST | Đăng ký</title>
+</head>
+<body>
+<nav class="nav">
+    <div class="nav-logo">
+        <p>GOLDEN <span>HARVEST</span></p>
+    </div>
+    <div class="nav-button">
+        <a class="btn" id="loginBtn" onclick="window.location.href='login.html'">Đăng nhập</a>
+        <a class="btn white-btn" id="registerBtn" onclick="window.location.href='register.html'">Đăng ký</a>
+    </div>
+</nav>
+
+<div class="form-box">
+    <div class="register-container" id="register">
+        <div class="top">
+            <span>Đã có tài khoản? <a href="login.html">Đăng nhập ngay</a></span>
+            <header>Đăng ký tài khoản</header>
+        </div>
+
+        <form id="registerForm">
+            <form action="/registerRequest" method="POST">
+                <div class="input-box">
+                    <input type="text" class="input-field" placeholder="Tên đăng nhập" name="username" id="user"
+                           required>
+                    <i class="bx bx-user"></i>
+                </div>
+
+                <div class="input-box">
+                    <input type="email" class="input-field" placeholder="Email" name="email" required>
+                    <i class="bx bx-envelope"></i>
+                </div>
+
+                <div class="input-box">
+                    <input type="text" class="input-field" placeholder="Số điện thoại" name="phone">
+                    <i class="bx bx-phone"></i>
+                </div>
+
+                <div class="input-box">
+                    <input type="password" class="input-field" placeholder="Mật khẩu" name="password" id="pass"
+                           required>
+                    <i class="bx bx-lock-alt"></i>
+                </div>
+
+                <div class="input-box">
+                    <input type="password" class="input-field" placeholder="Xác nhận mật khẩu" id="confirm_pass"
+                           required>
+                    <i class="bx bx-check-shield"></i>
+                </div>
+
+                <div class="input-box">
+                    <select name="role" id="roleSelect" class="input-field" onchange="toggleRestaurantDropdown()">
+                        style="background: rgba(255, 255, 255, 0.2); border: none; padding-left: 50px;">
+                        <option value="CUSTOMER" style="color: black;">Khách hàng</option>
+                        <option value="STAFF" style="color: black;">Nhân viên</option>
+                    </select>
+                    <i class="bx bx-briefcase-alt-2"></i>
+                </div>
+
+                <div class="input-box" id="restaurantDiv" style="display: none; margin-top: 25px;">
+                    <select id="restaurantSelect" name="restaurant_id" class="input-field" style="...">
+                        <option value="">-- Chọn Nhà Hàng --</option>
+                    </select>
+                    <i class="bx bx-store-alt"></i>
+                </div>
+
+                <div class="input-box">
+                    <input type="submit" class="submit" value="Đăng ký ngay">
+                </div>
+            </form>
+        </form>
+    </div>
+</div>
+
+<script>
+    const registerForm = document.getElementById('registerForm');
+
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // 1. Kiểm tra mật khẩu có khớp nhau không
+        const pass = document.getElementById('pass').value;
+        const confirmPass = document.getElementById('confirm_pass').value;
+
+        if (pass !== confirmPass) {
+            alert("Mật khẩu xác nhận không khớp!");
+            return;
+        }
+
+        // 2. Lấy data
+        const formData = new FormData(registerForm);
+        const username = document.getElementById('user').value; // Kiểm tra xem id ô username là 'user' hay 'username' nhé
+        const password = pass;
+        const role = document.getElementById('roleSelect').value;
+        const restaurant_id = document.getElementById('restaurantSelect').value;
+
+        // Lấy giá trị ra, kiểm tra nếu có thì nhét lại vào FormData
+        const resId = document.getElementById('restaurantSelect').value;
+        if (resId && resId !== "") {
+        // delete cái cũ (nếu có) và append cái đã chắc chắn có giá trị vào
+            formData.set('restaurant_id', resId);
+        } else {
+             formData.delete('restaurant_id'); // Nếu là khách thì xóa luôn cho sạch
+        }
+
+
+        try {
+            const response = await fetch('http://127.0.0.1:5000/api/v1/auth/registerRequest', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("Chúc mừng! Đăng ký thành công.");
+                window.location.href = "login.html"; // Đăng ký xong cho qua trang Login
+            } else {
+                alert("Lỗi đăng ký: " + (result.message || "Vui lòng kiểm tra lại"));
+            }
+
+        } catch (error) {
+            console.error("Lỗi:", error);
+            alert("Không kết nối được với Server Flask!");
+        }
+    });
+
+    // Hàm ẩn/hiện ô chọn nhà hàng dựa vào Role
+async function toggleRestaurantDropdown() {
+    const role = document.getElementById("roleSelect").value;
+    const resDiv = document.getElementById("restaurantDiv");
+    const select = document.getElementById("restaurantSelect");
+
+    if (role === "STAFF") {
+        resDiv.style.display = "block";
+
+        // Chỉ load nếu dropdown đang trống (để tránh load đi load lại)
+        if (select.options.length <= 1) {
+            try {
+                const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/list");
+                const data = await res.json();
+
+                data.forEach(r => {
+                    const option = document.createElement("option");
+                    option.value = r.id; // ID này sẽ khớp với RestaurantID trong DB
+                    option.textContent = r.name;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error("Không lấy được danh sách nhà hàng:", err);
+            }
+        }
+    } else {
+        resDiv.style.display = "none";
+    }
+}
+
+</script>
+</body>
+</html>

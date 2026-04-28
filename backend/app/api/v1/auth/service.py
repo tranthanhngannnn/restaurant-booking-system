@@ -10,12 +10,24 @@ class AuthService:
         if User.query.filter_by(Username=data.get('username')).first():
             return {"message": "Tên đăng nhập đã tồn tại"}, 400
 
+        res_id = data.get('restaurant_id')
+
+        # Ép kiểu về số (vì FormData gửi qua luôn là chuỗi)
+        if res_id and str(res_id).strip() != "":
+            try:
+                res_id = int(res_id)
+            except ValueError:
+                res_id = None
+        else:
+            res_id = None
+
         new_user = User(
             Username=data.get('username'),
             Password=data.get('password'),
             Role=data.get('role'),
             Email=data.get('email'),
-            Phone=data.get('phone')
+            Phone=data.get('phone'),
+            RestaurantID=res_id
         )
         db.session.add(new_user)
         db.session.commit()
@@ -36,13 +48,17 @@ class AuthService:
         # 1. Tìm user trong Database
         user = User.query.filter_by(Username=username).first()
 
+
         # 2. Kiểm tra mật khẩu
         if user and user.Password == password:
             # Tạo Token
             access_token = create_access_token(
                 identity=str(user.UserID),
                 expires_delta=timedelta(days=1),
-                additional_claims={"role": user.Role} # Thêm tham số additional_claims để đưa Role vào Token
+                additional_claims={
+                    "role": user.Role,
+                    "restaurant_id": user.RestaurantID
+                } # Thêm tham số additional_claims để đưa Role vào Token
             )
 
             # Trả về kết quả thành công

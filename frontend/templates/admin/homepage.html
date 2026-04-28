@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Harvest | Admin Dashboard</title>
+
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../../static/css/admin.css">
+
+</head>
+<body>
+<header class="admin-header">
+    <div class="header-left">
+        <a href="homepage.html" style="text-decoration: none;">
+            <h1 class="logo">GOLDEN <span>HARVEST</span></h1>
+        </a>
+    </div>
+
+    <div class="header-right">
+        <nav class="admin-nav">
+            <a href="restaurants.html" class="nav-item">Restaurants</a>
+            <a href="cuisine.html" class="nav-item">Cuisine</a>
+            <a href="users.html" class="nav-item">Users</a>
+            <a href="report.html" class="nav-item">Report</a>
+        </nav>
+
+        <button onclick="handleLogout()" class="btn-logout">Đăng xuất</button>
+    </div>
+</header>
+
+<main class="hero-section">
+    <div class="hero-content">
+        <h2 class="slogan">Dine with <span>Elegance</span></h2>
+        <p class="sub-slogan">Trải nghiệm tinh hoa ẩm thực tại Golden Harvest</p>
+    </div>
+</main>
+
+<footer class="admin-footer">
+    <div class="footer-container">
+        <div class="footer-column brand-info">
+            <h2 class="footer-logo"> ABOUT <span> US </span></h2>
+            <p>Revolutionizing the way you dine. Access the world's most exclusive dining rooms at your fingertips.</p>
+        </div>
+
+        <div class="footer-column">
+            <h3>Explore</h3>
+            <ul>
+                <li><a href="#">Find Restaurants</a></li>
+                <li><a href="#">Reservation</a></li>
+                <li><a href="#">Gift Cards</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-column">
+            <h3>Support</h3>
+            <ul>
+                <li><a href="#">Customer Service</a></li>
+                <li><a href="#">Partner With Us</a></li>
+                <li><a href="#">Terms of Service</a></li>
+                <li><a href="#">Privacy Policy</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-column">
+            <h3>Connect</h3>
+            <div class="social-icons">
+                <a href="#"><i class='bx bxl-facebook-circle'></i></a>
+                <a href="#"><i class='bx bxl-instagram'></i></a>
+            </div>
+            <p class="subscribe-text">Subscribe to our newsletter for exclusive offers.</p>
+            <div class="subscribe-form">
+                <input type="email" placeholder="Email Address">
+                <button type="button">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>© 2026 Golden Harvest. All rights reserved. Elevating gastronomy every day.</p>
+    </div>
+</footer>
+
+<script>
+    //Logic đăng xuất
+    function handleLogout() {
+        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+            // Xóa Token đã lưu lúc đăng nhập
+            localStorage.removeItem('token');
+            // Quay về trang login
+            window.location.href = "../auth/login.html";
+        }
+    }
+</script>
+</body>
+</html>

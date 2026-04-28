@@ -1,4 +1,5 @@
 from core.extensions import db
+from models.confirmbooking import Booking
 
 class Table(db.Model):
 
@@ -9,5 +10,5 @@ class Table(db.Model):
     capacity = db.Column(db.Integer)
 
 
-    bookings = db.relationship('Booking', backref='table', lazy=True)
+    bookings = db.relationship(Booking, backref='table', lazy=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('Restaurant.RestaurantID'), nullable=False)

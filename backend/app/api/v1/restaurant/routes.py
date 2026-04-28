@@ -1,8 +1,14 @@
-from flask import request, jsonify ,Blueprint
+from flask import request, jsonify, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from models.menu import Menu
+from models.tables import Tables
+from models.booking import Reservation
+from models.orders import Order
+from models.food import Food
+from models.ordersitem import OrderItem
+from core.extensions import db
+from models.user import User
 from app.api.v1.restaurant.service import RestaurantService
-
-
 from .service import *
 
 restaurant_bp = Blueprint('restaurant', __name__)
@@ -17,8 +23,12 @@ def staff_register_restaurant():
         "RestaurantName": request.form.get('RestaurantName'),
         "Address": request.form.get('Address'),
         "Phone": request.form.get('Phone'),
+        "Email": request.form.get('Email'),
         "CuisineID": request.form.get('CuisineID'),
-        "UserID": get_jwt_identity() # Lấy ID người đang login làm chủ
+        "Opentime": request.form.get('Opentime'),
+        "Closetime": request.form.get('Closetime'),
+        "description": request.form.get('description'),
+        "UserID": get_jwt_identity()
     }
     result, status = RestaurantService.create(data, is_admin=False)
     return jsonify(result), status
@@ -27,72 +37,123 @@ def staff_register_restaurant():
 def update_table_status(id):
     return jsonify(update_table_status_service(id, request.json))
 
-
+#dành cho KH
 @restaurant_bp.route('/menu', methods=['GET'])
-def get_menu():
-    menus = Menu.query.filter_by(visible=True).all()  # chỉ lấy món hiển thị
-    return jsonify([{
-        "id": m.id,
-        "name": m.name,
-        "price": m.price,
-        "image": m.image,
-        "category": m.category,
-        "description": m.description,
-        "visible": m.visible
-    } for m in menus])
+@jwt_required()
+def get_menu_api():
+    # Lấy ID nhà hàng từ tham số truyền lên
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    res_id = user_info.RestaurantID
 
+    try:
+        menu_data = get_res_menu(res_id)
+        return jsonify(menu_data)
+    except Exception as e:
+        return jsonify({"message": f"Lỗi server: {str(e)}"}), 500
+
+
+#dành cho nhân viên
 @restaurant_bp.route('/menu/admin', methods=['GET'])
+@jwt_required()
 def get_menu_admin():
-    menus = Menu.query.all()
+    # 1. Kiểm tra xem có phải nhân viên/chủ không
+    token_data = get_jwt()
+    if token_data.get("role") != "STAFF":
+        return jsonify({"message": "Chỉ nhân viên mới được xem!"}), 403
 
-    return jsonify([{
-        "id": m.id,
-        "name": m.name,
-        "price": m.price,
-        "image": m.image,
-        "category": m.category,
+    current_user_id = get_jwt_identity() #NẾU ĐÚNG ROLE NHÀ HÀNG -> LẤY ID VÀ QUERY MENU
+    user_info = User.query.get(current_user_id) #Tìm thông tin user để suy ra nhà hàng họ đang làm việc
 
-        "visible": m.visible
-    } for m in menus])
+    # Kiểm tra xem nhân viên này đã được phân công về nhà hàng nào chưa
+    if not user_info or not user_info.RestaurantID:
+        return jsonify({"message": "Nhân viên này chưa được phân công nhà hàng!"}), 400
+
+    try:
+        menu_data = get_menu_res_admin(user_info.RestaurantID)
+        return jsonify(menu_data)
+    except Exception as e:
+        return jsonify({"message": f"Lỗi server: {str(e)}"}), 500
+
+
+@restaurant_bp.route('/list', methods=['GET'])
+def get_restaurant_list():
+    restaurants = Restaurant.query.all()
+    return jsonify([
+        {"id": r.RestaurantID, "name": r.RestaurantName}
+        for r in restaurants
+    ])
+
 
 @restaurant_bp.route('/menu', methods=['POST'])
+@jwt_required()
 def create_food_api():
-    data = request.json
-    return jsonify(create_food(data))
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
 
-@restaurant_bp.route('/menu/<int:id>', methods=['PUT'])
+    if not user_info or not user_info.RestaurantID:
+        return jsonify({"message": "Nhân viên chưa được phân công nhà hàng!"}), 400
+
+    return jsonify(create_food(request.json, user_info.RestaurantID))
+
+
+@restaurant_bp.route('/menu/<id>', methods=['PUT'])
 def update_food_api(id):
-    data = request.json
+    if request.is_json:
+        data = request.json
+    else:
+        # Xử lý form-data (gửi từ frontend khi có file)
+        data = request.form.to_dict()
+        image_file = request.files.get('image')
+        if image_file:
+            data['image_file'] = image_file
+            
     return jsonify(update_food(id, data))
 
-@restaurant_bp.route('/menu/<int:id>', methods=['DELETE'])
+@restaurant_bp.route('/menu/<id>', methods=['DELETE'])
 def delete_food_api(id):
     return jsonify(delete_food(id))
 
-
-# ===== TABLE =====
 @restaurant_bp.route('/tables', methods=['GET'])
+@jwt_required()
 def get_tables_api():
-    return jsonify(get_tables())
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    # Lấy đúng ID nhà hàng của người đang đăng nhập
+    res_id = user_info.RestaurantID
+    tables = get_tables(res_id)
+    return jsonify(tables)
 
 @restaurant_bp.route('/tables', methods=['POST'])
+@jwt_required()
 def create_table_api():
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    # Lấy đúng ID nhà hàng của người đang đăng nhập
+    res_id = user_info.RestaurantID
     data = request.json
-    return jsonify(create_table(data))
+    return jsonify(create_table(data, res_id))
+
 
 @restaurant_bp.route("/bookings", methods=["POST"])
 def add_booking():
     return jsonify(create_booking(request.json))
 
 @restaurant_bp.route('/bookings', methods=['GET'])
+@jwt_required()
 def get_bookings_api():
-    return jsonify(get_bookings())
+    current_user_id = get_jwt_identity()
+    user_info = User.query.get(current_user_id)
+    data = get_bookings(user_info.RestaurantID)
+    return jsonify(data)
 
 @restaurant_bp.route('/bookings/<int:id>/confirm', methods=['POST'])
+@jwt_required()
 def confirm_booking_api(id):
     return jsonify(confirm_booking(id))
 
 @restaurant_bp.route('/bookings/<int:id>/reject', methods=['POST'])
+@jwt_required()
 def reject_booking_api(id):
     return jsonify(reject_booking(id))
 
@@ -104,103 +165,69 @@ def delete_booking_api(id):
 def get_booking_by_table(id):
     return jsonify(get_booking_by_table_service(id))
 
-
 @restaurant_bp.route("/orders", methods=["POST"])
 def create_order():
     data = request.json
     table_id = data["table_id"]
-
-    # 🔥 check bàn
-    table = Table.query.get(table_id)
+    table = Tables.query.get(table_id)
     if not table:
         return {"error": "Table not found"}, 404
 
-    # 🔥 lấy order active (nếu có)
     order = Order.query.filter_by(table_id=table_id, status="active").first()
-
     if not order:
         order = Order(table_id=table_id, status="active")
         db.session.add(order)
         db.session.commit()
+        table.Status = "Reserved"
 
-        # cập nhật bàn
-        table.status = "reserved"
-
-    # 🔥 thêm món
     for item in data["items"]:
         existing = OrderItem.query.filter_by(
             order_id=order.id,
             food_id=item["food_id"]
         ).first()
-
         if existing:
             existing.quantity += item["qty"]
         else:
-            oi = OrderItem(
-                order_id=order.id,
-                food_id=item["food_id"],
-                quantity=item["qty"]
-            )
+            oi = OrderItem(order_id=order.id, food_id=item["food_id"], quantity=item["qty"])
             db.session.add(oi)
-
     db.session.commit()
-
     return {"message": "Order updated"}
 
 @restaurant_bp.route("/orders/pay/<int:table_id>", methods=["PUT"])
 def pay_order(table_id):
-    order = Order.query.filter_by(table_id=table_id, status="active").first()
-
+    # 1. Tìm đúng order của bàn dựa trên table_id và trạng thái "active"
+    order = Order.query.filter(Order.table_id == table_id, Order.status == "active").first()
+    
+    # 2. Nếu không tìm thấy order (ví dụ trường hợp test mock front-end)
     if not order:
-        return {"error": "No active order"}
+        # Tạo luôn order mới để có cái mà thanh toán
+        order = Order(table_id=table_id, status="active")
+        db.session.add(order)
+        db.session.flush()
 
+    # 3. Cập nhật trạng thái order và bàn
     order.status = "paid"
-
-    table = Table.query.get(table_id)
-    table.status = "available"
-
+    
+    table = Tables.query.get(table_id)
+    if table:
+        table.Status = "Trống" # reset trạng thái bàn về trống
+        
+    # 4. Commit thay đổi vào database
     db.session.commit()
-
-    return {"message": "Paid"}
-
-@restaurant_bp.route("/orders/table/<int:table_id>", methods=["GET"])
-def get_order_by_table(table_id):
-    order = Order.query.filter_by(table_id=table_id, status="active").first()
-
-    if not order:
-        return jsonify(None)
-
-    items = OrderItem.query.filter_by(order_id=order.id).all()
-
+    
     return jsonify({
-        "id": order.id,
-        "items": [
-            {
-                "food_id": i.food_id,
-                "qty": i.quantity
-            } for i in items
-        ]
-    })
+        "message": "Thanh toán và cập nhật trạng thái bàn thành công",
+        "order_id": order.id,
+        "status": "Available"
+    }), 200
 
-@restaurant_bp.route('/menu/<int:id>/toggle', methods=['PUT'])
+
+
+@restaurant_bp.route('/menu/<id>/toggle', methods=['PUT', 'OPTIONS'])
 def toggle_menu(id):
-    menu = Menu.query.get(id)
+    menu = Food.query.get(id)
     if not menu:
-        return jsonify({"error":"Not found"}), 404
-
-    menu.visible = not menu.visible
+        return jsonify({"error": "Not found"}), 404
+    menu.Visible = not menu.Visible
     db.session.commit()
-
-    return jsonify({"message":"updated", "visible": menu.visible})
-
-@restaurant_bp.route('/bookings', methods=['GET'])
-def get_all_bookings_route():
-    return jsonify(get_bookings())
-
-@restaurant_bp.route('/confirm_booking/<int:id>', methods=['PUT'])
-def confirm(id):
-    return jsonify(confirm_booking(id))
-
-@restaurant_bp.route('/reject_booking/<int:id>', methods=['PUT'])
-def reject(id):
-    return jsonify(reject_booking(id))
+    return jsonify({"message": "updated", "visible": menu.Visible})
