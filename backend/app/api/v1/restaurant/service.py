@@ -5,7 +5,7 @@ from models.food import Food
 from models.menu import Menu
 from models.tables import Tables
 from models.booking import Reservation
-from models.orders import Order
+
 from models.ordersitem import OrderItem
 from models.food import Food
 from schemas.menu_schema import MenuSchema
