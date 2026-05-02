@@ -20,14 +20,20 @@ def admin_get_all_users():
 @jwt_required()
 def admin_update_user(user_id):
     claims = get_jwt()
+
     if claims.get("role") != "ADMIN":
         return jsonify({"message": "Quyen nay cua Admin!"}), 403
 
     data = request.form.to_dict()
-    updated_user = AdminUserService.update_user(user_id, data)
 
-    if updated_user:
+    result = AdminUserService.update_user(user_id, data)
+
+    if isinstance(result, tuple):
+        return jsonify(result[0]), result[1]
+
+    if result:
         return jsonify({"message": "Cap nhat user thanh cong!"}), 200
+
     return jsonify({"message": "Khong tim thay nguoi dung"}), 404
 
 

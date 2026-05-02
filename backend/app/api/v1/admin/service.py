@@ -14,10 +14,25 @@ class AdminUserService:
     @staticmethod
     def update_user(user_id, data):
         user = User.query.get(user_id)
+
         if not user:
             return None
 
-        # Dùng setattr để cập nhật mọi thứ gửi từ Form Data
+        if "Email" in data:
+            email = data["Email"].strip()
+            if "@" not in email or "." not in email:
+                return {"message": "Email khong hop le"}, 400
+
+        if "Phone" in data:
+            phone = data["Phone"].strip()
+            if len(phone) > 11:
+                return {"message": "Phone khong hop le"}, 400
+
+        if "Username" in data:
+            username = data["Username"].strip()
+            if username == "":
+                return {"message": "Username khong duoc de trong"}, 400
+
         for key, value in data.items():
             if hasattr(user, key):
                 setattr(user, key, value)
