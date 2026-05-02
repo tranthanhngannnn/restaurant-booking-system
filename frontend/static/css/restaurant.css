@@ -118,5 +118,31 @@ body.modal-open {
 .app-modal-body::-webkit-scrollbar { width: 6px; }
 .app-modal-body::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
 
+<<<<<<< HEAD
+/* Modal */
+
+/* 🔥 NÚT SỬA - HỦY */
+.actions {
+    display: flex;
+    justify-content: space-between; /* Sửa trái - Hủy phải */
+    gap: 10px;
+}
+
+.actions button {
+    flex: 1; /* 2 nút đều nhau */
+}
+
+/* màu cho đẹp */
+.actions button:first-child {
+    background: #4CAF50; /* Sửa */
+    color: white;
+}
+
+.actions button:last-child {
+    background: #f44336; /* Hủy */
+    color: white;
+}
+=======
 /*button sửa xóa*/
 tr td { min-height: 80px;}
+>>>>>>> origin/main

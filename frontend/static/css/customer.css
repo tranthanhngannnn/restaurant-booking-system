@@ -315,6 +315,30 @@ table th {
 }
 
 .popup-content {
+<<<<<<< HEAD
+   background: white;
+   color: black;
+   padding: 20px;
+   border-radius: 10px;
+   width: 400px;
+   max-height: 80vh;
+   overflow-y: auto;
+   position: relative;
+   text-align: center;
+}
+
+.popup-content input,
+.popup-content textarea {
+   width: 100%;
+   padding: 10px;
+   margin: 10px 0;
+   border: 1px solid #ccc;
+   border-radius: 6px;
+   background: white;
+   color: black;
+}
+/* NÚT X */
+=======
     background: white;
     color: black;
     padding: 20px;
@@ -325,6 +349,7 @@ table th {
     position: relative;
 }
 
+>>>>>>> origin/main
 .close-btn {
     position: absolute;
     top: 10px; right: 15px;
@@ -340,3 +365,32 @@ table th {
     .sidebar { width: 100%; height: auto; position: relative; }
     .container { flex-direction: column; }
 }
+<<<<<<< HEAD
+
+.desc {
+   position: absolute;
+   bottom: 0;
+   left: 0;
+   right: 0;
+   background: rgba(0,0,0,0.7);
+   color: white;
+   padding: 10px;
+   font-size: 14px;
+   transform: translateY(100%);
+   transition: 0.3s;
+}
+
+.food-item:hover .desc {
+   transform: translateY(0);
+}
+.row {
+   display: flex;
+   gap: 10px;
+   margin-bottom: 10px;
+}
+
+.row input {
+   flex: 1;
+}
+=======
+>>>>>>> origin/main

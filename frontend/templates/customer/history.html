@@ -23,7 +23,11 @@
             <a href="home.html">🏠 Trang chủ</a>
             <a href="search.html">🔍 Tìm kiếm</a>
             <a href="booking.html">📅 Đặt bàn</a>
+<<<<<<< HEAD
+            <a href="history.html" id="historyLink" style="display:none;">📜 Lịch sử</a>
+=======
             <a href="history.html" id="historyLink">📜 Lịch sử</a>
+>>>>>>> origin/main
         </div>
 
         <!-- CONTENT -->
@@ -71,6 +75,16 @@
 </div>
 
 <script>
+<<<<<<< HEAD
+
+    const API = "http://127.0.0.1:5000";
+
+    let bookings = [];
+
+    window.onload = () => {
+        const token = localStorage.getItem("token");
+
+=======
     const API = "http://localhost:5000"
 
     let bookings = []
@@ -79,17 +93,51 @@
         const token = localStorage.getItem("token");
         const historyLink = document.getElementById("historyLink")
         // 1. Kiểm tra nhanh: Không có token trong máy thì khỏi load gì hết
+>>>>>>> origin/main
         if (!token) {
             alert("Bạn chưa đăng nhập!");
             window.location.href = "../auth/login.html";
             return;
         }
+<<<<<<< HEAD
+        fetch(`${API}/api/v1/customer/me`, {
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            }
+        })
+                .then(res => {
+                    if (!res.ok) {
+                        alert("Phiên đăng nhập hết hạn hoặc Token sai. Vui lòng đăng nhập lại!");
+                        localStorage.removeItem("token");
+                        window.location.href = "../auth/login.html";
+                        throw new Error("Token invalid");
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    // Check token thành công, cho phép hiện Lịch sử
+                    const historyLink = document.getElementById("historyLink");
+                    if (historyLink) historyLink.style.display = "block";
+
+                    // Gọi hàm tải dữ liệu, truyền cái token xuống luôn
+                    loadHistory(token);
+
+                    const searchInput = document.getElementById("searchInput");
+                    const statusFilter = document.getElementById("statusFilter");
+                    if (searchInput) searchInput.addEventListener("keyup", filterData);
+                    if (statusFilter) statusFilter.addEventListener("change", filterData);
+                })
+                .catch(err => console.log("Lỗi check token:", err));
+=======
         // LOAD DATA
         loadHistory()
 
 
         searchInput.addEventListener("keyup", filterData)
         statusFilter.addEventListener("change", filterData)
+>>>>>>> origin/main
     }
 
     function loadHistory() {
@@ -103,6 +151,52 @@
         })
                 .then(res => res.json())
                 .then(data => {
+<<<<<<< HEAD
+                    console.log("DATA:", data);
+                    if (!Array.isArray(data)) {
+                        data = data.data || [];
+                    }
+                    bookings = data;
+                    renderTable(data);
+                })
+                .catch(err => {
+                    console.error("Lỗi fetch history:", err);
+                });
+    }
+
+    function filterData() {
+        const searchInput = document.getElementById("searchInput");
+        const statusFilter = document.getElementById("statusFilter");
+        const key = searchInput ? searchInput.value.toLowerCase() : "";
+        const status = statusFilter ? statusFilter.value : "";
+
+        let filtered = bookings.filter(b =>
+                (b.CustomerName && b.CustomerName.toLowerCase().includes(key)) ||
+                String(b.ReservationID).includes(key)
+        );
+
+        if (status) {
+            filtered = filtered.filter(b => b.Status === status);
+        }
+        renderTable(filtered);
+    }
+
+    async function renderTable(data) {
+        const historyContainer = document.getElementById("historyContainer");
+        let html = "";
+
+        if (!data || data.length === 0) {
+            if (historyContainer) historyContainer.innerHTML = "<p>Không có dữ liệu</p>";
+            return;
+        }
+
+        for (const b of data) {
+            let reviewHtml = "";
+
+            // CHỈ CHECK KHI ĐÃ CONFIRMED
+            if (b.Status === "Confirmed") {
+                const reviewData = await checkReview(b.ReservationID);
+=======
 
                     console.log("DATA:", data)
 
@@ -148,6 +242,7 @@
             // CHỈ CHECK KHI ĐÃ CONFIRMED
             if (b.Status === "Confirmed") {
                 const reviewData = await checkReview(b.RestaurantID || b.restaurant_id)
+>>>>>>> origin/main
                 if (reviewData.reviewed) {
                     reviewHtml = `
                     <div class="review-box">
@@ -158,6 +253,20 @@
                         <div class="review-text">
                             ${reviewData.comment || "Không có nhận xét"}
                         </div>
+<<<<<<< HEAD
+                    </div>`;
+                } else {
+                    reviewHtml = `<button onclick="event.stopPropagation(); openReview(${b.RestaurantID || b.restaurant_id}, ${b.ReservationID})">⭐ Đánh giá</button>`;
+                }
+            }
+
+            html += `
+            <div class="history-card ${b.Status}" onclick="handleClick('${b.Status}', ${b.RestaurantID || b.restaurant_id}, ${b.ReservationID})">
+                <div class="card-header">
+                    <h3>🍲 ${b.RestaurantName || "Nhà hàng"}</h3>
+                    <span class="status ${b.Status}">${b.Status}</span>
+                </div>
+=======
                     </div>
                 `
                 } else {
@@ -181,11 +290,42 @@
                     </span>
                 </div>
 
+>>>>>>> origin/main
                 <div class="card-body">
                     <p>📅 ${b.BookingDate} - ${b.BookingTime}</p>
                     <p>👤 ${b.GuestCount} người</p>
                     <p>🪑 Bàn: ${b.TableNumber || "Chưa xếp"}</p>
                 </div>
+<<<<<<< HEAD
+                <div class="card-footer">
+                    ${reviewHtml}
+                </div>
+            </div>`;
+        }
+
+        if (historyContainer) historyContainer.innerHTML = html;
+    }
+
+
+    async function handleClick(status, restaurantID, reservationID) {
+        if (status === "Confirmed") {
+            const reviewData = await checkReview(reservationID);
+
+            // Mở popup lên, ném luôn sao và nhận xét cũ vào (nếu có)
+            openReview(restaurantID, reservationID, reviewData.rating, reviewData.comment);
+
+        } else if (status === "Cancelled") {
+            alert("Đơn đã bị hủy");
+        } else {
+            alert("Chưa sử dụng dịch vụ");
+        }
+    }
+
+    async function checkReview(reservationId) {
+        const token = localStorage.getItem("token");
+        // Lưu ý check lại đường dẫn API này trong Flask xem có đúng không nha
+        const res = await fetch(`${API}/api/v1/customer/review/check?reservation_id=${reservationId}`, {
+=======
 
                 <div class="card-footer">
                     ${reviewHtml}
@@ -215,6 +355,7 @@
     async function checkReview(restaurantId) {
         const token = localStorage.getItem("token");
         const res = await fetch(`${API}/review/check?restaurant_id=${restaurantId}`, {
+>>>>>>> origin/main
             headers: {
                 "Authorization": "Bearer " + token
             }
@@ -223,6 +364,32 @@
     }
 
     function goHome() {
+<<<<<<< HEAD
+        window.location.href = "home.html";
+    }
+
+    let currentReviewReservationID = null;
+    let currentReviewRestaurantID = null;
+
+    function openReview(restaurantID, reservationID, oldRating, oldComment) {
+        const reviewBox = document.getElementById("reviewBox");
+        if (reviewBox) reviewBox.style.display = "flex";
+
+        currentReviewRestaurantID = restaurantID;
+        currentReviewReservationID = reservationID;
+
+        // Điền dữ liệu cũ lên form (Không có thì để trống bắt tự nhập)
+        const ratingInput = document.getElementById("rating");
+        const commentInput = document.getElementById("comment");
+
+        if (ratingInput) ratingInput.value = oldRating || "";
+        if (commentInput) commentInput.value = oldComment || "";
+    }
+
+    function closeReview() {
+        const reviewBox = document.getElementById("reviewBox");
+        if (reviewBox) reviewBox.style.display = "none";
+=======
         window.location.href = "home.html"
     }
 
@@ -234,10 +401,38 @@
 
     function closeReview() {
         reviewBox.style.display = "none"
+>>>>>>> origin/main
     }
 
     function submitReview() {
         const token = localStorage.getItem("token");
+<<<<<<< HEAD
+
+        if (!token) {
+            alert("Vui lòng đăng nhập lại!");
+            return;
+        }
+
+        if (!currentReviewRestaurantID || !currentReviewReservationID) {
+            alert("Thiếu mã nhà hàng hoặc mã đơn đặt bàn! Hãy load lại trang.");
+            return;
+        }
+
+        const ratingInput = document.getElementById("rating");
+        const commentInput = document.getElementById("comment");
+
+        fetch(`${API}/api/v1/customer/review`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({
+                RestaurantID: parseInt(currentReviewRestaurantID),
+                ReservationID: parseInt(currentReviewReservationID),
+                Rating: parseInt(ratingInput ? ratingInput.value : 5),
+                Comment: commentInput ? commentInput.value : ""
+=======
         const rID = restaurantId.value
 
         if (!rID) {
@@ -256,10 +451,22 @@
                 ReservationID: parseInt(reservationId.value),
                 Rating: parseInt(rating.value),
                 Comment: comment.value
+>>>>>>> origin/main
             })
         })
                 .then(res => res.json())
                 .then(data => {
+<<<<<<< HEAD
+                    alert(data.message || data.error);
+                    if (data.message) {
+                        closeReview();
+                        loadHistory(); // Load lại bảng để check xem nó hiện sao chưa
+                    }
+                })
+                .catch(err => {
+                    console.error("Lỗi gửi review:", err);
+                });
+=======
                     alert(data.message || data.error)
 
                     if (data.message) {
@@ -267,6 +474,7 @@
                         loadHistory()
                     }
                 })
+>>>>>>> origin/main
     }
 </script>
 
