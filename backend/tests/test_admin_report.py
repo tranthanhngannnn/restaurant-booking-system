@@ -9,6 +9,7 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+
 from core import create_app
 
 REPORT_URL = "/api/v1/admin/report"

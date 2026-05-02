@@ -2,6 +2,9 @@ from models.cuisine import Cuisine
 from models.restaurant import Restaurant
 from core.extensions import db
 from models.user import User
+from models.booking import Reservation
+from models.payment import Payment
+from sqlalchemy import func
 
 
 class AdminUserService:
@@ -160,3 +163,132 @@ class AdminRestaurantService:
         except Exception as e:
             db.session.rollback()
             return {"message": f"Lỗi hệ thống: {str(e)}"}, 500
+
+    @staticmethod
+    def reject(restaurant_id):
+        try:
+            restaurant = Restaurant.query.get(restaurant_id)
+            if not restaurant:
+                return {"message": "Không tìm thấy nhà hàng này!"}, 404
+
+            restaurant.status = "Từ chối"
+            db.session.commit()
+            return {"message": f"Đã từ chối nhà hàng {restaurant.RestaurantName}!"}, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"message": f"Lỗi hệ thống: {str(e)}"}, 500
+
+
+class ReportService:
+    @staticmethod
+    def _month_key(year, month):
+        return f"{year:04d}-{month:02d}"
+
+    @staticmethod
+    def _parse_month(report_month):
+        year, month = map(int, report_month.split("-"))
+        return year, month
+
+    @staticmethod
+    def _build_months(report_month, months_back=6):
+        year, month = ReportService._parse_month(report_month)
+        months = []
+        for i in range(months_back - 1, -1, -1):
+            y = year
+            m = month - i
+            while m <= 0:
+                m += 12
+                y -= 1
+            while m > 12:
+                m -= 12
+                y += 1
+            key = ReportService._month_key(y, m)
+            months.append({"key": key, "label": f"Thang {m:02d}/{y}"})
+        return months
+
+    @staticmethod
+    def get_report(restaurant_id, report_month):
+        months = ReportService._build_months(report_month, months_back=6)
+        month_keys = [item["key"] for item in months]
+        month_labels = {item["key"]: item["label"] for item in months}
+        selected_month = month_keys[-1]
+
+        restaurant_query = Restaurant.query.filter(Restaurant.status != "Ngưng hoạt động")
+        if restaurant_id:
+            restaurant_query = restaurant_query.filter(Restaurant.RestaurantID == int(restaurant_id))
+
+        base_restaurants = restaurant_query.order_by(Restaurant.RestaurantName.asc()).all()
+        restaurant_map = {
+            restaurant.RestaurantID: {
+                "restaurant_id": restaurant.RestaurantID,
+                "restaurant_name": restaurant.RestaurantName,
+                "monthly_revenue": {key: 0 for key in month_keys},
+                "selected_month_revenue": 0,
+                "total_6_months": 0,
+            }
+            for restaurant in base_restaurants
+        }
+
+        query = (
+            db.session.query(
+                Restaurant.RestaurantID.label("restaurant_id"),
+                Restaurant.RestaurantName.label("restaurant_name"),
+                func.year(Payment.CreatedAt).label("year"),
+                func.month(Payment.CreatedAt).label("month"),
+                func.coalesce(func.sum(Payment.Amount), 0).label("revenue"),
+            )
+            .join(Reservation, Reservation.RestaurantID == Restaurant.RestaurantID)
+            .join(Payment, Payment.ReservationID == Reservation.ReservationID)
+            .filter(Payment.CreatedAt.isnot(None))
+            .filter(func.date_format(Payment.CreatedAt, "%Y-%m").in_(month_keys))
+            .filter(Restaurant.status != "Ngưng hoạt động")
+        )
+
+        if restaurant_id:
+            query = query.filter(Restaurant.RestaurantID == int(restaurant_id))
+
+        rows = (
+            query.group_by(
+                Restaurant.RestaurantID,
+                Restaurant.RestaurantName,
+                func.year(Payment.CreatedAt),
+                func.month(Payment.CreatedAt),
+            )
+            .order_by(Restaurant.RestaurantName.asc())
+            .all()
+        )
+
+        for row in rows:
+            res_id = int(row.restaurant_id)
+            month_key = ReportService._month_key(int(row.year), int(row.month))
+            revenue = float(row.revenue or 0)
+            if res_id in restaurant_map:
+                restaurant_map[res_id]["monthly_revenue"][month_key] = revenue
+
+        for restaurant in restaurant_map.values():
+            restaurant["selected_month_revenue"] = restaurant["monthly_revenue"].get(selected_month, 0)
+            restaurant["total_6_months"] = sum(restaurant["monthly_revenue"].values())
+            restaurant["monthly_revenue"] = [
+                {
+                    "key": key,
+                    "label": month_labels[key],
+                    "revenue": restaurant["monthly_revenue"][key],
+                }
+                for key in month_keys
+            ]
+
+        restaurants = sorted(
+            restaurant_map.values(),
+            key=lambda item: item["selected_month_revenue"],
+            reverse=True,
+        )
+
+        return {
+            "month": selected_month,
+            "months": months,
+            "restaurants": restaurants,
+            "total_report": sum(item["selected_month_revenue"] for item in restaurants),
+            "total_6_months": sum(item["total_6_months"] for item in restaurants),
+            "restaurant_count": len(restaurants),
+        }
