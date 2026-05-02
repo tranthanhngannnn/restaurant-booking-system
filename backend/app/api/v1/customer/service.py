@@ -1,14 +1,10 @@
-from models.menu import Menu
+from models.food import Food
 from models.tables import Tables
 from models.booking import Reservation
 from core.extensions import db
 from datetime import datetime, timedelta
 from models.payment import Payment
 from models.restaurant import Restaurant
-from flask_jwt_extended import get_jwt_identity
-from flask_login import current_user
-from sqlalchemy import or_
-
 
 # ================== SEARCH ==================
 def search_restaurant(address, cuisine):
@@ -42,7 +38,7 @@ def search_restaurant(address, cuisine):
 
 # ================== MENU ==================
 def get_menu(restaurant_id):
-    foods = Menu.query.filter_by(RestaurantID=restaurant_id).all()
+    foods = Food.query.filter_by(RestaurantID=restaurant_id).all()
 
     return [{
         "FoodName": f.FoodName,
@@ -50,7 +46,6 @@ def get_menu(restaurant_id):
         "Description": f.Description,
         "Image": f.Image
     } for f in foods]
-
 
 # ================== CHECK TABLE ==================
 def check_table(restaurant_id, date, time, people):
@@ -81,56 +76,44 @@ def check_table(restaurant_id, date, time, people):
 
 # ================== CREATE BOOKING ==================
 def create_booking(data):
-    # 1. Dọn dẹp booking cũ
     cancel_expired_bookings()
 
-    # 2. Rút trích tất cả dữ liệu từ cục 'data' frontend gửi lên
-    customer_name = data.get("name")
-    phone = data.get("phone")
-    restaurant_id = data.get("restaurant_id")
+    # Validate bắt buộc
+    if not data.get("name") or not data.get("phone"):
+        return {"error": "Tên và SĐT là bắt buộc"}
+
+    try:
+        guest_count = int(data.get("people"))
+        if guest_count < 1 or guest_count > 10:
+            return {"error": "Chỉ được đặt từ 1-10 khách"}
+    except:
+        return {"error": "Số khách không hợp lệ"}
+
     table_id = data.get("table_id")
-    booking_date = data.get("date")
-    booking_time = data.get("time")
-    people_str = data.get("people")
+    table = Tables.query.get(table_id)
+    if not table:
+        return {"error": "Bàn không tồn tại"}
 
-    # 3. Bẫy lỗi dữ liệu trống
-    if not customer_name:
-        return {"error": "Customer name is required"}
-    if not table_id or not restaurant_id:
-        return {"error": "Thiếu thông tin nhà hàng hoặc bàn"}
-
-    # Ép kiểu dữ liệu để so sánh trong SQL
-    table_id = int(table_id)
-    guest_count = int(people_str)
-
-    # 4. Chống double booking
+    # Check double booking
+    booking_date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+    booking_time = datetime.strptime(data.get("time"), "%H:%M").time()
     exist = Reservation.query.filter(
         Reservation.TableID == table_id,
         Reservation.BookingDate == booking_date,
         Reservation.BookingTime == booking_time,
         Reservation.Status.in_(["Pending", "Confirmed"])
     ).first()
-
     if exist:
-        return {"error": "Bàn đã được đặt trong khung giờ này"}
+        return {"error": "Bàn đã được đặt"}
 
-    # 5. Tính tiền cọc ở backend
+    # Tính tiền cọc
     deposit = calculate_deposit(guest_count)
 
-    # 6. Xử lý ID cho khách Login & Khách vãng lai
-    user_id = get_jwt_identity()  # không có token nó ra None
-
-    if user_id:
-        user_id = str(user_id)  # Ép kiểu string cho đúng Model
-    else:
-        user_id = None  # Khách vãng lai, chấp nhận cột UserID bị NULL
-
-    # 7. Tạo đối tượng Reservation
     reservation = Reservation(
-        UserID=user_id,
-        CustomerName=customer_name,
-        phone=phone,
-        RestaurantID=int(restaurant_id),
+        UserID=data.get("user_id"),
+        CustomerName=data.get("name"),
+        phone=data.get("phone"),
+        RestaurantID=int(data.get("restaurant_id")),
         TableID=table_id,
         BookingDate=booking_date,
         BookingTime=booking_time,
@@ -139,55 +122,40 @@ def create_booking(data):
         Status="Pending"
     )
 
-    # 8. Lưu xuống Database
     try:
         db.session.add(reservation)
         db.session.commit()
-    except Exception as e:
+    except:
         db.session.rollback()
-        print("Lỗi SQL lúc lưu đặt bàn:", str(e))  # In ra terminal để debug
-        return {"error": "Đặt bàn thất bại do lỗi hệ thống"}
+        return {"error": "Đặt bàn thất bại"}
 
-    # 9. Tạo QR và trả về kết quả
     qr = generate_vietqr(reservation.Deposit, reservation.ReservationID)
 
-    return {
-        "reservation_id": reservation.ReservationID,
-        "qr": qr,
-        "deposit": deposit
-    }
-
+    return {"reservation_id": reservation.ReservationID,
+            "qr": qr,
+            "deposit": deposit}
 
 def get_all_restaurants():
-    # Lấy hết dữ liệu từ bảng Restaurant
     restaurants = Restaurant.query.all()
-    result = []
-    for r in restaurants:
-        result.append({
+
+    return [
+        {
             "RestaurantID": r.RestaurantID,
             "RestaurantName": r.RestaurantName,
-            "Opentime": str(r.Opentime),
-            "Closetime": str(r.Closetime)
-        })
-    return result
-
+            "Opentime": r.Opentime.strftime("%H:%M") if r.Opentime else None ,
+            "Closetime": r.Closetime.strftime("%H:%M") if r.Closetime else None
+        }
+        for r in restaurants
+    ]
 
 def get_restaurant_by_id(restaurant_id):
     r = Restaurant.query.get(restaurant_id)
-    if not r:
-        return {}
-    return {
-        "RestaurantID": r.RestaurantID,
-        "RestaurantName": r.RestaurantName,
-        "Opentime": str(r.Opentime),
-        "Closetime": str(r.Closetime)
-    }
+    return r.to_dict() if r else {}
 
 
 # ================== PAYMENT ==================
 def calculate_deposit(people):
     return people * 50000  # 50k/người
-
 
 def confirm_payment(reservation_id, amount):
     booking = Reservation.query.get(reservation_id)
@@ -204,11 +172,13 @@ def confirm_payment(reservation_id, amount):
 
     payment = Payment(
         ReservationID=reservation_id,
-        Amount=float(amount),
+        Amounts=float(amount),
         Status="Paid",
         PaymentMethod="QR",
         CreatedAt=datetime.now()
     )
+
+    booking.Status = "Confirmed"
 
     db.session.add(payment)
     db.session.commit()
@@ -241,43 +211,21 @@ def cancel_expired_bookings():
 
 
 # ================== HISTORY ==================
-def get_history(user_id, keyword):
-    if not user_id:
-        return []
-
-    # Chỉ lấy các booking thuộc về user đang đăng nhập
-    query = db.session.query(
-        Reservation,
-        Restaurant.RestaurantName
-    ).outerjoin(
-        Restaurant, Reservation.RestaurantID == Restaurant.RestaurantID
-    ).filter(
-        Reservation.UserID == str(user_id)
-    )
-
-    # Nếu có keyword (tìm theo tên khách hoặc ID booking)
-    if keyword:
-        filters = [Reservation.CustomerName.ilike(f"%{keyword}%")]
-        if keyword.isdigit():
-            filters.append(Reservation.ReservationID == int(keyword))
-        
-        query = query.filter(or_(*filters))
-
-    results = query.order_by(Reservation.ReservationID.desc()).all()
-
+def get_history(user_id):
+    bookings = Reservation.query.filter_by(UserID=user_id).all()
 
     result = []
-    for r, restaurant_name in results:
+    for b in bookings:
         result.append({
-            "ReservationID": r.ReservationID,
-            "RestaurantName": restaurant_name,
-            "RestaurantID": r.RestaurantID,
-            "CustomerName": r.CustomerName,
-            "BookingDate": str(r.BookingDate) if r.BookingDate else "",
-            "BookingTime": str(r.BookingTime) if r.BookingTime else "",
-            "GuestCount": r.GuestCount,
-            "TableNumber": r.TableID,
-            "Status": r.Status
+            "ReservationID": b.ReservationID,
+            "CustomerName": b.CustomerName,
+            "phone": b.phone,
+            "BookingDate": b.BookingDate.strftime("%Y-%m-%d"),
+            "BookingTime": b.BookingTime.strftime("%H:%M"),
+            "GuestCount": b.GuestCount,
+            "Status": b.Status,
+            "RestaurantID": b.RestaurantID,
+            "RestaurantName": b.restaurant.RestaurantName if b.restaurant else None,
+            "TableNumber": b.table.TableNumber if b.table else None
         })
-
     return result
