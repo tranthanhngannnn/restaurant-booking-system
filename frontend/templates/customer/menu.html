@@ -14,36 +14,13 @@
 
 <button onclick="goBooking()">Đặt bàn</button>
 <script src="../../static/js/menu_data.js"></script>
-<script>
-const params = new URLSearchParams(window.location.search)
-const id = params.get("id")
+<script type="module">
+    import { renderMenu, goBooking, goHome } from "../../static/js/cus_menu.js";
 
-if (!id) {
-    document.getElementById("menu").innerHTML = "<p>Lỗi: không có nhà hàng</p>"
-} else {
-            let html = ""
-            const filtered = MENU_DATA.filter(m => m.restaurant_id == id)
-            filtered.forEach(m => {
-                html += `
-                <div class="food-item">
-                    <img src="${m.image}" class="food-img">
-                    <h3>${m.name}</h3>
-                    <p>💰 ${m.price} VND</p>
-                    <div class="desc">${m.description || ""}</div>
-                </div>
-                `
-            })
-            document.getElementById("menu").innerHTML = html
+    window.goBooking = goBooking;
+    window.goHome = goHome;
 
-}
-
-function goBooking() {
-    window.location.href = `booking.html?id=${id}`
-}
-
-function goHome() {
-    window.location.href = `search.html`
-}
+    renderMenu();
 </script>
 
 </body>

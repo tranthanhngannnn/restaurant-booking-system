@@ -7,7 +7,6 @@ from backend.models.tables import Tables
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from .service import search_restaurant, get_all_restaurants
 from backend.models.booking import Reservation
-from backend.models.restaurant import Restaurant
 from datetime import datetime
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/api/v1/customer")

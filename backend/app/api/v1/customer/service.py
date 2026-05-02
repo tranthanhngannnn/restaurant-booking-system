@@ -6,16 +6,37 @@ from datetime import datetime, timedelta
 from backend.models.payment import Payment
 from backend.models.restaurant import Restaurant
 from flask_jwt_extended import get_jwt_identity
-from flask_login import current_user
 from sqlalchemy import or_
+from sqlalchemy import func
+import re
+import unicodedata
 
+#  SEARCH
+def normalize_text(text):
+    if not text:
+        return ""
+    text = text.lower()
+    # bỏ dấu tiếng Việt
+    text = unicodedata.normalize('NFD', text)
+    text = ''.join(c for c in text if unicodedata.category(c) != 'Mn')
+    # bỏ ký tự đặc biệt (# , . ...)
+    text = re.sub(r'[^a-z0-9\s]', ' ', text)
+    # bỏ khoảng trắng dư
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
 
-# ================== SEARCH ==================
 def search_restaurant(address, cuisine):
     query = Restaurant.query
 
     if address:
-        query = query.filter(Restaurant.Address.ilike(f"%{address}%"))
+        keyword = normalize_text(address).replace(" ", "")
+
+        query = query.filter(
+            or_(
+                func.replace(func.lower(Restaurant.RestaurantName), " ", "").ilike(f"%{keyword}%"),
+                func.replace(func.lower(Restaurant.Address), " ", "").ilike(f"%{keyword}%")
+            )
+        )
 
     if cuisine:
         query = query.filter(Restaurant.CuisineID == int(cuisine))
@@ -54,10 +75,13 @@ def get_menu(restaurant_id):
 
 # ================== CHECK TABLE ==================
 def check_table(restaurant_id, date, time, people):
+    cancel_expired_bookings()
     people = int(people)
     booking_date = datetime.strptime(date, "%Y-%m-%d").date()
     booking_time = datetime.strptime(time, "%H:%M").time()
-
+    booking_dt = datetime.combine(booking_date, booking_time)
+    start = (booking_dt - timedelta(minutes=30)).time()
+    end = (booking_dt + timedelta(minutes=30)).time()
     tables = Tables.query.filter_by(RestaurantID=restaurant_id).all()
     result = []
 
@@ -66,7 +90,7 @@ def check_table(restaurant_id, date, time, people):
             exist = Reservation.query.filter(
                 Reservation.TableID == t.TableID,
                 Reservation.BookingDate == booking_date,
-                Reservation.BookingTime == booking_time,
+                Reservation.BookingTime.between(start, end),
                 Reservation.Status.in_(["Pending", "Confirmed"])
             ).first()
 
@@ -110,12 +134,14 @@ def create_booking(data):
     # Ép kiểu dữ liệu để so sánh trong SQL
     table_id = int(table_id)
     guest_count = int(people_str)
-
+    booking_dt = datetime.combine(booking_date, booking_time)
+    start = (booking_dt - timedelta(minutes=30)).time()
+    end = (booking_dt + timedelta(minutes=30)).time()
     # 4. Chống double booking
     exist = Reservation.query.filter(
         Reservation.TableID == table_id,
         Reservation.BookingDate == booking_date,
-        Reservation.BookingTime == booking_time,
+        Reservation.BookingTime.between(start, end),
         Reservation.Status.in_(["Pending", "Confirmed"])
     ).first()
 
@@ -243,7 +269,7 @@ def cancel_expired_bookings():
     for b in bookings:
         booking_datetime = datetime.combine(b.BookingDate, b.BookingTime)
 
-        if booking_datetime < now - timedelta(minutes=5):
+        if booking_datetime < now + timedelta(minutes=2):
             b.Status = "Cancelled"
     db.session.commit()
 
