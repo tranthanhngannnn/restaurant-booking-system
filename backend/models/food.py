@@ -2,7 +2,7 @@ from core.extensions import db
 
 class Food(db.Model):
     __tablename__ = "Food"
-    FoodID = db.Column(db.String(8), primary_key=True)
+    FoodID = db.Column(db.String(5), primary_key=True)
     FoodName = db.Column(db.String(100))
 
     RestaurantID = db.Column(
@@ -12,5 +12,7 @@ class Food(db.Model):
 
     Price = db.Column(db.Float)
     Description = db.Column(db.String(255))
-    Image = db.Column(db.String(255))
+    Image_URL = db.Column("Image_URL",db.String(255))
     restaurant = db.relationship("Restaurant", backref="foods")
+    Visible = db.Column(db.Boolean, default=True)
+    Category = db.Column(db.String(50))

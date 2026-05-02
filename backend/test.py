@@ -8,24 +8,39 @@ app = create_app()
 
 
 def seed_restaurants():
-    """Tạo danh sách nhà hàng"""
-    data = [
-        "Nhà hàng lẩu",
-        "Nhà hàng nướng"
-    ]
-
+    """Tạo danh sách nhà hàng với đầy đủ thông tin"""
     restaurants = [
-        Restaurant(RestaurantName=name,
-                   Opentime=time(8, 0),
-                   Closetime=time(22, 0)
-                   )
-
-        for name in data
+        Restaurant(
+            RestaurantName="Hotpot",
+            Address="123 Đường Nguyễn Đình Chiểu, Quận 3, TP.HCM",
+            Phone="0901234567",
+            Email="contact@hotpot.vn",
+            Opentime=time(10, 0),
+            Closetime=time(22, 30),
+            description="Nhà hàng lẩu Tứ Xuyên siêu cay khổng lồ, không gian ấm cúng phù hợp cho gia đình và nhóm bạn.",
+            status="Approved",  # Nên để Approved để dễ test hiển thị
+            UserID=1,           # Giả sử ID của user chủ nhà hàng là 1 (nhớ đảm bảo bảng User có ID này nhé)
+            CuisineID=1         # 1 là Lẩu - Khớp với thẻ select bên HTML
+        ),
+        Restaurant(
+            RestaurantName="Grill House",
+            Address="456 Đường Sư Vạn Hạnh, Quận 10, TP.HCM",
+            Phone="0987654321",
+            Email="booking@grillhouse.vn",
+            Opentime=time(16, 0),
+            Closetime=time(23, 59),
+            description="Đồ nướng BBQ Hàn Quốc xèo xèo, thịt bò nhập khẩu tươi ngon, view check-in cực xịn.",
+            status="Approved",
+            UserID=2,           # Giả sử ID của user chủ nhà hàng là 2
+            CuisineID=2         # 2 là Nướng - Khớp với thẻ select bên HTML
+        )
     ]
 
+    # Thêm vào session và lưu xuống Database
     db.session.add_all(restaurants)
     db.session.commit()
 
+    print("Đã seed thành công 2 nhà hàng: Hotpot và Grill House!")
     return restaurants
 
 

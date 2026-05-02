@@ -34,28 +34,6 @@ if (!id) {
                 `
             })
             document.getElementById("menu").innerHTML = html
-  /*  fetch(`http://127.0.0.1:5000/api/menu/${id}`)
-    .then(res => res.json())
-    .then(data => {
-        let html = ""
-
-        if (data.length === 0) {
-            html = "<p>Chưa có món ăn</p>"
-        }
-
-              data.forEach(m => {
-            html += `
-            <div class="food-item">
-                <img src="${m.Image || 'https://via.placeholder.com/150'}" class="food-img">
-                <h3>${m.FoodName}</h3>
-                <p>💰 ${m.Price} VND</p>
-                <p>${m.Description || ""}</p>
-            </div>
-            `
-        })
-
-        document.getElementById("menu").innerHTML = html
-    })*/
 
 }
 
