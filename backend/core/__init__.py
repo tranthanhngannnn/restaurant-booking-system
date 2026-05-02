@@ -8,7 +8,7 @@ from models.user import User
 from models.review import Review
 from app.api.v1.auth.routes import auth_bp
 from app.api.v1.admin.routes import admin_bp
-
+from app.api.v1.restaurant.routes import restaurant_bp
 from app.api.v1.customer.routes import customer_bp
 
 
@@ -24,7 +24,9 @@ def create_app():
     # Cấu hình Database & Security
     app.config.from_object(Config)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+        'SQLALCHEMY_DATABASE_URI',
+        'sqlite:///:memory:')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.secret_key = "super_secret_key"
