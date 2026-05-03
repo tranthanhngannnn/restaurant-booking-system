@@ -18,7 +18,11 @@ function getAuthHeaders(includeJson = true) {
     return headers;
 }
 
+<<<<<<< HEAD
+// hiển thị thông báo
+=======
 //hiển thị thông báo
+>>>>>>> origin/main
 function showPageMessage(message, type = "info") {
     if (!messageBox) return;
     messageBox.hidden = false;
@@ -26,7 +30,11 @@ function showPageMessage(message, type = "info") {
     messageBox.className = `staff-restaurant-message ${type}`;
 }
 
+<<<<<<< HEAD
+// ẩn thông báo
+=======
 //ẩn thông báo
+>>>>>>> origin/main
 function clearPageMessage() {
     if (!messageBox) return;
     messageBox.hidden = true;
@@ -34,7 +42,11 @@ function clearPageMessage() {
     messageBox.className = "staff-restaurant-message";
 }
 
+<<<<<<< HEAD
+// chuyển panel
+=======
 //đăng kí nhà hàng mới
+>>>>>>> origin/main
 function setActivePanel(panelName) {
     if (panelName === "register") {
         window.location.href = "register_restaurant.html";
@@ -54,7 +66,11 @@ function setActivePanel(panelName) {
     }
 }
 
+<<<<<<< HEAD
+// render bàn
+=======
 
+>>>>>>> origin/main
 function renderTableCard(table) {
     let capacity = table.capacity;
     let extraClass = "";
@@ -73,7 +89,10 @@ function renderTableCard(table) {
         </div>`;
     }
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
     if (table.status === "Reserved" || table.status === "Confirmed") {
         return `<div class="card reserved ${extraClass}" onclick="openOrder(${table.id})">
             <div class="icon">🍽️</div>
@@ -86,7 +105,10 @@ function renderTableCard(table) {
         </div>`;
     }
 
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main
     return `<div class="card ${extraClass}">
         <div class="icon">🍽️</div>
         <h3>Bàn ${table.id}</h3>
@@ -94,6 +116,42 @@ function renderTableCard(table) {
     </div>`;
 }
 
+<<<<<<< HEAD
+// 🔥 QUAN TRỌNG: đọc localStorage và update UI
+function applyMockStatus() {
+    const tablesMock = JSON.parse(localStorage.getItem("tables")) || {};
+
+    document.querySelectorAll(".card").forEach(card => {
+        const title = card.querySelector("h3");
+        if (!title) return;
+
+        const id = title.innerText.replace("Bàn ", "").trim();
+
+        if (tablesMock[id] === "occupied") {
+            card.classList.remove("available");
+            card.classList.add("reserved");
+
+            const p = card.querySelector("p");
+            if (p) p.innerText = "Đang dùng";
+
+            card.setAttribute("onclick", `openOrder(${id})`);
+        }
+
+        if (tablesMock[id] === "empty") {
+            card.classList.remove("reserved");
+            card.classList.add("available");
+
+            const p = card.querySelector("p");
+            if (p) p.innerText = "Trống";
+
+            card.removeAttribute("onclick");
+        }
+    });
+}
+
+// load bàn
+=======
+>>>>>>> origin/main
 async function loadTables() {
     try {
         const response = await fetch(TABLE_API, {
@@ -107,6 +165,24 @@ async function loadTables() {
 
         const tables = await response.json();
         const middle = Math.ceil(tables.length / 2);
+<<<<<<< HEAD
+
+        document.getElementById("left-side").innerHTML =
+            tables.slice(0, middle).map(renderTableCard).join("");
+
+        document.getElementById("right-side").innerHTML =
+            tables.slice(middle).map(renderTableCard).join("");
+
+    } catch (error) {
+        showPageMessage(error.message || "Lỗi tải dữ liệu bàn.", "error");
+    }
+
+    // 🔥 FIX CHÍNH
+    applyMockStatus();
+}
+
+// update trạng thái (API)
+=======
         document.getElementById("left-side").innerHTML = tables.slice(0, middle).map(renderTableCard).join("");
         document.getElementById("right-side").innerHTML = tables.slice(middle).map(renderTableCard).join("");
     } catch (error) {
@@ -115,6 +191,7 @@ async function loadTables() {
 }
 
 
+>>>>>>> origin/main
 async function updateTableStatus(tableId, payload) {
     const response = await fetch(`${TABLE_API}/${tableId}/status`, {
         method: "PUT",
@@ -129,6 +206,10 @@ async function updateTableStatus(tableId, payload) {
     return response.json();
 }
 
+<<<<<<< HEAD
+// hủy đặt bàn
+=======
+>>>>>>> origin/main
 async function cancelBooking(event, id) {
     event.stopPropagation();
     if (!confirm("Hủy đặt bàn này?")) return;
@@ -146,9 +227,13 @@ async function cancelBooking(event, id) {
     }
 }
 
+<<<<<<< HEAD
+// thêm bàn
+=======
 
 
 // thêm bàn mới
+>>>>>>> origin/main
 async function addTable() {
     const capacity = parseInt(prompt("Nhập số chỗ ngồi:"), 10);
     if (!capacity || capacity <= 0) {
@@ -157,7 +242,10 @@ async function addTable() {
     }
 
     try {
+<<<<<<< HEAD
+=======
         // 1. Lấy danh sách bàn hiện tại để tính số bàn mới (tự tăng)
+>>>>>>> origin/main
         const listResponse = await fetch(TABLE_API, {
             method: "GET",
             headers: getAuthHeaders(true)
@@ -165,7 +253,10 @@ async function addTable() {
         const tables = await listResponse.json();
         const newNumber = tables.length + 1;
 
+<<<<<<< HEAD
+=======
         // 2. Gửi request POST thêm bàn mới
+>>>>>>> origin/main
         const createResponse = await fetch(TABLE_API, {
             method: "POST",
             headers: getAuthHeaders(true),
@@ -178,7 +269,11 @@ async function addTable() {
 
         if (createResponse.ok) {
             showPageMessage("Đã thêm bàn mới thành công!", "success");
+<<<<<<< HEAD
+            await loadTables();
+=======
             await loadTables(); // Reload lại danh sách bàn trên giao diện
+>>>>>>> origin/main
         } else {
             const errorData = await createResponse.json();
             throw new Error(errorData.error || "Không thêm được bàn mới.");
@@ -190,6 +285,14 @@ async function addTable() {
     }
 }
 
+<<<<<<< HEAD
+// mở order
+function openOrder(id){
+  window.location.href = `./orders.html?table_id=${id}`;
+}
+
+// logout
+=======
 
 function openOrder(id){
   window.location.href = `./orders.html?table_id=${id}` ;
@@ -197,6 +300,7 @@ function openOrder(id){
 window.onload = loadTables;
 
 
+>>>>>>> origin/main
 function handleLogout() {
     if (!confirm("Bạn có chắc muốn đăng xuất không?")) return;
     localStorage.removeItem("token");
@@ -204,7 +308,11 @@ function handleLogout() {
     window.location.href = "../auth/login.html";
 }
 
+<<<<<<< HEAD
+// event
+=======
 
+>>>>>>> origin/main
 navButtons.forEach((button) => {
     button.addEventListener("click", () => {
         setActivePanel(button.dataset.panelTarget);
@@ -213,13 +321,28 @@ navButtons.forEach((button) => {
 
 if (logoutButton) logoutButton.addEventListener("click", handleLogout);
 
+<<<<<<< HEAD
+window.cancelBooking = cancelBooking;
+window.addTable = addTable;
+window.openOrder = openOrder;
+
+// load lần đầu
+=======
 
 window.cancelBooking = cancelBooking;
 
 window.addTable = addTable;
 window.openOrder = openOrder;
 
+>>>>>>> origin/main
 window.onload = async () => {
     setActivePanel("tables");
     await loadTables();
 };
+<<<<<<< HEAD
+// quay lại tab sẽ reload
+window.addEventListener("focus", () => {
+    loadTables();
+});
+=======
+>>>>>>> origin/main

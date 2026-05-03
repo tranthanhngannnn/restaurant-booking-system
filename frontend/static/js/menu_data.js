@@ -1,9 +1,9 @@
-//  Toàn bộ dữ liệu menu
+
 const MENU_DATA = [
    { id: "LT", name: 'Lẩu Thái', restaurant_id: 1, category_id: 3, price: 50000, description:'Lẩu chua cay kiểu Thái với hải sản tươi và rau', image: '/static/images/Food/Lau/lauthai.jpg' },
    { id: "LM", name: 'Lẩu Mala', restaurant_id: 1, category_id: 3, price: 50000, description:'Lẩu cay tê đặc trưng Tứ Xuyên với nhiều loại topping', image: '/static/images/Food/Lau/laumala.jpg' },
-   { id: "LCD", name: 'Lẩu Cua Đồng', restaurant_id: 1, category_id: 3, price: 50000, description:'Lẩu cua đồng đậm vị truyền thống ăn kèm rau tươi', image: '/static/images/Food/Lau/cuadong.webp' },
-   { id: "LKC", name: 'Lẩu Kimchi', restaurant_id: 1, category_id: 3, price: 60000, description:'Lẩu kimchi Hàn Quốc cay nhẹ với thịt và đậu hũ', image: '/static/images/Food/Lau/laukimchi.webp' },
+   { id: "LCD", name: 'Lẩu Cua Đồng', restaurant_id: 1, category_id: 3, price: 50000, description:'Lẩu cua đồng đậm vị truyền thống ăn kèm rau tươi', image: '/static/images/Food/Lau/laucuadong.jpg' },
+   { id: "LKC", name: 'Lẩu Kimchi', restaurant_id: 1, category_id: 3, price: 60000, description:'Lẩu kimchi Hàn Quốc cay nhẹ với thịt và đậu hũ', image: '/static/images/Food/Lau/laukimchi.jpg' },
    { id: "LTX", name: 'Lẩu Tứ Xuyên', restaurant_id: 1, category_id: 3, price: 50000, description:'Lẩu cay nồng đậm vị tiêu hoa Tứ Xuyên', image: '/static/images/Food/Lau/lautuxuyen.jpg' },
    { id: "LBNG", name: 'Lẩu Bò Nhúng Giấm', restaurant_id: 1, category_id: 3, price: 50000, description:'Thịt bò tươi nhúng giấm chua nhẹ ăn kèm rau', image: '/static/images/Food/Lau/laubonhunggiam.jpg' },
    { id: "STN", name: 'Set Thịt Nhỏ', restaurant_id: 1, category_id: 1, price: 120000, description:'Set thịt nhỏ gồm bò, heo và rau ăn kèm', image: '/static/images/Food/Lau/setthitnho.jpg' },
@@ -28,5 +28,3 @@ const MENU_DATA = [
    { id: "NVH", name: 'Nạc Vai Heo', restaurant_id: 2, category_id: 5, price: 100000, description:'Thịt nạc vai heo mềm, thích hợp nướng BBQ', image: '/static/images/Food/Nuong/nacvaiheo.jpg' },
    { id: "TCTH", name: 'Trái Cây Tổng Hợp', restaurant_id: 2, category_id: 7, price: 100000, description:'Đĩa trái cây tươi theo mùa tráng miệng', image: '/static/images/Food/Nuong/traicaytonghop.jpg' }
    ];
-
-

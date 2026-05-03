@@ -10,7 +10,7 @@ from backend.core.extensions import db
 from backend.models.user import User
 from backend.app.api.v1.restaurant.service import RestaurantService
 from .service import *
-
+from backend.app.api.v1.restaurant.service import update_food
 restaurant_bp = Blueprint('restaurant', __name__)
 
 @restaurant_bp.route('/registerRestaurant', methods=['POST'])
@@ -64,7 +64,8 @@ def get_menu_admin():
 
     current_user_id = get_jwt_identity() #NẾU ĐÚNG ROLE NHÀ HÀNG -> LẤY ID VÀ QUERY MENU
     user_info = User.query.get(current_user_id) #Tìm thông tin user để suy ra nhà hàng họ đang làm việc
-
+    print("USER:", user_info)
+    print("RestaurantID:", getattr(user_info, "RestaurantID", None))
     # Kiểm tra xem nhân viên này đã được phân công về nhà hàng nào chưa
     if not user_info or not user_info.RestaurantID:
         return jsonify({"message": "Nhân viên này chưa được phân công nhà hàng!"}), 400
