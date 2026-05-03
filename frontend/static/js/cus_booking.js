@@ -146,6 +146,11 @@ export function selectTable(id) {
 
 // CREATE BOOKING
 export function createBooking() {
+    const note = noteInput.value.trim();
+    if (note.length > 300) {
+        alert("Ghi chú tối đa 300 ký tự!");
+        return;
+    }
     fetch(`${API}/book`, {
         method: "POST",
         headers: {

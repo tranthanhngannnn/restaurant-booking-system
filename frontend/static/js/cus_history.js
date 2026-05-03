@@ -177,7 +177,10 @@ export function openReview(restaurantID, reservationID, oldRating, oldComment) {
 
     const ratingInput = document.getElementById("rating");
     const commentInput = document.getElementById("comment");
-
+    if (comment.length > 255) {
+        alert("Bình luận tối đa 255 ký tự!");
+        return;
+    }
     if (ratingInput) ratingInput.value = oldRating || "";
     if (commentInput) commentInput.value = oldComment || "";
 }

@@ -8,7 +8,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from .service import search_restaurant, get_all_restaurants
 from backend.models.booking import Reservation
 from datetime import datetime
-
+from sqlalchemy.exc import DataError
 customer_bp = Blueprint("customer", __name__, url_prefix="/api/v1/customer")
 
 
@@ -64,6 +64,9 @@ def book():
             return jsonify({"error": "Chỉ được đặt từ 1-10 khách"}), 400
     except:
         return jsonify({"error": "Số khách không hợp lệ"}), 400
+    note = data.get("note", "")
+    if note and len(note) > 300:
+        return jsonify({"error": "Ghi chú tối đa 300 ký tự"}), 400
 
     table_id = data.get("table_id")
     restaurant_id = data.get("restaurant_id")
@@ -145,39 +148,56 @@ def payment():
 @jwt_required()
 def create_review():
     user_id = get_jwt_identity()
-    if not user_id: return jsonify({"error": "Chưa đăng nhập"}), 401
+    if not user_id:
+        return jsonify({"error": "Chưa đăng nhập"}), 401
+
     data = request.json
     reservation_id = data.get("ReservationID")
     rating = data.get("Rating")
+
+
     if not isinstance(rating, int) or rating < 1 or rating > 5:
         return jsonify({"error": "Rating phải là số nguyên từ 1 đến 5"}), 400
 
-    # ===== VALIDATE COMMENT =====
-    comment = data.get("Comment", "")
-    if comment and len(comment) > 500:
-        return jsonify({"error": "Bình luận tối đa 500 ký tự"}), 400
 
-    # Tìm xem cái ID đơn hàng này đã từng được đánh giá chưa?
+    comment = data.get("Comment", "")
+    if comment and len(comment) > 255:
+        return jsonify({"error": "Bình luận tối đa 255 ký tự"}), 400
+
     existing_review = Review.query.filter_by(ReservationID=reservation_id).first()
 
-    if existing_review:
-        # NẾU CÓ RỒI -> Cập nhật lại (Sửa)
-        existing_review.Rating = data.get("Rating")
-        existing_review.Comment = data.get("Comment", "")
+    try:
+        if existing_review:
+            # UPDATE
+            existing_review.Rating = rating
+            existing_review.Comment = comment
 
-        db.session.commit()
-        return jsonify({"message": "Cập nhật đánh giá thành công!"})
-    else:
-        new_review = Review(
-            UserID=user_id,
-            RestaurantID=data["RestaurantID"],
-            ReservationID=data.get("ReservationID"),
-            Rating=data.get("Rating"),
-            Comment=data.get("Comment", "")
-        )
-    db.session.add(new_review)
-    db.session.commit()
-    return jsonify({"message": "Đã gửi đánh giá thành công!"})
+            db.session.commit()
+            return jsonify({"message": "Cập nhật đánh giá thành công!"})
+
+        else:
+            # CREATE
+            new_review = Review(
+                UserID=user_id,
+                RestaurantID=data["RestaurantID"],
+                ReservationID=reservation_id,
+                Rating=rating,
+                Comment=comment
+            )
+
+            db.session.add(new_review)
+            db.session.commit()
+
+            return jsonify({"message": "Đã gửi đánh giá thành công!"})
+
+    except DataError:
+        db.session.rollback()
+        return jsonify({"error": "Bình luận vượt quá 255 ký tự"}), 400
+
+    except Exception as e:
+        db.session.rollback()
+        print("Lỗi review:", str(e))
+        return jsonify({"error": "Lỗi hệ thống"}), 500
 
 
 # lưu đánh giá

@@ -302,3 +302,20 @@ def test_expired_pending_not_block(client, monkeypatch):
     })
 
     assert res.status_code == 200
+
+def test_booking_note_too_long(client):
+    data = {
+        "name": "Test",
+        "phone": "0123456789",
+        "restaurant_id": 1,
+        "table_id": 1,
+        "date": "2099-12-30",
+        "time": "18:00",
+        "people": 2,
+        "note": "a" * 301  # vượt 300
+    }
+
+    res = client.post("/api/v1/customer/book", json=data)
+
+    assert res.status_code == 400
+    assert "Ghi chú tối đa 300 ký tự" in res.json["error"]

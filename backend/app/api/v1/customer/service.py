@@ -115,6 +115,7 @@ def create_booking(data):
         restaurant_id = int(data.get("restaurant_id"))
         table_id = int(data.get("table_id"))
         people_str = int(data.get("people"))
+        note = data.get("note", "")
 
         booking_date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
         booking_time = datetime.strptime(data.get("time"), "%H:%M").time()
@@ -169,6 +170,7 @@ def create_booking(data):
         BookingDate=booking_date,
         BookingTime=booking_time,
         GuestCount=guest_count,
+        Note=note,
         Deposit=deposit,
         Status="Pending"
     )
