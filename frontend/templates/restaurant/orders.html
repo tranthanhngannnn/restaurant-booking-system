@@ -133,6 +133,7 @@
     }
 
     // 6. Gửi Order
+<<<<<<< HEAD
 async function createOrder(){
     if(order.length === 0){
         alert("Chưa có món");
@@ -149,6 +150,25 @@ async function createOrder(){
         table_id: tableId,
         items: order
     }));
+=======
+     async function createOrder(){
+           if(order.length === 0){
+            alert("Chưa có món");
+            return;
+            }
+
+        const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
+         method: "POST",
+         headers: {"Content-Type":"application/json"},
+         body: JSON.stringify({
+         table_id: parseInt(tableId),
+         items: order.map(i => ({
+         food_id: i.food_id,
+         qty: i.qty
+      }))
+    })
+  });
+>>>>>>> origin/main
 
     // 🔹 (optional) gọi API thật nếu có backend
     try {
@@ -190,6 +210,7 @@ async function createOrder(){
     }
 
     async function payOrder() {
+<<<<<<< HEAD
     if (!confirm("Xác nhận thanh toán cho bàn này?")) return;
 
     // 🔹 Lấy danh sách trạng thái bàn
@@ -214,6 +235,22 @@ async function createOrder(){
         loadSavedOrder();
     };
 
+=======
+        if (!confirm("Xác nhận thanh toán cho bàn này?")) return;
+
+        // Mock thanh toán thành công
+        console.log("Payment successful for mock order");
+        localStorage.removeItem("currentOrder");
+        alert("Thanh toán thành công! Bàn hiện đã trống.");
+        window.location.href = "table.html";
+    }
+
+    window.onload = () => {
+        loadMenu();
+        loadSavedOrder();
+    };
+
+>>>>>>> origin/main
 
 </script>
 

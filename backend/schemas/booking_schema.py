@@ -1,4 +1,5 @@
 from core.extensions import ma
+<<<<<<< HEAD
 from models.booking import Reservation
 
 class BookingSchema(ma.Schema):
@@ -31,3 +32,15 @@ class BookingSchema(ma.Schema):
 
 booking_schema = BookingSchema()
 bookings_schema = BookingSchema(many=True)
+=======
+from models.booking import Reservation   # sửa đúng path
+
+class BookingSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Reservation
+        load_instance = True
+
+    RestaurantName = ma.Function(lambda obj: obj.restaurant.RestaurantName if obj.restaurant else "")
+    TableNumber = ma.Function(lambda obj: obj.table.TableNumber if obj.table else "")
+bookings_schema = BookingSchema(many=True)
+>>>>>>> origin/main
