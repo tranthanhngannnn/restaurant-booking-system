@@ -1,5 +1,5 @@
-from core.extensions import db
-from models.confirmbooking import Booking
+from backend.core.extensions import db
+from backend.models.confirmbooking import Booking
 
 class Table(db.Model):
 

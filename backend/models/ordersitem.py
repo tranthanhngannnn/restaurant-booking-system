@@ -1,5 +1,5 @@
-from core.extensions import db
-from models.menu import Menu
+from backend.core.extensions import db
+from backend.models.menu import Menu
 
 class OrderItem(db.Model):
     __tablename__ = "order_item"
