@@ -8,7 +8,7 @@ from models.user import User
 from models.review import Review
 from app.api.v1.auth.routes import auth_bp
 from app.api.v1.admin.routes import admin_bp
-from app.api.v1.restaurant.routes import restaurant_bp
+from app.api.v1.restaurant import restaurant_bp
 from app.api.v1.customer.routes import customer_bp
 
 
@@ -34,20 +34,13 @@ def create_app():
     ma.init_app(app)
     login_manager.init_app(app)
     jwt.init_app(app)
-    CORS(app, supports_credentials=True, origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500"
-    ])
+    CORS(app, supports_credentials=True,origins=["http://127.0.0.1:5500", "http://localhost:5500"])
+
 
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
     app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurant')
     app.register_blueprint(customer_bp, url_prefix="/api/v1/customer")
-    app.add_url_rule(
-        '/api/v1/restaurants/registerRestaurant',
-        view_func=app.view_functions['restaurant.staff_register_restaurant'],
-        methods=['POST']
-    )
 
     @login_manager.user_loader
     def load_user(user_id):

@@ -133,6 +133,24 @@
     }
 
     // 6. Gửi Order
+<<<<<<< HEAD
+async function createOrder(){
+    if(order.length === 0){
+        alert("Chưa có món");
+        return;
+    }
+
+    // 🔹 lưu trạng thái bàn (mock)
+    let tables = JSON.parse(localStorage.getItem("tables")) || {};
+    tables[tableId] = "occupied";
+    localStorage.setItem("tables", JSON.stringify(tables));
+
+    // 🔹 lưu order mock
+    localStorage.setItem("currentOrder", JSON.stringify({
+        table_id: tableId,
+        items: order
+    }));
+=======
      async function createOrder(){
            if(order.length === 0){
             alert("Chưa có món");
@@ -150,12 +168,32 @@
       }))
     })
   });
+>>>>>>> origin/main
 
-  if(res.ok){
-    alert("Đã gửi order");
-  } else {
-    alert("Lỗi gửi order");
-  }
+    // 🔹 (optional) gọi API thật nếu có backend
+    try {
+        const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+                table_id: parseInt(tableId),
+                items: order.map(i => ({
+                    food_id: i.food_id,
+                    qty: i.qty
+                }))
+            })
+        });
+
+        if(res.ok){
+            alert("Đã gửi order");
+        } else {
+            alert("Lỗi gửi order");
+        }
+
+    } catch (err) {
+        console.log("Mock mode - không có backend cũng OK");
+        alert("Đã gửi order (mock)");
+    }
 }
 
     // Load lại Order đã lưu nếu có
@@ -172,6 +210,32 @@
     }
 
     async function payOrder() {
+<<<<<<< HEAD
+    if (!confirm("Xác nhận thanh toán cho bàn này?")) return;
+
+    // 🔹 Lấy danh sách trạng thái bàn
+    let tables = JSON.parse(localStorage.getItem("tables")) || {};
+
+    // 🔹 Set bàn hiện tại = trống
+    tables[tableId] = "empty";
+
+    // 🔹 Lưu lại
+    localStorage.setItem("tables", JSON.stringify(tables));
+
+    // 🔹 Xóa order
+    localStorage.removeItem("currentOrder");
+
+    alert("Thanh toán thành công! Bàn đã trống.");
+
+    window.location.href = "table.html";
+}
+
+    window.onload = () => {
+        loadMenu();
+        loadSavedOrder();
+    };
+
+=======
         if (!confirm("Xác nhận thanh toán cho bàn này?")) return;
 
         // Mock thanh toán thành công
@@ -186,6 +250,7 @@
         loadSavedOrder();
     };
 
+>>>>>>> origin/main
 
 </script>
 

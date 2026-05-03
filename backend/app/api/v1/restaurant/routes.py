@@ -10,7 +10,7 @@ from core.extensions import db
 from models.user import User
 from app.api.v1.restaurant.service import RestaurantService
 from .service import *
-
+from app.api.v1.restaurant.service import update_food
 restaurant_bp = Blueprint('restaurant', __name__)
 
 @restaurant_bp.route('/registerRestaurant', methods=['POST'])
