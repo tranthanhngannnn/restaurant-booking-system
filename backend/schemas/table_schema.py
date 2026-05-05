@@ -10,7 +10,7 @@ class TableSchema(Schema):
 
     restaurant_id = fields.Int(required=True)  # ✅ thêm
 
-    # ✅ validate số ghế
+    #  validate số ghế
     @validates("seats")
     def validate_seats(self, value):
         if value <= 0:

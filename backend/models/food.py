@@ -1,5 +1,5 @@
 from backend.core.extensions import db
-
+from backend.models.category import Category
 class Food(db.Model):
     __tablename__ = "Food"
     FoodID = db.Column(db.String(5), primary_key=True)
@@ -15,4 +15,5 @@ class Food(db.Model):
     Image_URL = db.Column("Image_URL",db.String(255))
     restaurant = db.relationship("Restaurant", backref="foods")
     Visible = db.Column(db.Boolean, default=True)
-    Category = db.Column(db.String(50))
+    CategoryID = db.Column(db.Integer, db.ForeignKey('Category.CategoryID'))
+    category = db.relationship("Category")

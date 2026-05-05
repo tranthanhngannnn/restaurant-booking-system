@@ -1,5 +1,5 @@
-from core import create_app, db
-from models.menu import Menu
+from backend.core import create_app, db
+from backend.models.menu import Menu
 
 app = create_app()
 

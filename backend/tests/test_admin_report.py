@@ -10,7 +10,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 
-from core import create_app
+from backend.core import create_app
 
 REPORT_URL = "/api/v1/admin/report"
 REPORT_SERVICE_PATH = "app.api.v1.admin.routes.ReportService.get_report"

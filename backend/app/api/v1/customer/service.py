@@ -80,8 +80,8 @@ def check_table(restaurant_id, date, time, people):
     booking_date = datetime.strptime(date, "%Y-%m-%d").date()
     booking_time = datetime.strptime(time, "%H:%M").time()
     booking_dt = datetime.combine(booking_date, booking_time)
-    start = (booking_dt - timedelta(minutes=30)).time()
-    end = (booking_dt + timedelta(minutes=30)).time()
+    start = (booking_dt - timedelta(minutes=60)).time()
+    end = (booking_dt + timedelta(minutes=60)).time()
     tables = Tables.query.filter_by(RestaurantID=restaurant_id).all()
     result = []
 
@@ -136,8 +136,8 @@ def create_booking(data):
     table_id = int(table_id)
     guest_count = int(people_str)
     booking_dt = datetime.combine(booking_date, booking_time)
-    start = (booking_dt - timedelta(minutes=30)).time()
-    end = (booking_dt + timedelta(minutes=30)).time()
+    start = (booking_dt - timedelta(minutes=60)).time()
+    end = (booking_dt + timedelta(minutes=60)).time()
     # 4. Chống double booking
     exist = Reservation.query.filter(
         Reservation.TableID == table_id,

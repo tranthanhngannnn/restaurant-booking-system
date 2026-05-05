@@ -12,12 +12,17 @@
     <!-- SIDEBAR -->
     <div class="sidebar">
         <h2>🍽️ Restaurant</h2>
-        <ul>
-            <li>Dashboard</li>
+
             <a href="table.html">Quản lý bàn</a>
             <a class="active">Đơn đặt bàn</a>
             <a href="menu_mgmt.html">Menu</a>
-        </ul>
+            <a href="register_restaurant.html">Đăng ký nhà hàng</a>
+
+        <div class="sidebar-bottom">
+            <button onclick="handleLogout()" class="logout-btn">
+                Đăng xuất
+            </button>
+        </div>
     </div>
 
     <!-- MAIN -->
@@ -32,6 +37,7 @@
                 <th>Số người</th>
                 <th>Ngày</th>
                 <th>Giờ</th>
+                <th>Bàn</th>
                 <th>Tiền cọc</th>
                 <th>Trạng thái</th>
                 <th>Hành động</th>
@@ -85,6 +91,7 @@ async function loadBookings() {
                     <td>${b.GuestCount}</td>
                     <td>${formatDate(b.BookingDate)}</td>
                     <td>${b.BookingTime}</td>
+                    <td>Bàn ${b.TableID}</td>
                     <td>${b.Deposit}</td>
                     <td class="${b.Status}">${b.Status}</td>
                     <td>

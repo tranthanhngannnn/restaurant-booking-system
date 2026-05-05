@@ -6,31 +6,18 @@
     <title>Quản lý bàn</title>
     <link rel="stylesheet" href="../../static/css/restaurant.css">
     <link rel="stylesheet" href="../../static/css/admin.css">
+    <link rel="stylesheet" href="../../static/css/comfirmbooking.css">
 </head>
 <body>
 <div class="container">
-    <div class="sidebar staff-restaurant-sidebar">
-        <div class="staff-restaurant-sidebar-top">
-            <h2>Restaurant</h2>
-            <ul>
-                <li>
-                    <button type="button" class="staff-restaurant-nav-button" data-panel-target="tables">
-                        Quản lý bàn
-                    </button>
-                </li>
-                <li>
-                    <a href="comfirmbooking.html" class="staff-restaurant-nav-link">Xác nhận đặt bàn</a>
-                </li>
-                <li>
-                    <button type="button" class="staff-restaurant-nav-button" data-panel-target="register">
-                        Đăng ký nhà hàng
-                    </button>
-                </li>
-            </ul>
-        </div>
-
-        <div class="staff-restaurant-sidebar-bottom">
-            <button type="button" id="logoutButton" class="staff-restaurant-logout" onclick="handleLogout()">
+   <div class="sidebar">
+        <h2>🍽️ Restaurant</h2>
+            <a class="active">Quản lý bàn</a>
+            <a href="comfirmbooking.html">Đơn đặt bàn</a>
+            <a href="menu_mgmt.html">Menu</a>
+            <a href="register_restaurant.html">Đăng ký nhà hàng</a>
+        <div class="sidebar-bottom">
+            <button onclick="handleLogout()" class="logout-btn">
                 Đăng xuất
             </button>
         </div>
@@ -57,5 +44,10 @@
 
 
 <script src="../../static/js/restaurant_table.js"></script>
+<script>
+function goToOrder(tableId) {
+    window.location.href = `order.html?table_id=${tableId}`;
+}
+</script>
 </body>
 </html>

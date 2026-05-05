@@ -8,6 +8,7 @@ from  backend.models.booking import Reservation
 from  backend.models.orders import Order
 from  backend.models.ordersitem import OrderItem
 from  backend.models.food import Food
+from backend.models.user import User
 from  backend.schemas.menu_schema import MenuSchema
 from  backend.schemas.table_schema import TableSchema
 from  backend.schemas.booking_schema import BookingSchema
@@ -30,8 +31,8 @@ def get_menu_res_admin(res_id):
         from image import MENU_DATA #tránh lỗi vòng lặp lúc khởi động
     except ImportError:
         from backend.image import MENU_DATA
-
-    menus = Food.query.filter_by(RestaurantID=res_id).all() #LẤY ĐÚNG MENU CỦA NHÀ HÀNG ĐÓ
+    menus = Food.query.filter(Food.RestaurantID == res_id).all()
+    #menus = Food.query.filter_by(RestaurantID=res_id).all() #LẤY ĐÚNG MENU CỦA NHÀ HÀNG ĐÓ
 
     result = []
     for m in menus:
@@ -45,18 +46,18 @@ def get_menu_res_admin(res_id):
                     break
 
         result.append({
-            "id": m.FoodID,
-            "name": m.FoodName,
-            "price": float(m.Price) if m.Price else 0,
+            "id": getattr(m, "FoodID", None),
+            "name": getattr(m, "FoodName", ""),
+            "price": float(getattr(m, "Price", 0) or 0),
             "image": image_url,
-            "restaurant_id": m.RestaurantID,
-            "Visible": m.Visible
+            "restaurant_id": getattr(m, "RestaurantID", None),
+            "Visible": getattr(m, "Visible", True)
         })
     return result
 
 #DÀNH CHO ORDER MÓN
 def get_res_menu(restaurant_id):
-    menus = Food.query.filter_by(RestaurantID=restaurant_id, Visible=True).all()
+    menus = Food.query.filter_by(RestaurantID=restaurant_id).all()
 
     try:
         from image import MENU_DATA
@@ -81,9 +82,10 @@ def get_res_menu(restaurant_id):
             "name": m.FoodName,
             "price": float(m.Price) if m.Price else 0,
             "image": image_url,
-            "category": m.Category if hasattr(m, 'Category') else "",
+
+            "category": m.category.CategoryName if m.category else "",
             "description": m.Description if hasattr(m, 'Description') else "",
-            "Visible": m.Visible
+            "Visible": getattr(m, "Visible", True)
         })
     return result
 
@@ -178,11 +180,15 @@ def confirm_booking(id):
     if not b:
         return {"error": "Not found"}
 
-    # ❗ RULE TEST: nếu đã Rejected thì không confirm
     if b.Status == "Rejected":
         return {"error": "Cannot confirm rejected booking"}
 
     b.Status = "Confirmed"
+
+    table = Tables.query.get(b.TableID)
+    if table:
+        table.Status = "Reserved"
+
     db.session.commit()
 
     return {
@@ -272,7 +278,7 @@ def create_food(data, res_id):
             FoodName=name,
             Price=price,
             Image_URL=data.get("image"),
-            Category=data.get("category"),
+            CategoryID=data.get("category_id"),
             RestaurantID=res_id,
             Visible=True
         )
@@ -355,8 +361,6 @@ def update_food(id, data):
 class RestaurantService:
     @staticmethod
     def create(data, is_admin=False):
-        if not is_admin:
-            return {"error": "Forbidden"}, 403
 
         restaurant_name = data.get('RestaurantName')
         if not restaurant_name:
@@ -378,7 +382,16 @@ class RestaurantService:
         db.session.add(new_res)
         db.session.commit()
 
-        return {"msg": "Created"}, 201
+
+        user = User.query.get(data.get("UserID"))
+        if user:
+            user.RestaurantID = new_res.RestaurantID
+            db.session.commit()
+
+        return {
+            "msg": "Created",
+            "restaurant_id": new_res.RestaurantID
+        }, 201
 
 def toggle_food(id):
     food = Food.query.get(id)
