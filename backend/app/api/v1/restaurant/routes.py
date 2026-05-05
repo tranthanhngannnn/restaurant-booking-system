@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from models.menu import Menu
-from models.tables import Tables
+from models.table import Tables
 from models.booking import Reservation
 from models.orders import Order
 from models.food import Food
@@ -33,8 +33,15 @@ def staff_register_restaurant():
     result, status = RestaurantService.create(data, is_admin=False)
     return jsonify(result), status
 
-@restaurant_bp.route("/tables/<int:id>/status", methods=["PUT"])
+@restaurant_bp.route("/tables/<int:id>/status", methods=["PUT", "OPTIONS"])
+@jwt_required(optional=True)
 def update_table_status(id):
+    if request.method == "OPTIONS":
+        return '', 200
+
+    from flask_jwt_extended import verify_jwt_in_request
+    verify_jwt_in_request()
+
     return jsonify(update_table_status_service(id, request.json))
 
 #dành cho KH
@@ -114,12 +121,17 @@ def update_food_api(id):
 def delete_food_api(id):
     return jsonify(delete_food(id))
 
-@restaurant_bp.route('/tables', methods=['GET'])
-@jwt_required()
+@restaurant_bp.route('/tables', methods=['GET', 'OPTIONS'])
+@jwt_required(optional=True)
 def get_tables_api():
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
     current_user_id = get_jwt_identity()
+    if not current_user_id:
+        return jsonify({"msg": "Missing token"}), 401
+
     user_info = User.query.get(current_user_id)
-    # Lấy đúng ID nhà hàng của người đang đăng nhập
     res_id = user_info.RestaurantID
     tables = get_tables(res_id)
     return jsonify(tables)

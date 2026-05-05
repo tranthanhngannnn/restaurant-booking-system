@@ -3,7 +3,7 @@ from core.extensions import db
 from datetime import datetime, timedelta
 from models.food import Food
 from models.menu import Menu
-from models.tables import Tables
+from models.table import Tables
 from models.booking import Reservation
 from models.orders import Order
 from models.ordersitem import OrderItem

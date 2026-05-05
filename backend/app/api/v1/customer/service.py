@@ -1,5 +1,5 @@
 from models.menu import Menu
-from models.tables import Tables
+from models.table import Tables
 from models.booking import Reservation
 from core.extensions import db
 from datetime import datetime, timedelta

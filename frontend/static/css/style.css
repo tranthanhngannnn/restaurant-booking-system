@@ -153,7 +153,7 @@ button.active {
 }
 .menu-item.disabled {
     opacity: 0.4;
-    filter: grayscale(100%)
+    filter: grayscale(100%);
 }
 
 /* CSS cho phần Form thêm món */

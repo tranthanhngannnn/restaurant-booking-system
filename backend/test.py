@@ -1,6 +1,6 @@
 from core import create_app, db
 from models.restaurant import Restaurant
-from models.table import Table
+from models.table import Tables
 from sqlalchemy import text
 from datetime import time
 
@@ -60,12 +60,13 @@ def seed_tables(restaurants):
                 capacity = 8
 
             db.session.add(
-                Table(
-                    name=f"Bàn {i}",
-                    capacity=capacity,
-                    seats=capacity,
-                    status="available",
-                    restaurant_id=restaurant.RestaurantID
+                Tables(
+                    TableNumber=f"Bàn {i}",
+                    Capacity=capacity,
+                    Seats=capacity,
+
+                    Status="available",
+                    RestaurantID=restaurant.RestaurantID
                 )
             )
 
@@ -76,8 +77,8 @@ def reset_db():
     """Xoá sạch database an toàn"""
 
     db.session.execute(text("SET FOREIGN_KEY_CHECKS=0"))
-    db.session.execute(text("TRUNCATE TABLE `table`"))
-    db.session.execute(text("TRUNCATE TABLE restaurant"))
+    db.session.execute(text("TRUNCATE TABLE `Table`"))
+    db.session.execute(text("TRUNCATE TABLE Restaurant"))
     db.session.execute(text("SET FOREIGN_KEY_CHECKS=1"))
     db.session.commit()
 
@@ -97,5 +98,5 @@ with app.app_context():
     print("✔ Đã tạo bàn")
 
     # 🔍 CHECK
-    for t in Table.query.all():
-        print(t.name, "-", t.capacity, "người")
+    for t in Tables.query.all():
+        print(t.TableNumber, "-", t.Capacity, "người")

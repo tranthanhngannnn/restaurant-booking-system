@@ -4,7 +4,7 @@ class Reservation(db.Model):
     __tablename__ = "Reservations"
 
     ReservationID = db.Column(db.Integer, primary_key=True)
-    UserID = db.Column(db.String(100), db.ForeignKey('users.UserID'), nullable=True)
+    UserID = db.Column(db.Integer, db.ForeignKey('users.UserID'), nullable=True)
     CustomerName = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(11), nullable=False)
     RestaurantID = db.Column(
@@ -12,7 +12,7 @@ class Reservation(db.Model):
         db.ForeignKey("Restaurant.RestaurantID"))
     TableID = db.Column(
         db.Integer,
-        db.ForeignKey("RestaurantTables.TableID"))
+        db.ForeignKey("Table.TableID"))
 
     BookingDate = db.Column(db.Date, nullable=False)
     BookingTime = db.Column(db.Time, nullable=False)

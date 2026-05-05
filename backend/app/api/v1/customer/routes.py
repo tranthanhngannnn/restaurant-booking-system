@@ -3,7 +3,7 @@ from .service import *
 from models.review import Review
 from core.extensions import db
 from models.user import User
-from models.tables import Tables
+from models.table import Tables
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from .service import search_restaurant, get_all_restaurants
 from models.booking import Reservation
