@@ -246,7 +246,7 @@ def mock_booking_conflict(monkeypatch, has_conflict):
         lambda: None
     )
 
-def test_booking_outside_30min_allowed(client, monkeypatch):
+def test_booking_outside_60min_allowed(client, monkeypatch):
     mock_booking_conflict(monkeypatch, has_conflict=False)
 
     res = client.post("/api/v1/customer/book", json={
@@ -254,29 +254,14 @@ def test_booking_outside_30min_allowed(client, monkeypatch):
         "phone": "0912345678",
         "people": 2,
         "date": "2026-05-10",
-        "time": "18:31",
+        "time": "19:01",
         "table_id": 1,
         "restaurant_id": 1
     })
 
     assert res.status_code == 200
 
-def test_booking_within_30min_blocked(client, monkeypatch):
-    mock_booking_conflict(monkeypatch, has_conflict=True)
-
-    res = client.post("/api/v1/customer/book", json={
-        "name": "A",
-        "phone": "0912345678",
-        "people": 2,
-        "date": "2026-05-10",
-        "time": "18:15",
-        "table_id": 1,
-        "restaurant_id": 1
-    })
-
-    assert res.status_code == 400
-
-def test_booking_exact_30min_blocked(client, monkeypatch):
+def test_booking_within_60min_blocked(client, monkeypatch):
     mock_booking_conflict(monkeypatch, has_conflict=True)
 
     res = client.post("/api/v1/customer/book", json={
@@ -285,6 +270,21 @@ def test_booking_exact_30min_blocked(client, monkeypatch):
         "people": 2,
         "date": "2026-05-10",
         "time": "18:30",
+        "table_id": 1,
+        "restaurant_id": 1
+    })
+
+    assert res.status_code == 400
+
+def test_booking_exact_60min_blocked(client, monkeypatch):
+    mock_booking_conflict(monkeypatch, has_conflict=True)
+
+    res = client.post("/api/v1/customer/book", json={
+        "name": "A",
+        "phone": "0912345678",
+        "people": 2,
+        "date": "2026-05-10",
+        "time": "19:00",
         "table_id": 1,
         "restaurant_id": 1
     })
@@ -302,6 +302,65 @@ def test_expired_pending_not_block(client, monkeypatch):
     })
 
     assert res.status_code == 200
+
+
+def test_booking_under_30min_blocked(client, monkeypatch):
+
+    mock_booking_conflict(monkeypatch, has_conflict=False)
+
+    fixed_now = datetime(2026, 5, 10, 18, 0)
+
+    class MockDateTime(datetime):
+        @classmethod
+        def now(cls):
+            return fixed_now
+
+    # ✔ MOCK ĐÚNG CHỖ QUAN TRỌNG
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.datetime",
+        MockDateTime
+    )
+
+    res = client.post("/api/v1/customer/book", json={
+        "name": "A",
+        "phone": "0912345678",
+        "people": 2,
+        "date": "2026-05-10",
+        "time": "18:10",  # 10 phút → FAIL
+        "table_id": 1,
+        "restaurant_id": 1
+    })
+
+    assert res.status_code == 400
+    assert "30 phút" in res.get_json()["error"]
+
+def test_booking_over_30min_allowed(client, monkeypatch):
+
+    mock_booking_conflict(monkeypatch, has_conflict=False)
+
+    fixed_now = datetime(2026, 5, 10, 18, 0)
+
+    class MockDateTime(datetime):
+        @classmethod
+        def now(cls):
+            return fixed_now
+
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.datetime",
+        MockDateTime
+    )
+
+    res = client.post("/api/v1/customer/book", json={
+        "name": "A",
+        "phone": "0912345678",
+        "people": 2,
+        "date": "2026-05-10",
+        "time": "18:40",  # 40 phút → OK
+        "table_id": 1,
+        "restaurant_id": 1
+    })
+
+    assert res.status_code in [200, 201]
 
 def test_booking_note_too_long(client):
     data = {

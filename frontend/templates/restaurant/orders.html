@@ -12,11 +12,13 @@
 
     <div class="layout">
 
+        <!-- MENU -->
         <div class="menu">
             <h3>Menu</h3>
             <div id="menu-list" class="menu-container"></div>
         </div>
 
+        <!-- ORDER -->
         <div class="order-box">
             <h3>Danh sách món</h3>
             <ul id="order-list"></ul>
@@ -36,145 +38,132 @@
 
 <script src="../../static/js/menu_data.js"></script>
 <script>
-    // 1. Lấy Table ID
+    //  INIT
     const tableId = new URLSearchParams(window.location.search).get("table_id");
     const tableDisplay = document.getElementById("table-id");
-    if(tableDisplay) tableDisplay.innerText = tableId;
-
+    if (tableDisplay) tableDisplay.innerText = tableId;
 
     let order = [];
 
-    // 2. Hàm Load Menu
+    // LOAD MENU
     async function loadMenu() {
-    const token = localStorage.getItem('token');
-    const urlParams = new URLSearchParams(window.location.search);
-    const resId = urlParams.get('restaurant_id');
+        const token = localStorage.getItem('token');
 
-    try {
+        try {
+            const response = await fetch(`http://127.0.0.1:5000/api/v1/restaurant/menu`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-        const response = await fetch(`http://127.0.0.1:5000/api/v1/restaurant/menu`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+            const data = await response.json();
+
+            if (response.ok && data.length > 0) {
+                renderMenu(data);
+            } else {
+                console.log("Không có món hoặc lỗi!");
             }
-        });
 
-        const data = await response.json();
-
-        if (response.ok && data.length > 0) {
-            renderMenu(data);
-        } else {
-            console.log("Không có món hoặc lỗi!");
+        } catch (error) {
+            console.error("Lỗi fetch menu:", error);
         }
-    } catch (error) {
-        console.error("Lỗi fetch:", error);
-    }
-}
-
-    // 3. Hàm Vẽ Menu
-    function renderMenu(dataToRender, CuisineID) {
-    const menuContainer = document.getElementById('menu-list');
-    if (!menuContainer) return;
-
-    const html = dataToRender.map(item => {
-    console.log("Số lượng món nhận được:", dataToRender.length);
-    console.log("Dữ liệu chi tiết:", dataToRender);
-       let subFolder = "Lau";
-    if (item.CuisineID === 2 || (typeof CuisineID !== 'undefined' && CuisineID === 2)) {
-        subFolder = "Nuong";
     }
 
-        // 2. Ép đường dẫn về static local
-        // Tên file ảnh lấy từ item.image
-        const finalImage = item.image;
+    //  RENDER MENU
+    function renderMenu(data) {
+        const menuContainer = document.getElementById('menu-list');
+        if (!menuContainer) return;
 
-        return `
-            <div class="menu-item">
-                <div class="item-image">
-                    <img src="${finalImage}" onerror="this.onerror=null;this.src='https://via.placeholder.com/150?text=No+Image';">
-                </div>
-                <div class="item-info">
-                    <h3>${item.name}</h3>
-                    <p class="price">${item.price.toLocaleString()}đ</p>
-                    <button class="btn-add" onclick="addItem('${item.id}', '${item.name}', ${item.price}, '${finalImage}')">Thêm</button>
-                </div>
-            </div>`;
-    }).join('');
-    menuContainer.innerHTML = html;
-}
+        const html = data.map(item => {
+            const image = item.image || 'https://via.placeholder.com/150?text=No+Image';
 
-    // 4. Hàm Thêm Món
+            return `
+                <div class="menu-item">
+                    <div class="item-image">
+                        <img src="${image}" onerror="this.src='https://via.placeholder.com/150?text=No+Image';">
+                    </div>
+                    <div class="item-info">
+                        <h3>${item.name}</h3>
+                        <p class="price">${Number(item.price).toLocaleString()}đ</p>
+                        <button class="btn-add"
+                            onclick="addItem('${item.id}', '${item.name}', ${item.price}, '${image}')">
+                            Thêm
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        menuContainer.innerHTML = html;
+    }
+
+    //  ADD ITEM
     function addItem(food_id, name, price, image) {
         const item = order.find(i => i.food_id === food_id);
+
         if (item) {
             item.qty++;
         } else {
-            order.push({ food_id, name, price: parseFloat(price), qty: 1, image });
+            order.push({
+                food_id,
+                name,
+                price: parseFloat(price),
+                qty: 1,
+                image
+            });
         }
+
         renderOrder();
     }
 
-    // 5. Hàm Vẽ Giỏ Hàng
+    //  RENDER ORDER
     function renderOrder() {
         const list = document.getElementById("order-list");
         if (!list) return;
+
         list.innerHTML = "";
         let total = 0;
 
         order.forEach(i => {
             total += i.price * i.qty;
+
             const li = document.createElement("li");
-            li.innerHTML = `${i.name} x${i.qty} - ${(i.price * i.qty).toLocaleString()}đ`;
+            li.innerHTML = `
+                ${i.name}
+                <button onclick="changeQty('${i.food_id}', -1)">-</button>
+                ${i.qty}
+                <button onclick="changeQty('${i.food_id}', 1)">+</button>
+                - ${(i.price * i.qty).toLocaleString()}đ
+            `;
             list.appendChild(li);
         });
-        const totalDisp = document.getElementById("total");
-        if(totalDisp) totalDisp.innerText = total.toLocaleString();
+
+    document.getElementById("total").innerText = total.toLocaleString();
+}
+    function changeQty(food_id, delta) {
+        const item = order.find(i => i.food_id === food_id);
+        if (!item) return;
+
+        item.qty += delta;
+
+        if (item.qty <= 0) {
+            order = order.filter(i => i.food_id !== food_id);
     }
 
-    // 6. Gửi Order
-<<<<<<< HEAD
-async function createOrder(){
-    if(order.length === 0){
-        alert("Chưa có món");
-        return;
-    }
-
-    // 🔹 lưu trạng thái bàn (mock)
-    let tables = JSON.parse(localStorage.getItem("tables")) || {};
-    tables[tableId] = "occupied";
-    localStorage.setItem("tables", JSON.stringify(tables));
-
-    // 🔹 lưu order mock
-    localStorage.setItem("currentOrder", JSON.stringify({
-        table_id: tableId,
-        items: order
-    }));
-=======
-     async function createOrder(){
-           if(order.length === 0){
+    renderOrder();
+}
+    //  CREATE ORDER
+    async function createOrder() {
+        if (order.length === 0) {
             alert("Chưa có món");
             return;
-            }
+        }
 
-        const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
-         method: "POST",
-         headers: {"Content-Type":"application/json"},
-         body: JSON.stringify({
-         table_id: parseInt(tableId),
-         items: order.map(i => ({
-         food_id: i.food_id,
-         qty: i.qty
-      }))
-    })
-  });
->>>>>>> origin/main
-
-    // 🔹 (optional) gọi API thật nếu có backend
-    try {
         const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/orders", {
             method: "POST",
-            headers: {"Content-Type":"application/json"},
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 table_id: parseInt(tableId),
                 items: order.map(i => ({
@@ -184,74 +173,79 @@ async function createOrder(){
             })
         });
 
-        if(res.ok){
+        const data = await res.json();
+
+        console.log("CREATE ORDER:", data);
+
+        if (res.ok) {
             alert("Đã gửi order");
         } else {
             alert("Lỗi gửi order");
         }
-
-    } catch (err) {
-        console.log("Mock mode - không có backend cũng OK");
-        alert("Đã gửi order (mock)");
     }
-}
 
-    // Load lại Order đã lưu nếu có
+    //  LOAD SAVED ORDER
     function loadSavedOrder() {
         const saved = localStorage.getItem("currentOrder");
+
         if (saved) {
-            const mockData = JSON.parse(saved);
-            if (mockData.table_id === tableId) {
-                order = mockData.items;
+            const data = JSON.parse(saved);
+
+            if (data.table_id == tableId) {
+                order = data.items;
                 renderOrder();
-                console.log("Restored order from storage");
             }
         }
     }
 
+
+
+    // PAY ORDER
     async function payOrder() {
-<<<<<<< HEAD
-    if (!confirm("Xác nhận thanh toán cho bàn này?")) return;
+        if (!confirm("Thanh toán bàn này?")) return;
 
-    // 🔹 Lấy danh sách trạng thái bàn
-    let tables = JSON.parse(localStorage.getItem("tables")) || {};
+        const res = await fetch(
+            `http://127.0.0.1:5000/api/v1/restaurant/orders/pay/${tableId}`,
+            { method: "PUT" }
+        );
 
-    // 🔹 Set bàn hiện tại = trống
-    tables[tableId] = "empty";
+        const data = await res.json();
+        console.log("PAY:", data);
 
-    // 🔹 Lưu lại
-    localStorage.setItem("tables", JSON.stringify(tables));
+        if (res.ok) {
+            alert("Thanh toán thành công");
 
-    // 🔹 Xóa order
-    localStorage.removeItem("currentOrder");
+            order = []; // clear UI
+            renderOrder();
 
-    alert("Thanh toán thành công! Bàn đã trống.");
-
-    window.location.href = "table.html";
-}
-
-    window.onload = () => {
-        loadMenu();
-        loadSavedOrder();
-    };
-
-=======
-        if (!confirm("Xác nhận thanh toán cho bàn này?")) return;
-
-        // Mock thanh toán thành công
-        console.log("Payment successful for mock order");
-        localStorage.removeItem("currentOrder");
-        alert("Thanh toán thành công! Bàn hiện đã trống.");
-        window.location.href = "table.html";
+            window.location.href = "table.html";
+        } else {
+            alert("Lỗi thanh toán");
+        }
     }
 
-    window.onload = () => {
-        loadMenu();
-        loadSavedOrder();
-    };
+   async function loadOrderFromServer() {
+    try {
+        const res = await fetch(
+            `http://127.0.0.1:5000/api/v1/restaurant/orders/${tableId}`
+        );
 
->>>>>>> origin/main
+        const data = await res.json();
 
+        console.log("ORDER DATA:", data);
+
+        order = data.items || [];
+
+        renderOrder();
+
+    } catch (err) {
+        console.log("Lỗi load order:", err);
+    }
+}
+window.onload = () => {
+    loadMenu();
+    loadOrderFromServer();
+};
 </script>
 
 </body>

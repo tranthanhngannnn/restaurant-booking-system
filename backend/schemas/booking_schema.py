@@ -7,6 +7,7 @@ class BookingSchema(ma.SQLAlchemyAutoSchema):
         model = Reservation
         load_instance = True
 
+    TableID = ma.auto_field()
     RestaurantName = ma.Function(
         lambda obj: obj.restaurant.RestaurantName if obj.restaurant else ""
     )
