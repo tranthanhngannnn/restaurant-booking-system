@@ -1,4 +1,4 @@
-from core.extensions import db
+from backend.core.extensions import db
 
 class Booking(db.Model):
     id = db.Column(db.Integer, primary_key=True)

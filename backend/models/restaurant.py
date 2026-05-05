@@ -1,5 +1,5 @@
-from core.extensions import db
-from models.cuisine import Cuisine
+from backend.core.extensions import db
+from backend.models.cuisine import Cuisine
 from datetime import datetime
 
 

@@ -1,6 +1,6 @@
-from core import create_app, db
-from models.restaurant import Restaurant
-from models.table import Table
+from backend.core import create_app, db
+from backend.models.restaurant import Restaurant
+from backend.models.table import Table
 from sqlalchemy import text
 from datetime import time
 

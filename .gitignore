@@ -1,4 +1,4 @@
-# Frontend
+cd d:\restaurantbooking\backend# Frontend
 node_modules/
 
 # Backend (Python)
@@ -13,3 +13,5 @@ __pycache__/
 .vscode/
 temp-debug-*
 *.txt
+
+.agent/*

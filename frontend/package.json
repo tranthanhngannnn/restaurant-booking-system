@@ -4,7 +4,8 @@
   "description": "Unit tests for Golden Harvest frontend",
   "type": "module",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
     "@babel/core": "^7.24.9",
@@ -16,11 +17,16 @@
   "jest": {
     "testEnvironment": "jsdom",
     "transform": {
-      "^.+\\.(test|spec)\\.js$": "babel-jest"
+      "^.+\\.(test|spec)\\.js$": "babel-jest",
+      "^(?!.*node_modules).*\\.js$": "babel-jest"
     },
-    "setupFilesAfterEnv": ["<rootDir>/setup-jest.js"]
+    "setupFilesAfterEnv": ["<rootDir>/setup-jest.js"],
+    "transformIgnorePatterns": ["/node_modules/"]
   },
   "babel": {
     "presets": ["@babel/preset-env"]
-  }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

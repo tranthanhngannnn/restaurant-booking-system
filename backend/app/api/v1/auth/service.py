@@ -1,5 +1,5 @@
-from models.user import User
-from core.extensions import db
+from backend.models.user import User
+from backend.core.extensions import db
 from flask_jwt_extended import create_access_token
 from datetime import timedelta
 
@@ -57,7 +57,7 @@ class AuthService:
                 expires_delta=timedelta(days=1),
                 additional_claims={
                     "role": user.Role,
-                    "restaurant_id": user.RestaurantID
+                    "restaurant_id": None
                 } # Thêm tham số additional_claims để đưa Role vào Token
             )
 

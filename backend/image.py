@@ -22,14 +22,14 @@ MENU_DATA = [
         "name": "Lẩu Cua Đồng",
         "category": "lau",
         "price": 50000,
-        "image": "/static/images/Food/Lau/laucuadong.webp",
+        "image": "/static/images/Food/Lau/laucuadong.jpg",
         "stock": 10
     },
     {
         "name": "Lẩu Kimchi",
         "category": "lau",
         "price": 60000,
-        "image": "/static/images/Food/Lau/laukimchi.webp",
+        "image": "/static/images/Food/Lau/laukimchi.jpg",
         "stock": 10
     },
     {

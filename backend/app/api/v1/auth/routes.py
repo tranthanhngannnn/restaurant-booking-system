@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 
-from app.api.v1.auth.service import AuthService  # Import class logic từ file service
+from backend.app.api.v1.auth.service import AuthService  # Import class logic từ file service
 
 auth_bp = Blueprint('auth', __name__)
 

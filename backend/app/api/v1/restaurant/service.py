@@ -1,16 +1,16 @@
-from models.restaurant import Restaurant
-from core.extensions import db
+from  backend.models.restaurant import Restaurant
+from  backend.core.extensions import db
 from datetime import datetime, timedelta
-from models.food import Food
-from models.menu import Menu
-from models.tables import Tables
-from models.booking import Reservation
-from models.orders import Order
-from models.ordersitem import OrderItem
-from models.food import Food
-from schemas.menu_schema import MenuSchema
-from schemas.table_schema import TableSchema
-from schemas.booking_schema import BookingSchema
+from  backend.models.food import Food
+from  backend.models.menu import Menu
+from  backend.models.tables import Tables
+from  backend.models.booking import Reservation
+from  backend.models.orders import Order
+from  backend.models.ordersitem import OrderItem
+from  backend.models.food import Food
+from  backend.schemas.menu_schema import MenuSchema
+from  backend.schemas.table_schema import TableSchema
+from  backend.schemas.booking_schema import BookingSchema
 import os
 from werkzeug.utils import secure_filename
 

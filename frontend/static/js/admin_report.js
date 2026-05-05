@@ -51,6 +51,7 @@ async function loadRestaurants() {
 }
 
 function renderTable(months, restaurants) {
+    // Tạo header cho bảng: Nhà hàng + Tháng chọn + Tổng 6 tháng + 6 tháng chi tiết
     const headCells = [
         '<th>Nhà hàng</th>',
         '<th>Tháng chọn</th>',
@@ -59,12 +60,16 @@ function renderTable(months, restaurants) {
     ];
     tableHead.innerHTML = headCells.join('');
 
+    // Kiểm tra nếu không có dữ liệu doanh thu
     if (!restaurants.length) {
         tableBody.innerHTML = '<tr><td class="admin-report-empty" colspan="' + headCells.length + '">Không có dữ liệu doanh thu trong giai đoạn đã chọn.</td></tr>';
         return;
     }
 
+    // Render danh sách nhà hàng theo thứ tự doanh thu từ cao xuống thấp
+    // restaurants đã được sắp xếp ở BE theo total_6_months giảm dần
     tableBody.innerHTML = restaurants.map((restaurant, index) => {
+        // Tạo các ô hiển thị doanh thu từng tháng
         const monthCells = restaurant.monthly_revenue.map((item) => {
             return `<td class="admin-report-money">${formatCurrency(item.revenue)}</td>`;
         }).join('');
@@ -84,10 +89,12 @@ function renderTable(months, restaurants) {
 }
 
 async function loadReport() {
+    // Lấy thông tin từ form
     const token = localStorage.getItem('token');
     const month = monthInput.value;
     const restaurantId = restaurantSelect.value;
 
+    // Kiểm tra đăng nhập
     if (!token) {
         statusLabel.textContent = 'Chưa đăng nhập';
         statusNoteLabel.textContent = 'Không tìm thấy token admin trong localStorage.';
@@ -95,6 +102,7 @@ async function loadReport() {
         return;
     }
 
+    // Kiểm tra tháng đã chọn
     if (!month) {
         statusLabel.textContent = 'Thiếu tháng';
         statusNoteLabel.textContent = 'Vui lòng chọn tháng để xem báo cáo.';
@@ -105,11 +113,13 @@ async function loadReport() {
     setLoadingState(true, 'Loading...');
     statusNoteLabel.textContent = 'Hệ thống đang tổng hợp doanh thu theo tháng...';
 
+    // Chuẩn bị dữ liệu gửi đến API
     const formData = new FormData();
-    formData.append('restaurant_id', restaurantId);
-    formData.append('report_month', month);
+    formData.append('restaurant_id', restaurantId);  // ID nhà hàng (null = tất cả)
+    formData.append('report_month', month);          // Tháng báo cáo (YYYY-MM)
 
     try {
+        // Gọi API để lấy báo cáo doanh thu từ bảng Payment
         const response = await fetch(REPORT_API, {
             method: 'POST',
             headers: {
@@ -153,6 +163,7 @@ async function loadReport() {
     }
 }
 
+
 window.onload = async function () {
     monthInput.value = getCurrentMonthValue();
     await loadRestaurants();
@@ -176,3 +187,14 @@ export {
     tableHead,
     tableBody
 };
+
+window.loadReport = loadReport;
+
+function handleLogout() {
+        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+            localStorage.removeItem('token');
+            window.location.href = "../auth/login.html";
+        }
+    }
+
+window.handleLogout = handleLogout;
