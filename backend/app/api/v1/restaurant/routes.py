@@ -57,6 +57,7 @@ def get_menu_api():
 @restaurant_bp.route('/menu/admin', methods=['GET'])
 @jwt_required()
 def get_menu_admin():
+    #print("JWT DEBUG:", get_jwt())
     # 1. Kiểm tra xem có phải nhân viên/chủ không
     token_data = get_jwt()
     if token_data.get("role") != "STAFF":
@@ -66,6 +67,7 @@ def get_menu_admin():
     user_info = User.query.get(current_user_id) #Tìm thông tin user để suy ra nhà hàng họ đang làm việc
     print("USER:", user_info)
     print("RestaurantID:", getattr(user_info, "RestaurantID", None))
+
     # Kiểm tra xem nhân viên này đã được phân công về nhà hàng nào chưa
     if not user_info or not user_info.RestaurantID:
         return jsonify({"message": "Nhân viên này chưa được phân công nhà hàng!"}), 400
@@ -73,8 +75,11 @@ def get_menu_admin():
     try:
         menu_data = get_menu_res_admin(user_info.RestaurantID)
         return jsonify(menu_data)
+
     except Exception as e:
-        return jsonify({"message": f"Lỗi server: {str(e)}"}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": str(e)}), 500
 
 
 @restaurant_bp.route('/list', methods=['GET'])
@@ -130,11 +135,16 @@ def get_tables_api():
 def create_table_api():
     current_user_id = get_jwt_identity()
     user_info = User.query.get(current_user_id)
-    # Lấy đúng ID nhà hàng của người đang đăng nhập
+
+    if not user_info or not user_info.RestaurantID:
+        return jsonify({
+            "error": "User chưa được gán nhà hàng (RestaurantID = NULL)"
+        }), 400
+
     res_id = user_info.RestaurantID
     data = request.json
-    return jsonify(create_table(data, res_id))
 
+    return jsonify(create_table(data, res_id))
 
 @restaurant_bp.route("/bookings", methods=["POST"])
 def add_booking():
@@ -170,56 +180,94 @@ def get_booking_by_table(id):
 def create_order():
     data = request.json
     table_id = data["table_id"]
+
     table = Tables.query.get(table_id)
     if not table:
-        return {"error": "Table not found"}, 404
+        return jsonify({"error": "Table not found"}), 404
 
     order = Order.query.filter_by(table_id=table_id, status="active").first()
+
     if not order:
         order = Order(table_id=table_id, status="active")
         db.session.add(order)
         db.session.commit()
-        table.Status = "Reserved"
 
     for item in data["items"]:
+        food = Food.query.get(item["food_id"])
+        if not food:
+            continue
+
         existing = OrderItem.query.filter_by(
             order_id=order.id,
             food_id=item["food_id"]
         ).first()
+
         if existing:
             existing.quantity += item["qty"]
         else:
-            oi = OrderItem(order_id=order.id, food_id=item["food_id"], quantity=item["qty"])
+            oi = OrderItem(
+                order_id=order.id,
+                food_id=item["food_id"],
+                name=food.FoodName,
+                quantity=item["qty"],
+                price=float(food.Price)
+            )
             db.session.add(oi)
-    db.session.commit()
-    return {"message": "Order updated"}
 
+    table.Status = "Reserved"
+    db.session.commit()
+
+    return jsonify({
+        "message": "Order created",
+        "order_id": order.id
+    }), 200
+
+@restaurant_bp.route("/orders/<int:table_id>", methods=["GET"])
+def get_order_by_table(table_id):
+    order = Order.query.filter(
+        Order.table_id == table_id,
+        Order.status.in_(["active", "Active", "ACTIVE"])
+    ).first()
+
+    if not order:
+        return {"items": []}
+
+    items = OrderItem.query.filter_by(order_id=order.id).all()
+
+    return {
+        "items": [
+            {
+                "food_id": i.food_id,
+                "name": i.name,
+                "price": float(i.price),
+                "qty": i.quantity
+            } for i in items
+        ]
+    }
 @restaurant_bp.route("/orders/pay/<int:table_id>", methods=["PUT"])
 def pay_order(table_id):
-    # 1. Tìm đúng order của bàn dựa trên table_id và trạng thái "active"
-    order = Order.query.filter(Order.table_id == table_id, Order.status == "active").first()
-    
-    # 2. Nếu không tìm thấy order (ví dụ trường hợp test mock front-end)
-    if not order:
-        # Tạo luôn order mới để có cái mà thanh toán
-        order = Order(table_id=table_id, status="active")
-        db.session.add(order)
-        db.session.flush()
 
-    # 3. Cập nhật trạng thái order và bàn
-    order.status = "paid"
-    
+    # 1. Lấy tất cả order active
+    orders = Order.query.filter_by(
+        table_id=table_id,
+        status="active"
+    ).all()
+
+    # 2. Update hết thành paid
+    for o in orders:
+        o.status = "paid"
+
+    # 3. Update trạng thái bàn
     table = Tables.query.get(table_id)
     if table:
-        table.Status = "Trống" # reset trạng thái bàn về trống
-        
-    # 4. Commit thay đổi vào database
+        table.Status = "Available"
+
+    # 4. Commit
     db.session.commit()
-    
+
     return jsonify({
-        "message": "Thanh toán và cập nhật trạng thái bàn thành công",
-        "order_id": order.id,
-        "status": "Available"
+        "message": "Thanh toán thành công",
+        "table_status": "Available"
     }), 200
 
 

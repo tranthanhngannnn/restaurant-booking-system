@@ -41,6 +41,11 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
     app.register_blueprint(restaurant_bp, url_prefix='/api/v1/restaurant')
+    app.register_blueprint(
+        restaurant_bp,
+        url_prefix='/api/v1/restaurants',
+        name='restaurant_alias'
+    )
     app.register_blueprint(customer_bp, url_prefix="/api/v1/customer")
 
     @login_manager.user_loader

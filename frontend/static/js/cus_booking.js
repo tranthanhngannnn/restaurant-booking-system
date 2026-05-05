@@ -96,7 +96,13 @@ export function check() {
     const inputDate = new Date(date + "T" + time);
 
     if (inputDate < now) {
-        alert("Không thể đặt ngày trong quá khứ");
+        alert("Không thể đặt ngày, giờ trong quá khứ");
+        return;
+    }
+    const minTime = new Date(now.getTime() + 30 * 60 * 1000);
+
+    if (inputDate < minTime) {
+        alert("Phải đặt trước ít nhất 30 phút");
         return;
     }
 

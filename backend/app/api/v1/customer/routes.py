@@ -7,10 +7,9 @@ from backend.models.tables import Tables
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from .service import search_restaurant, get_all_restaurants
 from backend.models.booking import Reservation
-from datetime import datetime
 from sqlalchemy.exc import DataError
 customer_bp = Blueprint("customer", __name__, url_prefix="/api/v1/customer")
-
+from datetime import datetime, timedelta
 
 @customer_bp.route("/search")
 def search():
@@ -76,9 +75,14 @@ def book():
     try:
         booking_date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
         booking_time = datetime.strptime(data.get("time"), "%H:%M").time()
+        booking_datetime = datetime.combine(booking_date, booking_time)
+        now = datetime.now()
 
-        if datetime.combine(booking_date, booking_time) < datetime.now():
+        if booking_datetime < now:
             return jsonify({"error": "Không thể đặt bàn trong quá khứ"}), 400
+
+        if booking_datetime < now + timedelta(minutes=30):
+            return jsonify({"error": "Phải đặt trước ít nhất 30 phút"}), 400
     except:
         return jsonify({"error": "Sai format ngày/giờ"}), 400
     #Check restaurant time
