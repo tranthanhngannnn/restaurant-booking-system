@@ -87,7 +87,9 @@
 
         // 2. Ép đường dẫn về static local
         // Tên file ảnh lấy từ item.image
-        const finalImage = item.image;
+        const finalImage = item.image
+    ? `http://127.0.0.1:5000/${item.image}`
+    : "https://via.placeholder.com/150?text=No+Image";
 
         return `
             <div class="menu-item">

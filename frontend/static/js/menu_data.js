@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 //  Toàn bộ dữ liệu menu
 const MENU_DATA = [
    { id: "LT", name: 'Lẩu Thái', restaurant_id: 1, category_id: 3, price: 50000, description:'Lẩu chua cay kiểu Thái với hải sản tươi và rau', image: '/static/images/Food/Lau/lauthai.jpg' },
@@ -31,7 +31,7 @@ const MENU_DATA = [
    ];
 
 
-=======
+
 // File này chứa toàn bộ dữ liệu menu
 const MENU_DATA = [
    { id: "LT", name: 'Lẩu Thái', restaurant_id: 1, category_id: 3, price: 50000, description:'Lẩu chua cay kiểu Thái với hải sản tươi và rau', image: 'https://brand-pcms.ggg.systems/media/catalog/product/cache/fccf9bc1c56510f6f2e84ded9c30a375/6/0/60001564-lau-thai_1_1.jpg' },
@@ -63,4 +63,3 @@ const MENU_DATA = [
    { id: "TCTH", name: 'Trái Cây Tổng Hợp', restaurant_id: 2, category_id: 7, price: 100000, description:'Đĩa trái cây tươi theo mùa tráng miệng', image: 'https://i.pinimg.com/1200x/51/e9/00/51e90025e4f0f776b454617976400147.jpg' }
    ];
 
->>>>>>> origin/main

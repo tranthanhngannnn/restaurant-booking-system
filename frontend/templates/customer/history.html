@@ -75,7 +75,6 @@
 </div>
 
 <script>
-<<<<<<< HEAD
 
     const API = "http://127.0.0.1:5000";
 
@@ -84,7 +83,6 @@
     window.onload = () => {
         const token = localStorage.getItem("token");
 
-=======
     const API = "http://localhost:5000"
 
     let bookings = []
@@ -93,13 +91,11 @@
         const token = localStorage.getItem("token");
         const historyLink = document.getElementById("historyLink")
         // 1. Kiểm tra nhanh: Không có token trong máy thì khỏi load gì hết
->>>>>>> origin/main
         if (!token) {
             alert("Bạn chưa đăng nhập!");
             window.location.href = "../auth/login.html";
             return;
         }
-<<<<<<< HEAD
         fetch(`${API}/api/v1/customer/me`, {
             method: "GET",
             headers: {
@@ -130,14 +126,12 @@
                     if (statusFilter) statusFilter.addEventListener("change", filterData);
                 })
                 .catch(err => console.log("Lỗi check token:", err));
-=======
         // LOAD DATA
         loadHistory()
 
 
         searchInput.addEventListener("keyup", filterData)
         statusFilter.addEventListener("change", filterData)
->>>>>>> origin/main
     }
 
     function loadHistory() {
@@ -151,7 +145,6 @@
         })
                 .then(res => res.json())
                 .then(data => {
-<<<<<<< HEAD
                     console.log("DATA:", data);
                     if (!Array.isArray(data)) {
                         data = data.data || [];
@@ -196,7 +189,6 @@
             // CHỈ CHECK KHI ĐÃ CONFIRMED
             if (b.Status === "Confirmed") {
                 const reviewData = await checkReview(b.ReservationID);
-=======
 
                     console.log("DATA:", data)
 
@@ -242,7 +234,6 @@
             // CHỈ CHECK KHI ĐÃ CONFIRMED
             if (b.Status === "Confirmed") {
                 const reviewData = await checkReview(b.RestaurantID || b.restaurant_id)
->>>>>>> origin/main
                 if (reviewData.reviewed) {
                     reviewHtml = `
                     <div class="review-box">
@@ -253,7 +244,6 @@
                         <div class="review-text">
                             ${reviewData.comment || "Không có nhận xét"}
                         </div>
-<<<<<<< HEAD
                     </div>`;
                 } else {
                     reviewHtml = `<button onclick="event.stopPropagation(); openReview(${b.RestaurantID || b.restaurant_id}, ${b.ReservationID})">⭐ Đánh giá</button>`;
@@ -266,7 +256,6 @@
                     <h3>🍲 ${b.RestaurantName || "Nhà hàng"}</h3>
                     <span class="status ${b.Status}">${b.Status}</span>
                 </div>
-=======
                     </div>
                 `
                 } else {
@@ -290,13 +279,11 @@
                     </span>
                 </div>
 
->>>>>>> origin/main
                 <div class="card-body">
                     <p>📅 ${b.BookingDate} - ${b.BookingTime}</p>
                     <p>👤 ${b.GuestCount} người</p>
                     <p>🪑 Bàn: ${b.TableNumber || "Chưa xếp"}</p>
                 </div>
-<<<<<<< HEAD
                 <div class="card-footer">
                     ${reviewHtml}
                 </div>
@@ -325,7 +312,6 @@
         const token = localStorage.getItem("token");
         // Lưu ý check lại đường dẫn API này trong Flask xem có đúng không nha
         const res = await fetch(`${API}/api/v1/customer/review/check?reservation_id=${reservationId}`, {
-=======
 
                 <div class="card-footer">
                     ${reviewHtml}
@@ -355,7 +341,6 @@
     async function checkReview(restaurantId) {
         const token = localStorage.getItem("token");
         const res = await fetch(`${API}/review/check?restaurant_id=${restaurantId}`, {
->>>>>>> origin/main
             headers: {
                 "Authorization": "Bearer " + token
             }
@@ -364,7 +349,6 @@
     }
 
     function goHome() {
-<<<<<<< HEAD
         window.location.href = "home.html";
     }
 
@@ -389,7 +373,6 @@
     function closeReview() {
         const reviewBox = document.getElementById("reviewBox");
         if (reviewBox) reviewBox.style.display = "none";
-=======
         window.location.href = "home.html"
     }
 
@@ -401,12 +384,11 @@
 
     function closeReview() {
         reviewBox.style.display = "none"
->>>>>>> origin/main
+
     }
 
     function submitReview() {
         const token = localStorage.getItem("token");
-<<<<<<< HEAD
 
         if (!token) {
             alert("Vui lòng đăng nhập lại!");
@@ -432,7 +414,6 @@
                 ReservationID: parseInt(currentReviewReservationID),
                 Rating: parseInt(ratingInput ? ratingInput.value : 5),
                 Comment: commentInput ? commentInput.value : ""
-=======
         const rID = restaurantId.value
 
         if (!rID) {
@@ -451,12 +432,10 @@
                 ReservationID: parseInt(reservationId.value),
                 Rating: parseInt(rating.value),
                 Comment: comment.value
->>>>>>> origin/main
             })
         })
                 .then(res => res.json())
                 .then(data => {
-<<<<<<< HEAD
                     alert(data.message || data.error);
                     if (data.message) {
                         closeReview();
@@ -466,7 +445,6 @@
                 .catch(err => {
                     console.error("Lỗi gửi review:", err);
                 });
-=======
                     alert(data.message || data.error)
 
                     if (data.message) {
@@ -474,7 +452,6 @@
                         loadHistory()
                     }
                 })
->>>>>>> origin/main
     }
 </script>
 
