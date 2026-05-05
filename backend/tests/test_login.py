@@ -9,8 +9,8 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from core import create_app
-from app.api.v1.auth import routes as auth_routes
+from backend.core import create_app
+from backend.app.api.v1.auth import routes as auth_routes
 
 LOGIN_URL = "/api/v1/auth/login"
 LOGOUT_URL = "/api/v1/auth/logout"

@@ -20,8 +20,8 @@ TEST_USERS = {
 # FIXTURE: Tạo app test + database tạm
 @pytest.fixture()
 def app(monkeypatch):
-    from core import create_app
-    from app.api.v1.auth import routes as auth_routes
+    from backend.core import create_app
+    from backend.app.api.v1.auth import routes as auth_routes
 
     app = create_app()
     app.config.update(
