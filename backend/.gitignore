@@ -12,3 +12,12 @@ __pycache__/
 .idea/
 .vscode/
 
+*.pyc
+.pytest_cache/
+.coverage
+instance/
+
+node_modules/
+dist/
+build/
+

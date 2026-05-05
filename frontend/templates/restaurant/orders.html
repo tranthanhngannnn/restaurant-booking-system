@@ -58,9 +58,16 @@
                 }
             });
 
+           if (!response.ok) {
+                console.error("API lỗi:", response.status);
+                return;
+            }
+
             const data = await response.json();
 
-            if (response.ok && data.length > 0) {
+            console.log("MENU DATA:", data);
+
+            if (data.length > 0) {
                 renderMenu(data);
             } else {
                 console.log("Không có món hoặc lỗi!");

@@ -26,5 +26,9 @@ const MENU_DATA = [
    { id: "CMN", name: 'Combo Nấm', restaurant_id: 2, category_id: 1, price: 100000, description:'Combo nhiều loại nấm tươi ăn kèm món nướng', image: '/static/images/Food/Nuong/combonam.png' },
    { id: "TNST", name: 'Tôm Nướng Sa Tế', restaurant_id: 2, category_id: 6, price: 240000, description:'Tôm tươi nướng sa tế cay thơm', image: '/static/images/Food/Nuong/tomnuongsate.jpg' },
    { id: "NVH", name: 'Nạc Vai Heo', restaurant_id: 2, category_id: 5, price: 100000, description:'Thịt nạc vai heo mềm, thích hợp nướng BBQ', image: '/static/images/Food/Nuong/nacvaiheo.jpg' },
-   { id: "TCTH", name: 'Trái Cây Tổng Hợp', restaurant_id: 2, category_id: 7, price: 100000, description:'Đĩa trái cây tươi theo mùa tráng miệng', image: '/static/images/Food/Nuong/traicaytonghop.jpg' }
+   { id: "TCTH", name: 'Trái Cây Tổng Hợp', restaurant_id: 2, category_id: 7, price: 100000, description:'Đĩa trái cây tươi theo mùa tráng miệng', image: '/static/images/Food/Nuong/traicaytonghop.jpg' },
+
+
+   { id: "AO3DA", name: 'Lau thai chay', restaurant_id: 4, category_id: 3, price: 140000, description:'Đĩa trái cây tươi theo mùa tráng miệng', image: '/static/images/Food/Chay/lauchayjpg.jpg' }
+
    ];

@@ -41,17 +41,23 @@ def update_table_status(id):
 @restaurant_bp.route('/menu', methods=['GET'])
 @jwt_required()
 def get_menu_api():
-    # Lấy ID nhà hàng từ tham số truyền lên
     current_user_id = get_jwt_identity()
     user_info = User.query.get(current_user_id)
-    res_id = user_info.RestaurantID
+
+    if not user_info:
+        return jsonify({"message": "User không tồn tại"}), 404
+
+    if not user_info.RestaurantID:
+        return jsonify({"message": "User chưa có nhà hàng"}), 400
 
     try:
-        menu_data = get_res_menu(res_id)
+        menu_data = get_res_menu(user_info.RestaurantID)
         return jsonify(menu_data)
-    except Exception as e:
-        return jsonify({"message": f"Lỗi server: {str(e)}"}), 500
 
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": str(e)}), 500
 
 #dành cho nhân viên
 @restaurant_bp.route('/menu/admin', methods=['GET'])

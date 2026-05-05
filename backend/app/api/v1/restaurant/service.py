@@ -12,6 +12,7 @@ from backend.models.user import User
 from  backend.schemas.menu_schema import MenuSchema
 from  backend.schemas.table_schema import TableSchema
 from  backend.schemas.booking_schema import BookingSchema
+
 import os
 from werkzeug.utils import secure_filename
 
@@ -80,10 +81,10 @@ def get_res_menu(restaurant_id):
         result.append({
             "id": m.FoodID,
             "name": m.FoodName,
-            "price": float(m.Price) if m.Price else 0,
+            "price": float(m.Price or 0),
             "image": image_url,
 
-            "category": m.category.CategoryName if m.category else "",
+            "category": getattr(m.category, "CategoryName", "") if hasattr(m, "category") else "",
             "description": m.Description if hasattr(m, 'Description') else "",
             "Visible": getattr(m, "Visible", True)
         })
@@ -283,7 +284,18 @@ def create_food(data, res_id):
             Visible=True
         )
 
+        menu = Menu(
+            name=food.FoodName,
+            price=food.Price,
+            description=food.Description if hasattr(food, "Description") else "",
+            image=food.Image_URL,
+            category=data.get("category"),
+            visible=True,
+            RestaurantID=res_id
+        )
+
         db.session.add(food)
+        db.session.add(menu)
         db.session.commit()
 
         return {
