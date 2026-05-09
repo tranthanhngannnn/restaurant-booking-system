@@ -57,7 +57,7 @@ def get_menu_res_admin(res_id):
 
 #DÀNH CHO ORDER MÓN
 def get_res_menu(restaurant_id):
-    menus = Food.query.filter_by(RestaurantID=restaurant_id).all()
+    menus = Food.query.filter_by(RestaurantID=restaurant_id, Visible=True).all()
 
     try:
         from image import MENU_DATA
@@ -308,7 +308,6 @@ def delete_food(id):
 def update_food(id, data):
 
     food = Food.query.get(id)
-
     if not food:
         return {"error": "Food not found"}
 
@@ -354,7 +353,7 @@ def update_food(id, data):
             "name": food.FoodName,
             "price": food.Price,
             "image": food.Image_URL,
-            "category": food.Category
+            "category": food.category.CategoryName
         }
     }
 
@@ -376,17 +375,11 @@ class RestaurantService:
             description=data.get('description'),
             UserID=data.get('UserID'),
             CuisineID=data.get('CuisineID'),
-            status="Đang hoạt động"
+            status="Đang chờ duyệt"
         )
 
         db.session.add(new_res)
         db.session.commit()
-
-
-        user = User.query.get(data.get("UserID"))
-        if user:
-            user.RestaurantID = new_res.RestaurantID
-            db.session.commit()
 
         return {
             "msg": "Created",

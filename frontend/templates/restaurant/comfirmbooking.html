@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Quản lý đặt bàn</title>
+    <link rel="stylesheet" href="../../static/css/restaurant.css">
+    <link rel="stylesheet" href="../../static/css/admin.css">
     <link rel="stylesheet" href="../../static/css/comfirmbooking.css">
 </head>
+
 <body>
 
-<div class="container">
+    <div class="container">
 
-    <!-- SIDEBAR -->
+        <!-- SIDEBAR -->
     <div class="sidebar">
         <h2>🍽️ Restaurant</h2>
-
-            <a href="table.html">Quản lý bàn</a>
-            <a class="active">Đơn đặt bàn</a>
-            <a href="menu_mgmt.html">Menu</a>
-            <a href="register_restaurant.html">Đăng ký nhà hàng</a>
-
+        <a href="table.html">Quản lý bàn</a>
+        <a href="comfirmbooking.html" class="active">Đơn đặt bàn</a>
+        <a href="menu_mgmt.html">Menu</a>
+        <a href="register_restaurant.html">Đăng ký nhà hàng</a>
         <div class="sidebar-bottom">
             <button onclick="handleLogout()" class="logout-btn">
                 Đăng xuất
@@ -25,66 +27,66 @@
         </div>
     </div>
 
-    <!-- MAIN -->
-    <div class="main">
-        <h2>Danh sách đặt bàn</h2>
+        <!-- MAIN -->
+        <div class="main">
+            <h2>Danh sách đặt bàn</h2>
 
-        <table>
-            <thead>
-            <tr>
-                <th>Tên khách</th>
-                <th>SĐT</th>
-                <th>Số người</th>
-                <th>Ngày</th>
-                <th>Giờ</th>
-                <th>Bàn</th>
-                <th>Tiền cọc</th>
-                <th>Trạng thái</th>
-                <th>Hành động</th>
-            </tr>
-            </thead>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tên khách</th>
+                        <th>SĐT</th>
+                        <th>Số người</th>
+                        <th>Ngày</th>
+                        <th>Giờ</th>
+                        <th>Bàn</th>
+                        <th>Tiền cọc</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
 
-            <tbody id="booking-list"></tbody>
-        </table>
+                <tbody id="booking-list"></tbody>
+            </table>
+        </div>
+
     </div>
 
-</div>
+    <script>
+        const API = "http://127.0.0.1:5000/api/v1/restaurant"
 
-<script>
-    const API = "http://127.0.0.1:5000/api/v1/restaurant"
+        // load danh sách booking
+        async function loadBookings() {
+            const token = localStorage.getItem('token');
+            const restaurantName = localStorage.getItem('restaurant_name') || 'Nhà hàng';
 
-    // load danh sách booking
-async function loadBookings() {
-    const token = localStorage.getItem('token');
-    const restaurantName = localStorage.getItem('restaurant_name') || 'Nhà hàng';
-
-    // Cập nhật tiêu đề nhà hàng
-    if(document.querySelector('h1')) {
-        document.querySelector('h1').innerText = `Danh sách đặt bàn - ${restaurantName}`;
-    }
-
-    try {
-        const res = await fetch('http://127.0.0.1:5000/api/v1/restaurant/bookings', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+            // Cập nhật tiêu đề nhà hàng
+            if (document.querySelector('h1')) {
+                document.querySelector('h1').innerText = `Danh sách đặt bàn - ${restaurantName}`;
             }
-        });
 
-        if (res.status === 401) {
-            alert("Hết phiên làm việc, Ngân đăng nhập lại nha!");
-            return;
-        }
+            try {
+                const res = await fetch('http://127.0.0.1:5000/api/v1/restaurant/bookings', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-        const data = await res.json();
-        console.log("Data từ API trả về nè:", data);
+                if (res.status === 401) {
+                    alert("Hết phiên làm việc, Ngân đăng nhập lại nha!");
+                    return;
+                }
 
-        let html = "";
-        // Kiểm tra xem data có phải là mảng không để tránh lỗi loop
-        if (Array.isArray(data)) {
-            data.forEach(b => {
-                html += `
+                const data = await res.json();
+                console.log("Data từ API trả về nè:", data);
+
+                let html = "";
+                // Kiểm tra xem data có phải là mảng không để tránh lỗi loop
+                if (Array.isArray(data)) {
+                    data.forEach(b => {
+                        html += `
                 <tr>
                     <td>${b.CustomerName}</td>
                     <td>${b.phone || ''}</td>
@@ -95,64 +97,71 @@ async function loadBookings() {
                     <td>${b.Deposit}</td>
                     <td class="${b.Status}">${b.Status}</td>
                     <td>
-                    ${
-                        b.Status === "Pending"
-                        ? `
+                    ${b.Status === "Pending"
+                                ? `
                         <button class="btn confirm" onclick="confirmBooking(${b.ReservationID})">✔</button>
                         <button class="btn reject" onclick="rejectBooking(${b.ReservationID})">✖</button>
                         `
-                        : ""
-                    }
+                                : ""
+                            }
                     </td>
                 </tr>`;
-            });
-            document.getElementById("booking-list").innerHTML = html;
+                    });
+                    document.getElementById("booking-list").innerHTML = html;
+                }
+
+            } catch (err) {
+                console.error("Lỗi:", err);
+                alert("Lỗi tải dữ liệu rồi bà ơi!");
+            }
         }
 
-    } catch (err) {
-        console.error("Lỗi:", err);
-        alert("Lỗi tải dữ liệu rồi bà ơi!");
-    }
-}
-
-    // confirm
-    async function confirmBooking(id){
-    const token = localStorage.getItem('token');
-      await fetch(`${API}/bookings/${id}/confirm`, {
-        method: "POST",
-        headers: {
-            'Authorization': `Bearer ${token}`
+        // confirm
+        async function confirmBooking(id) {
+            const token = localStorage.getItem('token');
+            await fetch(`${API}/bookings/${id}/confirm`, {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            loadBookings()
         }
-      })
-      loadBookings()
-    }
 
-    // reject
-    async function rejectBooking(id){
-    const token = localStorage.getItem('token');
-      await fetch(`${API}/bookings/${id}/reject`, {
-        method: "POST",
-        headers: {
-            'Authorization': `Bearer ${token}`
+        // reject
+        async function rejectBooking(id) {
+            const token = localStorage.getItem('token');
+            await fetch(`${API}/bookings/${id}/reject`, {
+                method: "POST",
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            loadBookings()
         }
-      })
-      loadBookings()
-    }
 
-    // format date
-    function formatDate(dt){
-      if(!dt) return ""
-      return dt.split(" ")[0]
-    }
+        // format date
+        function formatDate(dt) {
+            if (!dt) return ""
+            return dt.split(" ")[0]
+        }
 
-    // format time
-    function formatTime(dt){
-      if(!dt) return ""
-      return dt.split(" ")[1]?.slice(0,5)
-    }
+        // format time
+        function formatTime(dt) {
+            if (!dt) return ""
+            return dt.split(" ")[1]?.slice(0, 5)
+        }
 
-    window.onload = loadBookings
-</script>
+        function handleLogout() {
+            if (!confirm("Bạn có chắc muốn đăng xuất không?")) return;
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            window.location.href = "../auth/login.html";
+        }
+
+        window.onload = loadBookings
+    </script>
 
 </body>
+
 </html>

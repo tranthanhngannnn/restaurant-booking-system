@@ -1,314 +1,346 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menu Nhà Hàng</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="../../static/css/restaurant.css">
+    <link rel="stylesheet" href="../../static/css/admin.css">
+    <link rel="stylesheet" href="../../static/css/style.css">
+</head>
+
+<body>
     <div class="container">
 
         <!-- SIDEBAR -->
         <div class="sidebar">
             <h2>🍽️ Restaurant</h2>
-            <ul>
-                <li>Dashboard</li>
-                <a href="table.html">Quản lý bàn</a>
-                <a class="active">Đơn đặt bàn</a>
-                <a href="menu_mgmt.html">Menu</a>
-                <a href="register_restaurant.html">Đăng ký nhà hàng</a>
-            </ul>
+            <a href="table.html">Quản lý bàn</a>
+            <a href="comfirmbooking.html">Đơn đặt bàn</a>
+            <a href="menu_mgmt.html" class="active">Menu</a>
+            <a href="register_restaurant.html">Đăng ký nhà hàng</a>
+            <div class="sidebar-bottom">
+                <button onclick="handleLogout()" class="logout-btn">
+                    Đăng xuất
+                </button>
+            </div>
+        </div>
+        </head>
+
+        <!-- MAIN CONTENT -->
+        <div class="main">
+            <div id="restaurant-page-message" class="staff-restaurant-message" hidden></div>
+
+            <div class="topbar">
+                <h1>Menu Nhà Hàng</h1>
+                <button class="btn-add" onclick="toggleAddForm()">+ Thêm món mới</button>
+            </div>
+
+            <!-- ===== THÊM MÓN (ẨN MẶC ĐỊNH) ===== -->
+            <div id="addFoodForm" class="add-food-container" style="display: none;">
+                <h3>Thêm món mới</h3>
+                <div class="input-group">
+                    <input id="name" placeholder="Tên món">
+                    <input id="price" type="number" placeholder="Giá">
+                    <input id="image" placeholder="Link ảnh">
+                    <input id="category" placeholder="Loại (lau, nuong...)">
+                    <button class="btn-add" onclick="addFood()">Thêm món</button>
+                </div>
+            </div>
+
+            <hr>
+
+            <input type="file" id="editImageInput" style="display:none" accept="image/*">
+            <div class="menu-container" id="menuContainer"></div>
         </div>
     </div>
-</head>
-<body>
 
-<h1>Menu Nhà Hàng</h1>
-
-<!-- ===== THÊM MÓN ===== -->
-<input type="file" id="editImageInput" style="display:none" accept="image/*">
-<div class="add-food-container">
-    <h3>Thêm món mới</h3>
-    <div class="input-group">
-        <input id="name" placeholder="Tên món">
-        <input id="price" type="number" placeholder="Giá">
-        <input id="image" placeholder="Link ảnh">
-        <input id="category" placeholder="Loại (lau, nuong...)">
-        <button class="btn-add" onclick="addFood()">Thêm món</button>
-    </div>
-</div>
-
-<hr>
-
-<div class="menu-container" id="menuContainer"></div>
-
-<script>
-    let MENU_DATA = [];
-    const menuContainer = document.getElementById('menuContainer');
+    <script>
+        let MENU_DATA = [];
+        const menuContainer = document.getElementById('menuContainer');
 
 
-    // ===== LOAD MENU =====
-    async function loadMenu() {
-    const token = localStorage.getItem('token');
+        // ===== LOAD MENU =====
+        async function loadMenu() {
+            const token = localStorage.getItem('token');
 
-        // Nếu không có token, thoát ra trang đăng nhập
-        if (!token) {
-            alert("Bạn chưa đăng nhập!");
-            window.location.href = "login.html";
-            return;
-        }
-
-        try {
-            const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu/admin", {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!res.ok) {
-                if (res.status === 401 || res.status === 403) {
-                    alert("Bạn không có quyền truy cập hoặc phiên đăng nhập đã hết hạn!");
-                    return;
-                }
-                throw new Error("Lỗi server");
+            // Nếu không có token, thoát ra trang đăng nhập
+            if (!token) {
+                alert("Bạn chưa đăng nhập!");
+                window.location.href = "login.html";
+                return;
             }
 
-            const data = await res.json();
+            try {
+                const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu/admin", {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-            MENU_DATA = data.map(item => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                image: item.image,
-                category: item.category,
-                visible: item.Visible
-            }));
+                if (!res.ok) {
+                    if (res.status === 401 || res.status === 403) {
+                        alert("Bạn không có quyền truy cập hoặc phiên đăng nhập đã hết hạn!");
+                        return;
+                    }
+                    throw new Error("Lỗi server");
+                }
 
-            renderMenu(MENU_DATA);
+                const data = await res.json();
 
-        } catch (err) {
-            console.error("Load menu error:", err);
+                MENU_DATA = data.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    image: item.image,
+                    category: item.category,
+                    visible: item.Visible
+                }));
+
+                renderMenu(MENU_DATA);
+
+            } catch (err) {
+                console.error("Load menu error:", err);
+            }
         }
-    }
 
 
-    // ===== RENDER MENU =====
-function renderMenu(dataToRender) {
-    const menuContainer = document.getElementById('menuContainer');
-    if (!menuContainer) return;
+        // ===== RENDER MENU =====
+        function renderMenu(dataToRender) {
+            const menuContainer = document.getElementById('menuContainer');
+            if (!menuContainer || !dataToRender) return;
 
-    menuContainer.innerHTML = '';
+            menuContainer.innerHTML = '';
 
-    // Kiểm tra nếu dataToRender bị rỗng thì không làm gì cả
-    if (!dataToRender) return;
+            dataToRender.forEach(item => {
+                item.visible = item.visible !== undefined ? item.visible : (item.Visible !== false);
+                const div = document.createElement('div');
+                div.className = 'menu-item';
 
-    dataToRender.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'menu-item';
+                // Chuẩn hóa visible: hỗ trợ cả item.visible và item.Visible
+                let currentVisible = item.visible !== false && item.Visible !== false;
+                div.style.opacity = currentVisible ? "1" : "0.4";
 
-        const currentVisible = item.visible !== false;
-        div.style.opacity = currentVisible ? "1" : "0.4";
-
-        div.innerHTML = `
+                div.innerHTML = `
             <img src="${item.image || 'https://via.placeholder.com/150'}" alt="${item.name}">
             <h3>${item.name}</h3>
             <p>${Number(item.price).toLocaleString()}₫</p>
-
             <div class="food-actions">
                 <button class="edit-btn" onclick="editFood('${item.id}', '${item.name}', '${item.price}')">Sửa</button>
-            <button class="toggle-btn">
-                ${currentVisible ? "Ẩn món" : "Hiện món"}
-            </button>
+                <button class="toggle-btn">${currentVisible ? "Ẩn món" : "Hiện món"}</button>
                 <button class="delete-btn" onclick="deleteFood('${item.id}')">Xóa</button>
+            </div>
         `;
 
-        const btn = div.querySelector('.toggle-btn');
-        btn.addEventListener('click', async (e) => {
-            try {
-                const token = localStorage.getItem('token');
-                const foodId = item.id || item.FoodID;
+                const btn = div.querySelector('.toggle-btn');
+                let isLoading = false;
+                btn.addEventListener('click', async () => {
+                    try {
+                        if (isLoading) return;
+                        isLoading = true;
+                        btn.disabled = true;
+                        const token = localStorage.getItem('token');
+                        const foodId = item.id || item.FoodID;
 
+                        const res = await fetch(
+                            `http://127.0.0.1:5000/api/v1/restaurant/menu/${foodId}/toggle`,
+                            {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            }
+                        );
+
+                        if (res.ok) {
+                            const result = await res.json();
+
+                            // Chuẩn hóa field visible từ response
+                            currentVisible = result.visible ?? result.Visible ?? !currentVisible;
+                            item.visible = currentVisible;
+
+                            // Cập nhật UI trực tiếp, không reload
+                            div.style.opacity = currentVisible ? "1" : "0.4";
+                            btn.textContent = currentVisible ? "Ẩn món" : "Hiện món";
+                        } else {
+                            alert("Thao tác thất bại!");
+                        }
+                    } catch (err) {
+                        console.error("Lỗi Toggle:", err);
+                    } finally {
+                        isLoading = false;
+                        btn.disabled = false;
+                    }
+                });
+
+                menuContainer.appendChild(div);
+            });
+        }
+        // ===== THÊM MÓN =====
+        async function addFood() {
+            console.log("Đang gọi hàm addFood()...");
+
+            const name = document.getElementById('name').value;
+            const price = Number(document.getElementById('price').value);
+            const image = document.getElementById('image').value;
+            const category = document.getElementById('category').value;
+            const token = localStorage.getItem('token');
+
+            console.log("Dữ liệu thu thập:", { name, price, image, category });
+
+            if (!name || !price) {
+                alert("Vui lòng nhập tên món và giá!");
+                return;
+            }
+
+            try {
+                console.log("Bắt đầu fetch tới /api/v1/restaurant/menu...");
+                const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, price, image, category })
+                });
+
+                console.log("Kết quả fetch - Status:", res.status);
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Lỗi từ server:", errorText);
+                    return alert("Thêm thất bại! Vui lòng kiểm tra lại.");
+                }
+
+                const result = await res.json();
+                console.log("Thêm thành công:", result);
+
+                alert("Thêm món thành công!");
+
+                // Reset form
+                document.getElementById('name').value = '';
+                document.getElementById('price').value = '';
+                document.getElementById('image').value = '';
+                document.getElementById('category').value = '';
+
+                // Load lại danh sách
+                loadMenu();
+
+            } catch (err) {
+                console.error("Lỗi khi gọi API addFood:", err);
+                alert("Lỗi kết nối server!");
+            }
+        }
+
+
+
+        // ===== XOÁ =====
+        async function deleteFood(id) {
+            if (!confirm("Xoá món này?")) return;
+
+            const token = localStorage.getItem('token');
+
+            try {
                 const res = await fetch(
-                    `http://127.0.0.1:5000/api/v1/restaurant/menu/${foodId}/toggle`,
+                    `http://127.0.0.1:5000/api/v1/restaurant/menu/${id}`,
                     {
-                        method: 'PUT',
+                        method: "DELETE",
                         headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
+                            'Authorization': `Bearer ${token}`
                         }
                     }
                 );
 
-                if (res.ok) {
-                    const result = await res.json();
+                if (!res.ok) return alert("Xoá thất bại");
 
-                    // 1. Cập nhật dữ liệu vào biến
-                    item.visible = result.visible;
+                loadMenu();
 
-                    // 2. Sửa TRỰC TIẾP trên giao diện cái ô này, không load lại cả trang
-                    div.style.opacity = item.visible ? "1" : "0.4";
-                    btn.innerText = item.visible ? "Ẩn món" : "Hiện món";
-
-                    console.log(`Món ${item.name} giờ là: ${item.visible ? 'Hiện' : 'Ẩn'}`);
-                } else {
-                    alert("Thao tác thất bại!");
-                }
             } catch (err) {
-                console.error("Lỗi Toggle:", err);
-            }
-        });
-
-        menuContainer.appendChild(div);
-    });
-}
-
-// ===== THÊM MÓN =====
-async function addFood() {
-    console.log("Đang gọi hàm addFood()...");
-    
-    const name = document.getElementById('name').value;
-    const price = Number(document.getElementById('price').value);
-    const image = document.getElementById('image').value;
-    const category = document.getElementById('category').value;
-    const token = localStorage.getItem('token');
-
-    console.log("Dữ liệu thu thập:", { name, price, image, category });
-
-    if (!name || !price) {
-        alert("Vui lòng nhập tên món và giá!");
-        return;
-    }
-
-    try {
-        console.log("Bắt đầu fetch tới /api/v1/restaurant/menu...");
-        const res = await fetch("http://127.0.0.1:5000/api/v1/restaurant/menu", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-            },
-            body: JSON.stringify({ name, price, image, category })
-        });
-
-        console.log("Kết quả fetch - Status:", res.status);
-
-        if (!res.ok) {
-            const errorText = await res.text();
-            console.error("Lỗi từ server:", errorText);
-            return alert("Thêm thất bại! Vui lòng kiểm tra lại.");
-        }
-
-        const result = await res.json();
-        console.log("Thêm thành công:", result);
-
-        alert("Thêm món thành công!");
-        
-        // Reset form
-        document.getElementById('name').value = '';
-        document.getElementById('price').value = '';
-        document.getElementById('image').value = '';
-        document.getElementById('category').value = '';
-
-        // Load lại danh sách
-        loadMenu();
-
-    } catch (err) {
-        console.error("Lỗi khi gọi API addFood:", err);
-        alert("Lỗi kết nối server!");
-    }
-}
-
-
-
-// ===== XOÁ =====
-async function deleteFood(id) {
-if (!confirm("Xoá món này?")) return;
-
-const token = localStorage.getItem('token');
-
-try {
-    const res = await fetch(
-        `http://127.0.0.1:5000/api/v1/restaurant/menu/${id}`,
-        { 
-            method: "DELETE",
-            headers: {
-                'Authorization': `Bearer ${token}`
+                console.error(err);
             }
         }
-    );
-
-    if (!res.ok) return alert("Xoá thất bại");
-
-    loadMenu();
-
-} catch (err) {
-    console.error(err);
-}
-}
 
 
-// ===== SỬA =====
-async function editFood(id, oldName, oldPrice) {
-    const name = prompt("Tên mới:", oldName);
-    const priceInput = prompt("Giá mới:", oldPrice);
+        // ===== SỬA =====
+        async function editFood(id, oldName, oldPrice) {
+            const name = prompt("Tên mới:", oldName);
+            const priceInput = prompt("Giá mới:", oldPrice);
 
-    if (name === null || priceInput === null) return;
-    const price = Number(priceInput);
+            if (name === null || priceInput === null) return;
+            const price = Number(priceInput);
 
-    if (!name || isNaN(price)) {
-        alert("Dữ liệu không hợp lệ!");
-        return;
-    }
-
-    const wantNewImage = confirm("Bạn có muốn chọn ảnh mới cho món ăn này không?\n(Nhấn Cancel để giữ nguyên ảnh cũ)");
-    let file = null;
-
-    if (wantNewImage) {
-        const fileInput = document.getElementById('editImageInput');
-        fileInput.value = ''; // Reset
-
-        file = await new Promise((resolve) => {
-            fileInput.onchange = () => resolve(fileInput.files[0]);
-            fileInput.click();
-            // Nếu người dùng không chọn gì và đóng dialog, promise này sẽ treo.
-        });
-    }
-
-    const token = localStorage.getItem('token');
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("price", price);
-    if (file) {
-        formData.append("image", file);
-    }
-
-    try {
-        const res = await fetch(
-            `http://127.0.0.1:5000/api/v1/restaurant/menu/${id}`,
-            {
-                method: "PUT",
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                    // FormData tự động set Content-Type là multipart/form-data kèm boundary
-                },
-                body: formData
+            if (!name || isNaN(price)) {
+                alert("Dữ liệu không hợp lệ!");
+                return;
             }
-        );
 
-        if (!res.ok) return alert("Sửa thất bại");
+            const wantNewImage = confirm("Bạn có muốn chọn ảnh mới cho món ăn này không?\n(Nhấn Cancel để giữ nguyên ảnh cũ)");
+            let file = null;
 
-        alert("Sửa thành công");
+            if (wantNewImage) {
+                const fileInput = document.getElementById('editImageInput');
+                fileInput.value = ''; // Reset
+
+                file = await new Promise((resolve) => {
+                    fileInput.onchange = () => resolve(fileInput.files[0]);
+                    fileInput.click();
+                    // Nếu người dùng không chọn gì và đóng dialog, promise này sẽ treo.
+                });
+            }
+
+            const token = localStorage.getItem('token');
+            const formData = new FormData();
+            formData.append("name", name);
+            formData.append("price", price);
+            if (file) {
+                formData.append("image", file);
+            }
+
+            try {
+                const res = await fetch(
+                    `http://127.0.0.1:5000/api/v1/restaurant/menu/${id}`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                            // FormData tự động set Content-Type là multipart/form-data kèm boundary
+                        },
+                        body: formData
+                    }
+                );
+
+                if (!res.ok) return alert("Sửa thất bại");
+
+                alert("Sửa thành công");
+                loadMenu();
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ===== TOGGLE FORM THÊM MÓN =====
+        function toggleAddForm() {
+            const form = document.getElementById('addFoodForm');
+            form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+        }
+
+        // ===== ĐĂNG XUẤT =====
+        function handleLogout() {
+            if (!confirm("Bạn có chắc muốn đăng xuất không?")) return;
+            localStorage.removeItem("token");
+            localStorage.removeItem("role");
+            window.location.href = "../auth/login.html";
+        }
+
+        // ===== INIT =====
         loadMenu();
-
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-    // ===== INIT =====
-    loadMenu();
-</script>
+    </script>
 
 </body>
+
 </html>

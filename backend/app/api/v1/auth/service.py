@@ -57,7 +57,7 @@ class AuthService:
                 expires_delta=timedelta(days=1),
                 additional_claims={
                     "role": user.Role,
-                    "restaurant_id": None
+                    "restaurant_id": user.RestaurantID
                 } # Thêm tham số additional_claims để đưa Role vào Token
             )
 
@@ -68,7 +68,8 @@ class AuthService:
                 "role": user.Role,
                 "user_info": {
                     "id": user.UserID,
-                    "username": user.Username
+                    "username": user.Username,
+                    "restaurant_id": user.RestaurantID
                 }
             }, 200
 

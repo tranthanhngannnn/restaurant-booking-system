@@ -11,20 +11,40 @@ class AdminUserService:
     @staticmethod
     def get_all_users():
         users = User.query.all()
-        return [{"id": u.UserID, "username": u.Username, "role": u.Role, "email": u.Email, "phone": u.Phone} for u in users]
+        return [
+            {
+                "id": u.UserID,
+                "username": u.Username,
+                "role": u.Role,
+                "email": u.Email,
+                "phone": u.Phone,
+                "restaurant_id": u.RestaurantID
+            } for u in users
+        ]
 
     @staticmethod
     def update_user(user_id, data):
-        user = User.query.get(user_id)
-        if not user:
+        target_user = User.query.get(user_id)
+        if not target_user:
             return None
 
+        # Cập nhật các trường thông thường (trừ RestaurantID xử lý riêng)
         for key, value in data.items():
-            if hasattr(user, key):
-                setattr(user, key, value)
+            if hasattr(target_user, key) and key != 'RestaurantID':
+                setattr(target_user, key, value)
+
+        # Xử lý logic gán nhà hàng
+        new_role = data.get('Role', target_user.Role)
+        if new_role == 'STAFF':
+            res_id = data.get('RestaurantID')
+            if res_id:
+                target_user.RestaurantID = int(res_id)
+        else:
+            # Nếu role không phải STAFF thì xóa liên kết nhà hàng
+            target_user.RestaurantID = None
 
         db.session.commit()
-        return user
+        return target_user
 
     @staticmethod
     def delete_user(user_id):
