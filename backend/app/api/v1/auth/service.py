@@ -56,11 +56,11 @@ class AuthService:
             res_id = None
 
         new_user = User(
-            Username=username,
-            Password=password,
-            Role=role,
-            Email=email,
-            Phone=phone,
+            Username=data.get('username'),
+            Password=data.get('password'),
+            Role=data.get('role'),
+            Email=data.get('email'),
+            Phone=data.get('phone'),
             RestaurantID=res_id
         )
         db.session.add(new_user)

@@ -306,7 +306,8 @@ def update_food(id, data):
     image_file = data.get("image_file")
     if image_file and hasattr(image_file, 'filename') and image_file.filename != '':
         filename = secure_filename(image_file.filename)
-        # Đường dẫn lưu file
+        # Đường dẫn lưu file (Dựa vào cấu trúc thư mục)
+        # backend/app/api/v1/restaurant/service.py -> frontend/static/images
         upload_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../frontend/static/images"))
 
         if not os.path.exists(upload_path):

@@ -1,56 +1,58 @@
 /* MAIN */
-.main{
-  flex:1;
-  padding:20px;
+.main {
+  flex: 1;
+  padding: 20px;
 }
 
 /* TABLE */
-table{
-  width:100%;
-  border-collapse:collapse;
-  background:white;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
 }
 
-th, td{
-  padding:10px;
-  border:1px solid #ddd;
-  text-align:center;
+th,
+td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
 }
 
-th{
-  background:#eee;
+th {
+  background: #34495e;
+  color: white;
 }
 
 /* STATUS */
-.pending{
-  color:orange;
-  font-weight:bold;
+.pending {
+  color: orange;
+  font-weight: bold;
 }
 
-.confirmed{
-  color:green;
-  font-weight:bold;
+.confirmed {
+  color: green;
+  font-weight: bold;
 }
 
-.rejected{
-  color:red;
-  font-weight:bold;
+.rejected {
+  color: red;
+  font-weight: bold;
 }
 
 /* BUTTON */
-.btn{
-  padding:5px 10px;
-  border:none;
-  cursor:pointer;
-  border-radius:5px;
+.btn {
+  padding: 5px 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
 
-.confirm{
-  background:green;
-  color:white;
+.confirm {
+  background: green;
+  color: white;
 }
 
-.reject{
-  background:red;
-  color:white;
+.reject {
+  background: red;
+  color: white;
 }
