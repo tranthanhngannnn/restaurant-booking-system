@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { renderMenu, goBooking, goHome } from "../cus_menu";
+import { renderMenu, goBooking, goHome } from "../static/js/cus_menu";
 
 describe("Menu JS", () => {
 

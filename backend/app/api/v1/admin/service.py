@@ -1,9 +1,13 @@
+import re
 from backend.models.cuisine import Cuisine
 from backend.models.restaurant import Restaurant
 from backend.core.extensions import db
 from backend.models.user import User
 from backend.models.booking import Reservation
 from backend.models.payment import Payment
+from backend.models.orders import Order
+from backend.models.ordersitem import OrderItem
+from backend.models.tables import Tables
 from sqlalchemy import func
 
 
@@ -11,20 +15,40 @@ class AdminUserService:
     @staticmethod
     def get_all_users():
         users = User.query.all()
-        return [{"id": u.UserID, "username": u.Username, "role": u.Role, "email": u.Email, "phone": u.Phone} for u in users]
+        return [
+            {
+                "id": u.UserID,
+                "username": u.Username,
+                "role": u.Role,
+                "email": u.Email,
+                "phone": u.Phone,
+                "restaurant_id": u.RestaurantID
+            } for u in users
+        ]
 
     @staticmethod
     def update_user(user_id, data):
-        user = User.query.get(user_id)
-        if not user:
+        target_user = User.query.get(user_id)
+        if not target_user:
             return None
 
+        # Cập nhật các trường thông thường (trừ RestaurantID xử lý riêng)
         for key, value in data.items():
-            if hasattr(user, key):
-                setattr(user, key, value)
+            if hasattr(target_user, key) and key != 'RestaurantID':
+                setattr(target_user, key, value)
+
+        # Xử lý logic gán nhà hàng
+        new_role = data.get('Role', target_user.Role)
+        if new_role == 'STAFF':
+            res_id = data.get('RestaurantID')
+            if res_id:
+                target_user.RestaurantID = int(res_id)
+        else:
+            # Nếu role không phải STAFF thì xóa liên kết nhà hàng
+            target_user.RestaurantID = None
 
         db.session.commit()
-        return user
+        return target_user
 
     @staticmethod
     def delete_user(user_id):
@@ -41,16 +65,23 @@ class CuisineService:
     @staticmethod
     def create(data):
         cuisine_name = data.get('CuisineName')
+        if cuisine_name is not None:
+            cuisine_name = str(cuisine_name).strip()
+
         if not cuisine_name:
-            return {"message": "Ten khong duoc de trong"}, 400
+            return {"message": "Tên loại ẩm thực không được để trống"}, 400
+
+        # Kiểm tra chỉ chứa chữ cái và khoảng trắng
+        if not all(c.isalpha() or c.isspace() for c in cuisine_name):
+            return {"message": "Tên loại ẩm thực không được chứa số hoặc ký tự đặc biệt"}, 400
 
         if Cuisine.query.filter_by(CuisineName=cuisine_name).first():
-            return {"message": "Danh muc da ton tai"}, 400
+            return {"message": "Danh mục đã tồn tại"}, 400
 
         new_cuisine = Cuisine(CuisineName=cuisine_name, Status="Hoat dong")
         db.session.add(new_cuisine)
         db.session.commit()
-        return {"message": "Them thanh cong!"}, 201
+        return {"message": "Thêm thành công!"}, 201
 
     @staticmethod
     def get_all():
@@ -62,14 +93,23 @@ class CuisineService:
     def update(id, data):
         cuisine_obj = Cuisine.query.get(id)
         if not cuisine_obj:
-            return {"message": "Khong tim thay"}, 404
+            return {"message": "Không tìm thấy"}, 404
+
+        new_name = data.get('CuisineName')
+        if new_name is not None:
+            new_name = str(new_name).strip()
+            if not new_name:
+                return {"message": "Tên loại ẩm thực không được để trống"}, 400
+            if not all(c.isalpha() or c.isspace() for c in new_name):
+                return {"message": "Tên loại ẩm thực không được chứa số hoặc ký tự đặc biệt"}, 400
+            data['CuisineName'] = new_name  # Gán lại bản đã được strip
 
         for key, value in data.items():
             if hasattr(Cuisine, key):
                 setattr(cuisine_obj, key, value)
 
         db.session.commit()
-        return {"message": "Cap nhat thanh cong!"}, 200
+        return {"message": "Cập nhật thành công!"}, 200
 
     @staticmethod
     def delete(id):
@@ -94,27 +134,67 @@ class AdminRestaurantService:
     def update_restaurant(restaurant_id, data, image=None):
         restaurant = Restaurant.query.get(restaurant_id)
         if not restaurant:
-            return None
+            return {"message": "Không tìm thấy nhà hàng"}, 404
 
-        for key, value in data.items():
-            if hasattr(restaurant, key):
-                setattr(restaurant, key, value)
+        # 1. Validate Tên nhà hàng
+        if 'RestaurantName' in data:
+            name = str(data.get('RestaurantName', '')).strip()
+            if not name:
+                return {"message": "Tên nhà hàng không được để trống"}, 400
+            if not all(c.isalnum() or c.isspace() for c in name):
+                return {"message": "Tên nhà hàng không hợp lệ"}, 400
+            restaurant.RestaurantName = name
+
+        # 2. Validate Số điện thoại
+        if 'Phone' in data:
+            phone = str(data.get('Phone', '')).strip()
+            if not phone:
+                return {"message": "Số điện thoại không được để trống"}, 400
+            if not (phone.isdigit() and len(phone) == 10 and phone.startswith('0')):
+                return {"message": "Số điện thoại phải có 10 chữ số"}, 400
+            restaurant.Phone = phone
+
+        # 3. Validate Địa chỉ
+        if 'Address' in data:
+            address = str(data.get('Address', '')).strip()
+            if not address:
+                return {"message": "Địa chỉ không được để trống"}, 400
+            if not re.match(r'^[\w\s/,\-]+$', address, re.UNICODE):
+                return {"message": "Địa chỉ không hợp lệ"}, 400
+            restaurant.Address = address
+
+        # 4. Validate Email
+        if 'Email' in data:
+            email = str(data.get('Email', '')).strip()
+            if not email:
+                return {"message": "Email không được để trống"}, 400
+            email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_regex, email):
+                return {"message": "Email không hợp lệ"}, 400
+            restaurant.Email = email
+
+        # 5. Cập nhật các trường khác (Nếu để trống thì giữ nguyên)
+        for key in ['Opentime', 'Closetime', 'description', 'CuisineID', 'status']:
+            if key in data:
+                value = data.get(key)
+                if value is not None and str(value).strip() != "":
+                    setattr(restaurant, key, value)
 
         if image and image.filename != '':
             restaurant.image_url = image.filename
 
         db.session.commit()
-        return restaurant
+        return {"message": "Cập nhật thành công!"}, 200
 
     @staticmethod
     def delete_restaurant(restaurant_id):
         restaurant = Restaurant.query.get(restaurant_id)
         if not restaurant:
-            return False
+            return {"message": "Không tìm thấy nhà hàng"}, 404
 
         restaurant.status = 'Ngưng hoạt động'
         db.session.commit()
-        return {"message": "Da an nha hang thanh cong, du lieu van duoc luu tru!", "code": 200}
+        return {"message": "Đã ẩn nhà hàng thành công!"}, 200
 
     @staticmethod
     def approve(restaurant_id):
@@ -148,11 +228,13 @@ class AdminRestaurantService:
 class ReportService:
     @staticmethod
     def _parse_month(report_month):
+        #Parse chuỗi 'YYYY-MM' thành year và month
         year, month = map(int, report_month.split('-'))
         return year, month
 
     @staticmethod
     def _shift_month(year, month, offset):
+        #Tính tháng mới sau khi dịch chuyển offset tháng
         month_index = (year * 12 + month - 1) + offset
         shifted_year = month_index // 12
         shifted_month = month_index % 12 + 1
@@ -160,14 +242,17 @@ class ReportService:
 
     @staticmethod
     def _month_key(year, month):
+        #Tạo key dạng 'YYYY-MM'
         return f"{year}-{month:02d}"
 
     @staticmethod
     def _month_label(year, month):
+        #Tạo label hiển thị dạng 'Thang MM/YYYY'
         return f"Thang {month:02d}/{year}"
 
     @staticmethod
     def _build_months(report_month, months_back=6):
+        #Xây dựng danh sách 6 tháng gần nhất từ tháng được chọn
         year, month = ReportService._parse_month(report_month)
         months = []
         start_offset = -(months_back - 1)
@@ -181,56 +266,66 @@ class ReportService:
 
     @staticmethod
     def get_report(restaurant_id, report_month):
+        # Xây dựng danh sách 6 tháng gần nhất
         months = ReportService._build_months(report_month, months_back=6)
         month_keys = [item["key"] for item in months]
         month_labels = {item["key"]: item["label"] for item in months}
-        selected_month = month_keys[-1]
-        restaurant_query = Restaurant.query.filter(Restaurant.status != 'Ngưng hoạt động')
+        selected_month = month_keys[-1]  # Tháng được chọn (tháng cuối)
 
+        # Query nhà hàng đang hoạt động
+        restaurant_query = Restaurant.query.filter(Restaurant.status != 'Ngưng hoạt động')
         if restaurant_id:
             restaurant_query = restaurant_query.filter(Restaurant.RestaurantID == int(restaurant_id))
 
         base_restaurants = restaurant_query.order_by(Restaurant.RestaurantName.asc()).all()
+
+        # Khởi tạo map nhà hàng với doanh thu = 0
         restaurant_map = {
             restaurant.RestaurantID: {
                 "restaurant_id": restaurant.RestaurantID,
                 "restaurant_name": restaurant.RestaurantName,
-                "monthly_revenue": {key: 0 for key in month_keys},
-                "selected_month_revenue": 0,
-                "total_6_months": 0
+                "monthly_revenue": {key: 0.0 for key in month_keys},  # Doanh thu từng tháng
+                "selected_month_revenue": 0.0,  # Doanh thu tháng được chọn
+                "total_6_months": 0.0  # Tổng doanh thu 6 tháng
             }
             for restaurant in base_restaurants
         }
 
+        # Query doanh thu từ database - Lấy doanh thu THỰC TẾ từ OrderItem
+        # Join: Restaurant -> Reservation -> Order -> OrderItem
         query = (
             db.session.query(
                 Restaurant.RestaurantID.label("restaurant_id"),
                 Restaurant.RestaurantName.label("restaurant_name"),
-                func.year(Payment.CreatedAt).label("year"),
-                func.month(Payment.CreatedAt).label("month"),
-                func.coalesce(func.sum(Payment.Amount), 0).label("revenue")
+                func.year(Reservation.BookingDate).label("year"),
+                func.month(Reservation.BookingDate).label("month"),
+                func.coalesce(func.sum(OrderItem.quantity * OrderItem.price), 0).label("revenue")
             )
             .join(Reservation, Reservation.RestaurantID == Restaurant.RestaurantID)
-            .join(Payment, Payment.ReservationID == Reservation.ReservationID)
-            .filter(Payment.CreatedAt.isnot(None))
-            .filter(func.date_format(Payment.CreatedAt, "%Y-%m").in_(month_keys))
+            .join(Tables, Tables.TableID == Reservation.TableID)
+            .join(Order, Order.table_id == Tables.TableID)
+            .join(OrderItem, OrderItem.order_id == Order.id)
+            .filter(Order.status == 'paid')  # Chỉ tính những Order đã thanh toán (hoàn tất)
+            .filter(func.date_format(Reservation.BookingDate, "%Y-%m").in_(month_keys))
             .filter(Restaurant.status != 'Ngưng hoạt động')
         )
 
         if restaurant_id:
             query = query.filter(Restaurant.RestaurantID == int(restaurant_id))
 
+        # Group by để tính tổng doanh thu từng tháng
         rows = (
             query.group_by(
                 Restaurant.RestaurantID,
                 Restaurant.RestaurantName,
-                func.year(Payment.CreatedAt),
-                func.month(Payment.CreatedAt)
+                func.year(Reservation.BookingDate),
+                func.month(Reservation.BookingDate)
             )
             .order_by(Restaurant.RestaurantName.asc())
             .all()
         )
 
+        # Cập nhật doanh thu vào restaurant_map
         for row in rows:
             res_id = int(row.restaurant_id)
             month_key = ReportService._month_key(int(row.year), int(row.month))
@@ -238,29 +333,35 @@ class ReportService:
             if res_id in restaurant_map:
                 restaurant_map[res_id]["monthly_revenue"][month_key] = revenue
 
+        # Tính toán tổng doanh thu cho từng nhà hàng
         for restaurant in restaurant_map.values():
-            restaurant["selected_month_revenue"] = restaurant["monthly_revenue"].get(selected_month, 0)
-            restaurant["total_6_months"] = sum(restaurant["monthly_revenue"].values())
+            restaurant["selected_month_revenue"] = float(restaurant["monthly_revenue"].get(selected_month, 0))
+            restaurant["total_6_months"] = float(sum(restaurant["monthly_revenue"].values()))
+
+            # Chuyển monthly_revenue thành list để trả về
             restaurant["monthly_revenue"] = [
                 {
                     "key": key,
                     "label": month_labels[key],
-                    "revenue": restaurant["monthly_revenue"][key]
+                    "revenue": float(restaurant["monthly_revenue"][key])
                 }
                 for key in month_keys
             ]
 
+        # Sắp xếp nhà hàng theo doanh thu thực tế từ cao xuống thấp:
+        # 1. Ưu tiên tổng doanh thu 6 tháng (giảm dần) - nhà hàng nào có doanh thu cao nhất sẽ lên đầu
+        # 2. Nếu tổng 6 tháng bằng nhau, xem doanh thu tháng được chọn (giảm dần)
         restaurants = sorted(
             restaurant_map.values(),
-            key=lambda item: item["selected_month_revenue"],
-            reverse=True
+            key=lambda item: (float(item["total_6_months"]), float(item["selected_month_revenue"])),
+            reverse=True  # Sắp xếp giảm dần để nhà hàng có doanh thu cao nhất lên đầu
         )
 
         return {
             "month": selected_month,
             "months": months,
             "restaurants": restaurants,
-            "total_report": sum(item["selected_month_revenue"] for item in restaurants),
-            "total_6_months": sum(item["total_6_months"] for item in restaurants),
+            "total_report": float(sum(item["selected_month_revenue"] for item in restaurants)),
+            "total_6_months": float(sum(item["total_6_months"] for item in restaurants)),
             "restaurant_count": len(restaurants)
         }

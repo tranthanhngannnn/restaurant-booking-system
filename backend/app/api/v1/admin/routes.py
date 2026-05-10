@@ -140,10 +140,8 @@ def admin_update_restaurant(id):
     data = request.form.to_dict()
     image = request.files.get('image')
 
-    updated = AdminRestaurantService.update_restaurant(id, data, image)
-    if updated:
-        return jsonify({"message": "Cap nhat thanh cong!"}), 200
-    return jsonify({"message": "Khong tim thay nha hang"}), 404
+    result, status = AdminRestaurantService.update_restaurant(id, data, image)
+    return jsonify(result), status
 
 
 @admin_bp.route('/restaurants/<int:id>', methods=['DELETE'])
@@ -153,8 +151,8 @@ def admin_delete_restaurant(id):
     if claims.get("role") != "ADMIN":
         return jsonify({"message": "Quyen nay cua Admin!"}), 403
 
-    result = AdminRestaurantService.delete_restaurant(id)
-    return jsonify({"message": result["message"]}), result["code"]
+    result, status = AdminRestaurantService.delete_restaurant(id)
+    return jsonify(result), status
 
 
 @admin_bp.route('/report', methods=['POST'])

@@ -49,12 +49,24 @@ def check():
 @jwt_required(optional=True)
 def book():
     data = request.json
-    if not data.get("name") or not data.get("phone"):
+    name = str(data.get("name", "")).strip()
+    phone = str(data.get("phone", "")).strip()
+
+    # 1. Kiểm tra để trống
+    if not name or not phone:
         return jsonify({"error": "Tên và SĐT là bắt buộc"}), 400
-        # Phone: 10 số, bắt đầu bằng 0
-    phone = data.get("phone")
+
+    # 2. Validate Name: Chỉ cho phép chữ cái và khoảng trắng
+    if not all(c.isalpha() or c.isspace() for c in name):
+        return jsonify({"error": "Tên không được chứa số hoặc ký tự đặc biệt"}), 400
+
+    # 3. Validate Phone: 10 số, bắt đầu bằng 0
     if not re.match(r"^0\d{9}$", phone):
         return jsonify({"error": "SĐT phải gồm 10 số và bắt đầu bằng 0"}), 400
+
+    # Cập nhật lại bản sạch vào data
+    data["name"] = name
+    data["phone"] = phone
 
         # ===== VALIDATE PEOPLE =====
     try:

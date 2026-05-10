@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { toMinutes, check } from "../cus_booking";
+import { toMinutes, check } from "../static/js/cus_booking";
 
 describe("Booking Utils", () => {
 

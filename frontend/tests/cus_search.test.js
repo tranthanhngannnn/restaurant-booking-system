@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import * as searchModule from "../cus_search";
+import * as searchModule from "../static/js/cus_search";
 
 global.fetch = jest.fn();
 

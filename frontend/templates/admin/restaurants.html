@@ -29,7 +29,6 @@
     <div class="admin-restaurants-toolbar">
         <div>
             <h2>Quản Lý Nhà Hàng</h2>
-            <p>Hiển thị đầy đủ danh sách nhà hàng và xử lý duyệt yêu cầu đang chờ.</p>
         </div>
         <button class="btn-add" onclick="prepareAdd()">+ Thêm Nhà Hàng</button>
     </div>
@@ -173,14 +172,5 @@
 </div>
 
 <script src="../../static/js/restaurants.js"></script>
-<script>
-    function handleLogout() {
-        if (confirm("Bạn có chắc muốn đăng xuất không?")) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('role');
-            window.location.href = "../auth/login.html";
-        }
-    }
-</script>
 </body>
 </html>

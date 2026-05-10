@@ -153,12 +153,15 @@ def create_booking(data):
     deposit = calculate_deposit(guest_count)
 
     # 6. Xử lý ID cho khách Login & Khách vãng lai
-    user_id = get_jwt_identity()  # không có token nó ra None
+    # Ưu tiên lấy từ JWT, nếu không có thì lấy từ data (do route gửi từ session)
+    user_id = get_jwt_identity()
+    if not user_id:
+        user_id = data.get("user_id")
 
     if user_id:
-        user_id = str(user_id)  # Ép kiểu string cho đúng Model
+        user_id = str(user_id)  # Ép kiểu string cho đúng Model UserID
     else:
-        user_id = None  # Khách vãng lai, chấp nhận cột UserID bị NULL
+        user_id = None  # Khách vãng lai, đảm bảo database cho phép NULL ở cột này
 
     # 7. Tạo đối tượng Reservation
     reservation = Reservation(

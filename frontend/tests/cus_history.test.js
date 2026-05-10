@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import * as historyModule from "../cus_history";
+import * as historyModule from "../static/js/cus_history";
 
 describe("History filter", () => {
 

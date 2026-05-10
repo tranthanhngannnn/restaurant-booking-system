@@ -1,0 +1,17 @@
+cd d:\restaurantbooking\backend# Frontend
+node_modules/
+
+# Backend (Python)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# IDE & Tools
+.idea/
+.vscode/
+temp-debug-*
+*.txt
+
+.agent/*
