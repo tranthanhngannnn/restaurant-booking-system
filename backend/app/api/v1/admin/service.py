@@ -273,7 +273,7 @@ class ReportService:
         selected_month = month_keys[-1]  # Tháng được chọn (tháng cuối)
 
         # Query nhà hàng đang hoạt động
-        restaurant_query = Restaurant.query.filter(Restaurant.status != 'Ngưng hoạt động')
+        restaurant_query = Restaurant.query.filter(Restaurant.status == 'Đang hoạt động')
         if restaurant_id:
             restaurant_query = restaurant_query.filter(Restaurant.RestaurantID == int(restaurant_id))
 
