@@ -4,6 +4,9 @@ from backend.core.extensions import db
 from backend.models.user import User
 from backend.models.booking import Reservation
 from backend.models.payment import Payment
+from backend.models.orders import Order
+from backend.models.ordersitem import OrderItem
+from backend.models.tables import Tables
 from sqlalchemy import func
 
 
@@ -231,22 +234,23 @@ class ReportService:
             for restaurant in base_restaurants
         }
 
-        # Query doanh thu từ database - Lấy doanh thu THỰC TẾ từ bảng Payment
-        # Join: Restaurant -> Reservation -> Payment để lấy số tiền khách đã thanh toán
+        # Query doanh thu từ database - Lấy doanh thu THỰC TẾ từ OrderItem
+        # Join: Restaurant -> Reservation -> Order -> OrderItem
         query = (
             db.session.query(
                 Restaurant.RestaurantID.label("restaurant_id"),
                 Restaurant.RestaurantName.label("restaurant_name"),
-                func.year(Payment.CreatedAt).label("year"),
-                func.month(Payment.CreatedAt).label("month"),
-                func.coalesce(func.sum(Payment.Amount), 0).label("revenue")  # Tổng tiền khách đã trả
+                func.year(Reservation.BookingDate).label("year"),
+                func.month(Reservation.BookingDate).label("month"),
+                func.coalesce(func.sum(OrderItem.quantity * OrderItem.price), 0).label("revenue")
             )
-            .join(Reservation, Reservation.RestaurantID == Restaurant.RestaurantID)  # Liên kết nhà hàng với đặt bàn
-            .join(Payment, Payment.ReservationID == Reservation.ReservationID)  # Liên kết đặt bàn với thanh toán
-            .filter(Payment.CreatedAt.isnot(None))  # Chỉ lấy giao dịch đã thanh toán
-            .filter(Payment.Status == 'Paid')  # Chỉ lấy payment đã thành công (không tính pending/failed)
-            .filter(func.date_format(Payment.CreatedAt, "%Y-%m").in_(month_keys))  # Lọc theo 6 tháng
-            .filter(Restaurant.status != 'Ngưng hoạt động')  # Chỉ lấy nhà hàng đang hoạt động
+            .join(Reservation, Reservation.RestaurantID == Restaurant.RestaurantID)
+            .join(Tables, Tables.TableID == Reservation.TableID)
+            .join(Order, Order.table_id == Tables.TableID)
+            .join(OrderItem, OrderItem.order_id == Order.id)
+            .filter(Order.status == 'paid')  # Chỉ tính những Order đã thanh toán (hoàn tất)
+            .filter(func.date_format(Reservation.BookingDate, "%Y-%m").in_(month_keys))
+            .filter(Restaurant.status != 'Ngưng hoạt động')
         )
 
         if restaurant_id:
@@ -257,8 +261,8 @@ class ReportService:
             query.group_by(
                 Restaurant.RestaurantID,
                 Restaurant.RestaurantName,
-                func.year(Payment.CreatedAt),
-                func.month(Payment.CreatedAt)
+                func.year(Reservation.BookingDate),
+                func.month(Reservation.BookingDate)
             )
             .order_by(Restaurant.RestaurantName.asc())
             .all()
