@@ -1,3 +1,4 @@
+import re
 from  backend.models.restaurant import Restaurant
 from  backend.core.extensions import db
 from datetime import datetime, timedelta
@@ -97,18 +98,33 @@ def get_tables(res_id):
     result = []
 
     for t in all_tables:
-        booking = Reservation.query.filter_by(
-            TableID=t.TableID,
-            Status="Confirmed"
+        # Lấy booking mới nhất đang được xác nhận tại bàn này
+        booking_info = db.session.query(
+            Reservation.CustomerName,
+            User.Username,
+            Reservation.GuestCount
+        ).outerjoin(
+            User, Reservation.UserID == User.UserID
+        ).filter(
+            Reservation.TableID == t.TableID,
+            Reservation.Status == "Confirmed"
         ).order_by(Reservation.BookingTime.desc()).first()
+
+        customer_name = None
+        guest_count = 0
+
+        if booking_info:
+            # Ưu tiên lấy CustomerName từ bảng Reservation, nếu trống thì lấy Username của User
+            customer_name = booking_info.CustomerName if booking_info.CustomerName else booking_info.Username
+            guest_count = booking_info.GuestCount
 
         result.append({
             "id": t.TableID,
             "name": t.TableNumber,
             "capacity": t.Capacity,
             "status": t.Status,
-            "customer_name": booking.CustomerName if booking else None,
-            "customer_count": booking.GuestCount if booking else 0
+            "customer_name": customer_name,
+            "customer_count": guest_count
         })
 
     return result
@@ -132,41 +148,6 @@ def create_table(data, res_id):
         "data": table_schema.dump(table)
     }
 
-
-def create_booking(data):
-    try:
-        booking_date = datetime.strptime(data.get('BookingDate'), "%Y-%m-%d").date()
-        booking_time = datetime.strptime(data.get('BookingTime'), "%H:%M").time()
-    except:
-        return {"error": "Wrong datetime format"}
-
-    table = Tables.query.get(data.get('TableID'))
-    if not table:
-        return {"error": "Table not found"}
-
-    booking = Reservation(
-        TableID=data.get('TableID'),
-        CustomerName=data.get('CustomerName'),
-        phone=data.get('phone', ''),
-        GuestCount=data.get('GuestCount', 1),
-        BookingDate=booking_date,
-        BookingTime=booking_time,
-        RestaurantID=data.get('RestaurantID'),
-        Deposit=data.get('Deposit', 0),
-        Status="Pending"
-    )
-
-    db.session.add(booking)
-    table.Status = "Reserved"
-    db.session.commit()
-
-    return {
-        "message": "Booking created",
-        "id": booking.id if hasattr(booking, "id") else None,
-        "Status": booking.Status,
-        "BookingDate": str(booking.BookingDate),
-        "BookingTime": str(booking.BookingTime)
-    }
 
 
 def get_bookings(res_id):
@@ -360,10 +341,44 @@ def update_food(id, data):
 class RestaurantService:
     @staticmethod
     def create(data, is_admin=False):
+        # 1. Làm sạch dữ liệu và Trim
+        restaurant_name = str(data.get('RestaurantName', '')).strip()
+        address = str(data.get('Address', '')).strip()
+        phone = str(data.get('Phone', '')).strip()
+        email = str(data.get('Email', '')).strip()
+        opentime = str(data.get('Opentime', '')).strip()
+        closetime = str(data.get('Closetime', '')).strip()
+        description = str(data.get('description', '')).strip()
+        user_id = data.get('UserID')
+        cuisine_id = data.get('CuisineID')
 
-        restaurant_name = data.get('RestaurantName')
+        # 2. Validate RestaurantName: Không trống, không ký tự đặc biệt
         if not restaurant_name:
-            return {"error": "Missing name"}, 400
+            return {"message": "Tên nhà hàng không hợp lệ và không được để trống"}, 400
+        # Kiểm tra chỉ cho phép chữ cái, số và khoảng trắng
+        if not all(c.isalnum() or c.isspace() for c in restaurant_name):
+            return {"message": "Tên nhà hàng không hợp lệ và không được để trống"}, 400
+
+        # 3. Validate Address: Không trống, cho phép /, ,, -
+        if not address:
+            return {"message": "Địa chỉ không được để trống"}, 400
+        if not re.match(r'^[\w\s/,\-]+$', address, re.UNICODE):
+            return {"message": "Địa chỉ chứa ký tự không hợp lệ"}, 400
+
+        # 4. Validate Phone: Số, 10 chữ số, bắt đầu bằng 0
+        if not (phone.isdigit() and len(phone) == 10 and phone.startswith('0')):
+            return {"message": "Số điện thoại phải là định dạng số, đúng 10 chữ số và bắt đầu bằng số 0"}, 400
+
+        # 5. Validate Email
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            return {"message": "Email không hợp lệ"}, 400
+
+        # 6. Validate Description: Không trống, không ký tự đặc biệt
+        if not description:
+            return {"message": "Mô tả không hợp lệ và không được để trống"}, 400
+        if not all(c.isalnum() or c.isspace() for c in description):
+            return {"message": "Mô tả không hợp lệ và không được để trống"}, 400
 
         new_res = Restaurant(
             RestaurantName=restaurant_name,
@@ -382,7 +397,7 @@ class RestaurantService:
         db.session.commit()
 
         return {
-            "msg": "Created",
+            "message": "Tạo nhà hàng thành công",
             "restaurant_id": new_res.RestaurantID
         }, 201
 

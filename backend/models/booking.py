@@ -24,3 +24,4 @@ class Reservation(db.Model):
     # relationship
     restaurant = db.relationship("Restaurant", backref="reservations")
     table = db.relationship("Tables", backref="reservations")
+    user = db.relationship("User", backref="reservations")

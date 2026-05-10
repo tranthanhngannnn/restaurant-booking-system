@@ -1,3 +1,4 @@
+import re
 from backend.models.cuisine import Cuisine
 from backend.models.restaurant import Restaurant
 from backend.core.extensions import db
@@ -64,16 +65,23 @@ class CuisineService:
     @staticmethod
     def create(data):
         cuisine_name = data.get('CuisineName')
+        if cuisine_name is not None:
+            cuisine_name = str(cuisine_name).strip()
+
         if not cuisine_name:
-            return {"message": "Ten khong duoc de trong"}, 400
+            return {"message": "Tên loại ẩm thực không được để trống"}, 400
+
+        # Kiểm tra chỉ chứa chữ cái và khoảng trắng
+        if not all(c.isalpha() or c.isspace() for c in cuisine_name):
+            return {"message": "Tên loại ẩm thực không được chứa số hoặc ký tự đặc biệt"}, 400
 
         if Cuisine.query.filter_by(CuisineName=cuisine_name).first():
-            return {"message": "Danh muc da ton tai"}, 400
+            return {"message": "Danh mục đã tồn tại"}, 400
 
         new_cuisine = Cuisine(CuisineName=cuisine_name, Status="Hoat dong")
         db.session.add(new_cuisine)
         db.session.commit()
-        return {"message": "Them thanh cong!"}, 201
+        return {"message": "Thêm thành công!"}, 201
 
     @staticmethod
     def get_all():
@@ -85,14 +93,23 @@ class CuisineService:
     def update(id, data):
         cuisine_obj = Cuisine.query.get(id)
         if not cuisine_obj:
-            return {"message": "Khong tim thay"}, 404
+            return {"message": "Không tìm thấy"}, 404
+
+        new_name = data.get('CuisineName')
+        if new_name is not None:
+            new_name = str(new_name).strip()
+            if not new_name:
+                return {"message": "Tên loại ẩm thực không được để trống"}, 400
+            if not all(c.isalpha() or c.isspace() for c in new_name):
+                return {"message": "Tên loại ẩm thực không được chứa số hoặc ký tự đặc biệt"}, 400
+            data['CuisineName'] = new_name  # Gán lại bản đã được strip
 
         for key, value in data.items():
             if hasattr(Cuisine, key):
                 setattr(cuisine_obj, key, value)
 
         db.session.commit()
-        return {"message": "Cap nhat thanh cong!"}, 200
+        return {"message": "Cập nhật thành công!"}, 200
 
     @staticmethod
     def delete(id):
@@ -117,27 +134,67 @@ class AdminRestaurantService:
     def update_restaurant(restaurant_id, data, image=None):
         restaurant = Restaurant.query.get(restaurant_id)
         if not restaurant:
-            return None
+            return {"message": "Không tìm thấy nhà hàng"}, 404
 
-        for key, value in data.items():
-            if hasattr(restaurant, key):
-                setattr(restaurant, key, value)
+        # 1. Validate Tên nhà hàng
+        if 'RestaurantName' in data:
+            name = str(data.get('RestaurantName', '')).strip()
+            if not name:
+                return {"message": "Tên nhà hàng không được để trống"}, 400
+            if not all(c.isalnum() or c.isspace() for c in name):
+                return {"message": "Tên nhà hàng không hợp lệ"}, 400
+            restaurant.RestaurantName = name
+
+        # 2. Validate Số điện thoại
+        if 'Phone' in data:
+            phone = str(data.get('Phone', '')).strip()
+            if not phone:
+                return {"message": "Số điện thoại không được để trống"}, 400
+            if not (phone.isdigit() and len(phone) == 10 and phone.startswith('0')):
+                return {"message": "Số điện thoại phải có 10 chữ số"}, 400
+            restaurant.Phone = phone
+
+        # 3. Validate Địa chỉ
+        if 'Address' in data:
+            address = str(data.get('Address', '')).strip()
+            if not address:
+                return {"message": "Địa chỉ không được để trống"}, 400
+            if not re.match(r'^[\w\s/,\-]+$', address, re.UNICODE):
+                return {"message": "Địa chỉ không hợp lệ"}, 400
+            restaurant.Address = address
+
+        # 4. Validate Email
+        if 'Email' in data:
+            email = str(data.get('Email', '')).strip()
+            if not email:
+                return {"message": "Email không được để trống"}, 400
+            email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            if not re.match(email_regex, email):
+                return {"message": "Email không hợp lệ"}, 400
+            restaurant.Email = email
+
+        # 5. Cập nhật các trường khác (Nếu để trống thì giữ nguyên)
+        for key in ['Opentime', 'Closetime', 'description', 'CuisineID', 'status']:
+            if key in data:
+                value = data.get(key)
+                if value is not None and str(value).strip() != "":
+                    setattr(restaurant, key, value)
 
         if image and image.filename != '':
             restaurant.image_url = image.filename
 
         db.session.commit()
-        return restaurant
+        return {"message": "Cập nhật thành công!"}, 200
 
     @staticmethod
     def delete_restaurant(restaurant_id):
         restaurant = Restaurant.query.get(restaurant_id)
         if not restaurant:
-            return False
+            return {"message": "Không tìm thấy nhà hàng"}, 404
 
         restaurant.status = 'Ngưng hoạt động'
         db.session.commit()
-        return {"message": "Da an nha hang thanh cong, du lieu van duoc luu tru!", "code": 200}
+        return {"message": "Đã ẩn nhà hàng thành công!"}, 200
 
     @staticmethod
     def approve(restaurant_id):

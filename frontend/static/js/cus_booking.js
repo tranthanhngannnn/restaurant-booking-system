@@ -10,10 +10,12 @@ let bookingData = {};
 export function initPage() {
     const historyLink = document.getElementById("historyLink");
 
+    const token = localStorage.getItem("token");
+    const headers = {};
+    if (token) headers["Authorization"] = "Bearer " + token;
+
     fetch(`${API}/me`, {
-        headers: {
-            "Authorization": "Bearer " + localStorage.getItem("token")
-        }
+        headers: headers
     })
         .then(res => res.json())
         .then(data => {
@@ -157,12 +159,13 @@ export function createBooking() {
         alert("Ghi chú tối đa 300 ký tự!");
         return;
     }
+    const token = localStorage.getItem("token");
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = "Bearer " + token;
+
     fetch(`${API}/book`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + localStorage.getItem("token")
-        },
+        headers: headers,
         body: JSON.stringify({
             name: nameInput.value,
             phone: phoneInput.value,
@@ -206,12 +209,13 @@ export function closePayment() {
 
 // CONFIRM
 export function confirmPayment() {
+    const token = localStorage.getItem("token");
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = "Bearer " + token;
+
     fetch(`${API}/payment`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + localStorage.getItem("token")
-        },
+        headers: headers,
         body: JSON.stringify({
             reservation_id: reservationId,
             amount: bookingData.deposit
