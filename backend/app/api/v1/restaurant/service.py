@@ -302,12 +302,11 @@ def update_food(id, data):
     if data.get("category"):
         food.Category = data.get("category")
 
-    # Xử lý hình ảnh
+    # Xử lý hình ảnh: CHỈ CẬP NHẬT NẾU CÓ FILE MỚI HOẶC URL MỚI
     image_file = data.get("image_file")
-    if image_file and image_file.filename != '':
+    if image_file and hasattr(image_file, 'filename') and image_file.filename != '':
         filename = secure_filename(image_file.filename)
-        # Đường dẫn lưu file (Dựa vào cấu trúc thư mục của bạn)
-        # backend/app/api/v1/restaurant/service.py -> frontend/static/images
+        # Đường dẫn lưu file
         upload_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../../frontend/static/images"))
 
         if not os.path.exists(upload_path):
@@ -316,14 +315,14 @@ def update_food(id, data):
         file_path = os.path.join(upload_path, filename)
         image_file.save(file_path)
 
-        # Lưu đường dẫn tương đối để frontend hiển thị
+        # Cập nhật đường dẫn mới
         food.Image_URL = f"/static/images/{filename}"
-    elif data.get("image"):
-        # Nếu gửi link ảnh trực tiếp (như cũ)
+        
+    elif data.get("image") and str(data.get("image")).strip() not in ["", "null", "undefined"]:
+        # Chỉ cập nhật nếu gửi URL ảnh trực tiếp và nó hợp lệ
         food.Image_URL = data.get("image")
-
-    # Nếu không có image_file và không có data.get("image"),
-    # thì food.Image_URL vẫn giữ nguyên giá trị cũ.
+    
+    # Nếu không thỏa các điều kiện trên, food.Image_URL sẽ giữ nguyên giá trị cũ từ DB.
 
     db.session.commit()
 
@@ -390,7 +389,7 @@ class RestaurantService:
             description=data.get('description'),
             UserID=data.get('UserID'),
             CuisineID=data.get('CuisineID'),
-            status="Đang chờ duyệt"
+            status="Đang hoạt động" if is_admin else "Đang chờ duyệt"
         )
 
         db.session.add(new_res)
@@ -438,7 +437,7 @@ def create_order(data):
 
             food = Food.query.get(food_id)
 
-            # ✔ FIX MOCK CASE (QUAN TRỌNG)
+            # FIX MOCK CASE (QUAN TRỌNG)
             if food is None:
                 return {"error": "Food not found"}
 

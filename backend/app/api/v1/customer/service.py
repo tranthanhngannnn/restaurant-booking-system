@@ -26,7 +26,7 @@ def normalize_text(text):
     return text
 
 def search_restaurant(address, cuisine):
-    query = Restaurant.query
+    query = Restaurant.query.filter(Restaurant.status == 'Đang hoạt động')
 
     if address:
         keyword = normalize_text(address).replace(" ", "")
@@ -198,8 +198,8 @@ def create_booking(data):
 
 
 def get_all_restaurants():
-    # Lấy hết dữ liệu từ bảng Restaurant
-    restaurants = Restaurant.query.all()
+    # Lấy dữ liệu từ bảng Restaurant với trạng thái Đang hoạt động
+    restaurants = Restaurant.query.filter_by(status='Đang hoạt động').all()
     result = []
     for r in restaurants:
         result.append({
