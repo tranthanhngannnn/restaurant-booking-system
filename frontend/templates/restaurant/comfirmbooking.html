@@ -14,18 +14,18 @@
     <div class="container">
 
         <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>🍽️ Restaurant</h2>
-        <a href="table.html">Quản lý bàn</a>
-        <a href="comfirmbooking.html" class="active">Đơn đặt bàn</a>
-        <a href="menu_mgmt.html">Menu</a>
-        <a href="register_restaurant.html">Đăng ký nhà hàng</a>
-        <div class="sidebar-bottom">
-            <button onclick="handleLogout()" class="logout-btn">
-                Đăng xuất
-            </button>
+        <div class="sidebar">
+            <h2>🍽️ Restaurant</h2>
+            <a href="table.html">Quản lý bàn</a>
+            <a href="comfirmbooking.html" class="active">Đơn đặt bàn</a>
+            <a href="menu_mgmt.html">Menu</a>
+            <a href="register_restaurant.html">Đăng ký nhà hàng</a>
+            <div class="sidebar-bottom">
+                <button onclick="handleLogout()" class="logout-btn">
+                    Đăng xuất
+                </button>
+            </div>
         </div>
-    </div>
 
         <!-- MAIN -->
         <div class="main">
@@ -52,115 +52,7 @@
 
     </div>
 
-    <script>
-        const API = "http://127.0.0.1:5000/api/v1/restaurant"
-
-        // load danh sách booking
-        async function loadBookings() {
-            const token = localStorage.getItem('token');
-            const restaurantName = localStorage.getItem('restaurant_name') || 'Nhà hàng';
-
-            // Cập nhật tiêu đề nhà hàng
-            if (document.querySelector('h1')) {
-                document.querySelector('h1').innerText = `Danh sách đặt bàn - ${restaurantName}`;
-            }
-
-            try {
-                const res = await fetch('http://127.0.0.1:5000/api/v1/restaurant/bookings', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (res.status === 401) {
-                    alert("Hết phiên làm việc, Ngân đăng nhập lại nha!");
-                    return;
-                }
-
-                const data = await res.json();
-                console.log("Data từ API trả về nè:", data);
-
-                let html = "";
-                // Kiểm tra xem data có phải là mảng không để tránh lỗi loop
-                if (Array.isArray(data)) {
-                    data.forEach(b => {
-                        html += `
-                <tr>
-                    <td>${b.CustomerName}</td>
-                    <td>${b.phone || ''}</td>
-                    <td>${b.GuestCount}</td>
-                    <td>${formatDate(b.BookingDate)}</td>
-                    <td>${b.BookingTime}</td>
-                    <td>Bàn ${b.TableID}</td>
-                    <td>${b.Deposit}</td>
-                    <td class="${b.Status}">${b.Status}</td>
-                    <td>
-                    ${b.Status === "Pending"
-                                ? `
-                        <button class="btn confirm" onclick="confirmBooking(${b.ReservationID})">✔</button>
-                        <button class="btn reject" onclick="rejectBooking(${b.ReservationID})">✖</button>
-                        `
-                                : ""
-                            }
-                    </td>
-                </tr>`;
-                    });
-                    document.getElementById("booking-list").innerHTML = html;
-                }
-
-            } catch (err) {
-                console.error("Lỗi:", err);
-                alert("Lỗi tải dữ liệu rồi bà ơi!");
-            }
-        }
-
-        // confirm
-        async function confirmBooking(id) {
-            const token = localStorage.getItem('token');
-            await fetch(`${API}/bookings/${id}/confirm`, {
-                method: "POST",
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            loadBookings()
-        }
-
-        // reject
-        async function rejectBooking(id) {
-            const token = localStorage.getItem('token');
-            await fetch(`${API}/bookings/${id}/reject`, {
-                method: "POST",
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-            loadBookings()
-        }
-
-        // format date
-        function formatDate(dt) {
-            if (!dt) return ""
-            return dt.split(" ")[0]
-        }
-
-        // format time
-        function formatTime(dt) {
-            if (!dt) return ""
-            return dt.split(" ")[1]?.slice(0, 5)
-        }
-
-        function handleLogout() {
-            if (!confirm("Bạn có chắc muốn đăng xuất không?")) return;
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            window.location.href = "../auth/login.html";
-        }
-
-        window.onload = loadBookings
-    </script>
+    <script src="../../../static/js/res_confirmbooking.js"></script>
 
 </body>
 
