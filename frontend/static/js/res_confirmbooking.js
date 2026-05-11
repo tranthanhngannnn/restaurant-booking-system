@@ -30,9 +30,10 @@ async function loadBookings() {
         let html = "";
         // Kiểm tra xem data có phải là mảng không để tránh lỗi loop
         if (Array.isArray(data)) {
-            data.forEach(b => {
+            data.forEach((b, index) => {
+                const highlightClass = index === 0 ? "new-booking" : "";
                 html += `
-                <tr>
+                <tr class="${highlightClass}">
                     <td>${b.CustomerName}</td>
                     <td>${b.phone || ''}</td>
                     <td>${b.GuestCount}</td>

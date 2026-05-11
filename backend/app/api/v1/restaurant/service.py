@@ -148,10 +148,19 @@ def create_table(data, res_id):
         "data": table_schema.dump(table)
     }
 
+def delete_table(id):
+    table = Tables.query.get(id)
+    if not table:
+        return {"error": "Bàn không tồn tại"}
+
+    db.session.delete(table)
+    db.session.commit()
+    return {"message": "Xóa bàn thành công"}
+
 
 
 def get_bookings(res_id):
-    query = Reservation.query.filter_by(RestaurantID=res_id).order_by(Reservation.BookingTime.desc()).all()
+    query = Reservation.query.filter_by(RestaurantID=res_id).order_by(Reservation.ReservationID.desc()).all()
     return bookings_schema.dump(query)
 
 

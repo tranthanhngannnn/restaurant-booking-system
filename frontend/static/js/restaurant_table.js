@@ -70,6 +70,7 @@ function renderTableCard(table) {
         table.status === "Available"
     ) {
        return `<div class="card available ${extraClass}" onclick="openOrder(${table.id})">
+            <span class="delete-icon" onclick="deleteTable(event, ${table.id})">🗑️</span>
             <div class="icon">🍽️</div>
             <h3>Bàn ${table.id}</h3>
             <p>Trống</p>
@@ -79,6 +80,7 @@ function renderTableCard(table) {
 
     if (table.status === "Reserved" || table.status === "Confirmed") {
         return `<div class="card reserved ${extraClass}" onclick="openOrder(${table.id})">
+            <span class="delete-icon" onclick="deleteTable(event, ${table.id})">🗑️</span>
             <div class="icon">🍽️</div>
             <h3>Bàn ${table.id}</h3>
             <p>👤 ${table.customer_name || ""}</p>
@@ -89,7 +91,8 @@ function renderTableCard(table) {
         </div>`;
     }
 
-    return `<div class="card ${extraClass}">
+    return `<div class="card ${extraClass}" onclick="openOrder(${table.id})">
+        <span class="delete-icon" onclick="deleteTable(event, ${table.id})">🗑️</span>
         <div class="icon">🍽️</div>
         <h3>Bàn ${table.id}</h3>
         <p>Trạng thái: ${table.status}</p>
@@ -203,6 +206,33 @@ function openOrder(id) {
     window.location.href = `./orders.html?table_id=${id}`;
 }
 
+// xóa bàn
+async function deleteTable(event, id) {
+    event.stopPropagation(); // Chặn sự kiện click vào card (mở order)
+    if (!confirm("Bạn có chắc chắn muốn xóa bàn này không?")) return;
+
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/api/v1/restaurant/delete_table/${id}`, {
+            method: "POST",
+            headers: getAuthHeaders(true)
+        });
+
+        if (response.ok) {
+            showPageMessage("Đã xóa bàn thành công!", "success");
+            // Xóa thẻ khỏi UI ngay lập tức
+            const card = event.target.closest('.card');
+            if (card) {
+                card.remove();
+            }
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "Không thể xóa bàn.");
+        }
+    } catch (err) {
+        showPageMessage(err.message, "error");
+    }
+}
+
 // logout
 function handleLogout() {
     if (!confirm("Bạn có chắc muốn đăng xuất không?")) return;
@@ -223,6 +253,7 @@ if (logoutButton) logoutButton.addEventListener("click", handleLogout);
 window.cancelBooking = cancelBooking;
 window.addTable = addTable;
 window.openOrder = openOrder;
+window.deleteTable = deleteTable;
 
 // load lần đầu
 window.onload = async () => {

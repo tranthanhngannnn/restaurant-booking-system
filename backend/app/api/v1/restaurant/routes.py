@@ -149,9 +149,11 @@ def create_table_api():
 
     return jsonify(create_table(data, res_id))
 
-@restaurant_bp.route("/bookings", methods=["POST"])
-def add_booking():
-    return jsonify(create_booking(request.json))
+@restaurant_bp.route('/delete_table/<int:id>', methods=['POST'])
+@jwt_required()
+def delete_table_api(id):
+    return jsonify(delete_table(id))
+
 
 @restaurant_bp.route('/bookings', methods=['GET'])
 @jwt_required()
