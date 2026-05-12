@@ -20,11 +20,17 @@
       "^.+\\.(test|spec)\\.js$": "babel-jest",
       "^(?!.*node_modules).*\\.js$": "babel-jest"
     },
-    "setupFilesAfterEnv": ["<rootDir>/setup-jest.js"],
-    "transformIgnorePatterns": ["/node_modules/"]
+    "setupFilesAfterEnv": [
+      "<rootDir>/setup-jest.js"
+    ],
+    "transformIgnorePatterns": [
+      "/node_modules/"
+    ]
   },
   "babel": {
-    "presets": ["@babel/preset-env"]
+    "presets": [
+      "@babel/preset-env"
+    ]
   },
   "keywords": [],
   "author": "",
