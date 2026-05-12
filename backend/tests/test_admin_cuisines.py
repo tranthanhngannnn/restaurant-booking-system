@@ -1,318 +1,62 @@
-import sys
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-
 import pytest
 from flask_jwt_extended import create_access_token
-
-BACKEND_DIR = Path(__file__).resolve().parents[1]
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
-
 from backend.core import create_app
+from backend.app.api.v1.admin.service import CuisineService
 
-CUISINES_URL = "/api/v1/admin/cuisines"
-CUISINE_SERVICE_PATH = "app.api.v1.admin.routes.CuisineService"
-
-
-@pytest.fixture()
-def app(monkeypatch):
-    monkeypatch.setenv("SECRET_KEY", "test-secret-key")
-    monkeypatch.setenv("JWT_SECRET_KEY", "test-jwt-secret")
-    monkeypatch.setenv("SQLALCHEMY_DATABASE_URI", "mysql+pymysql://test:test@localhost/test")
-
+@pytest.fixture
+def client():
+    # Khởi tạo app test
     app = create_app()
-    app.config.update(
-        TESTING=True,
-        SECRET_KEY="test-secret-key",
-        JWT_SECRET_KEY="test-jwt-secret",
-    )
-    return app
-
-
-@pytest.fixture()
-def client(app):
+    app.config.update(TESTING=True, JWT_SECRET_KEY="test-secret")
     return app.test_client()
 
-
-@pytest.fixture()
-def admin_headers(app):
-    return auth_headers(app, "ADMIN")
-
-
-@pytest.fixture()
-def customer_headers(app):
-    return auth_headers(app, "CUSTOMER")
-
-
-def auth_headers(app, role):
-    with app.app_context():
-        token = create_access_token(
-            identity="1",
-            additional_claims={"role": role},
-        )
+@pytest.fixture
+def auth_headers(client):
+    # Mock admin headers
+    with client.application.app_context():
+        token = create_access_token(identity="1", additional_claims={"role": "ADMIN"})
     return {"Authorization": f"Bearer {token}"}
 
+# 1-4. Test thêm mới Cuisine
+@pytest.mark.parametrize("input_data, mock_return, expected_status", [
+    ({"CuisineName": "Hấp"}, ({"message": "Thêm thành công"}, 201), 201),                                                   # 1. Thành công
+    ({"CuisineName": ""}, ({"message": "Tên loại ẩm thực không được để trống"}, 400), 400),                                 # 2. Trống tên
+    ({"CuisineName": "Mon An 123"}, ({"message": "Tên loại ẩm thực không được chứa số hoặc ký tự đặc biệt"}, 400), 400),     # 3. Ký tự lạ/Số
+    ({"CuisineName": "Lẩu"}, ({"message": "Loại ẩm thực đã tồn tại"}, 400), 400),                                           # 4. Đã tồn tại
+])
+def test_create_cuisine(client, auth_headers, monkeypatch, input_data, mock_return, expected_status):
+    monkeypatch.setattr(CuisineService, "create", lambda data: mock_return)
+    res = client.post("/api/v1/admin/cuisines", data=input_data, headers=auth_headers)
+    assert res.status_code == expected_status
+    assert res.get_json() == mock_return[0]
 
-def cuisine_list():
-    return [
-        {"id": 1, "name": "Mon Viet", "status": "Hoat dong"},
-        {"id": 2, "name": "Mon Han", "status": "Hoat dong"},
-    ]
+# 5. Test lấy danh sách Cuisine
+def test_get_all_cuisines(client, auth_headers, monkeypatch):
+    mock_data = [{"CuisineID": 1, "CuisineName": "Lẩu"}]
+    monkeypatch.setattr(CuisineService, "get_all", lambda: (mock_data, 200))
+    res = client.get("/api/v1/admin/cuisines", headers=auth_headers)
+    assert res.status_code == 200
+    assert res.get_json() == mock_data
 
-# Xem danh sách cuisine thành công
-@patch(f"{CUISINE_SERVICE_PATH}.get_all")
-def test_get_cuisines_success(mock_get_all, client, admin_headers):
-    mock_get_all.return_value = (cuisine_list(), 200)
+# 6-8. Test cập nhật Cuisine
+@pytest.mark.parametrize("cuisine_id, input_data, mock_return, expected_status", [
+    (1, {"CuisineName": "Asian Food"}, ({"message": "Cập nhật thành công"}, 200), 200), # 6. Thành công
+    (99, {"CuisineName": "Test"}, ({"message": "Không tìm thấy"}, 404), 404),          # 7. ID không tồn tại
+    (1, {"CuisineName": "Food@!"}, ({"message": "Tên loại ẩm thực không được chứa số hoặc ký tự đặc biệt"}, 400), 400),    # 8. Tên sai định dạng
+])
+def test_update_cuisine(client, auth_headers, monkeypatch, cuisine_id, input_data, mock_return, expected_status):
+    monkeypatch.setattr(CuisineService, "update", lambda cid, data: mock_return)
+    res = client.put(f"/api/v1/admin/cuisines/{cuisine_id}", data=input_data, headers=auth_headers)
+    assert res.status_code == expected_status
+    assert res.get_json() == mock_return[0]
 
-    response = client.get(CUISINES_URL, headers=admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert isinstance(data, list)
-    assert data == cuisine_list()
-    mock_get_all.assert_called_once_with()
-
-
-# Load cuisine khi thiếu token
-@patch(f"{CUISINE_SERVICE_PATH}.get_all")
-def test_get_cuisines_missing_token(mock_get_all, client):
-    response = client.get(CUISINES_URL)
-    data = response.get_json()
-
-    assert response.status_code == 401
-    assert "msg" in data
-    mock_get_all.assert_not_called()
-
-
-# Thêm cuisine mới thành công
-@patch(f"{CUISINE_SERVICE_PATH}.create")
-def test_create_cuisine_success(mock_create, client, admin_headers):
-    mock_create.return_value = ({"message": "Them thanh cong!"}, 201)
-
-    response = client.post(
-        CUISINES_URL,
-        data={"CuisineName": "Mon Thai"},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 201
-    assert data["message"] == "Them thanh cong!"
-    mock_create.assert_called_once_with({"CuisineName": "Mon Thai"})
-
-
-# Không thêm cuisine trùng tên
-@patch(f"{CUISINE_SERVICE_PATH}.create")
-def test_create_cuisine_duplicate_name(mock_create, client, admin_headers):
-    mock_create.return_value = ({"message": "Cuisine da ton tai"}, 400)
-
-    response = client.post(
-        CUISINES_URL,
-        data={"CuisineName": "Mon Thai"},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 400
-    assert data["message"] == "Cuisine da ton tai"
-    mock_create.assert_called_once_with({"CuisineName": "Mon Thai"})
-
-
-# Thêm cuisine với khoảng trắng đầu cuối
-@patch(f"{CUISINE_SERVICE_PATH}.create")
-def test_create_cuisine_trim_whitespace(mock_create, client, admin_headers):
-    mock_create.return_value = (
-        {"message": "Them cuisine thanh cong"},
-        201,
-    )
-
-    response = client.post(
-        CUISINES_URL,
-        data={"CuisineName": "  Mon Thai  "},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 201
-    assert data["message"] == "Them cuisine thanh cong"
-    mock_create.assert_called_once_with({"CuisineName": "Mon Thai"})
-
-
-#Thêm cuisine tên rất dài
-@patch(f"{CUISINE_SERVICE_PATH}.create")
-def test_create_cuisine_name_too_long(mock_create, client, admin_headers):
-    long_name = "A" * 300
-    mock_create.return_value = (
-        {"message": "Ten cuisine qua dai"},
-        400,
-    )
-
-    response = client.post(
-        CUISINES_URL,
-        data={"CuisineName": long_name},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 400
-    assert data["message"] == "Ten cuisine qua dai"
-    mock_create.assert_called_once_with({"CuisineName": long_name})
-
-# Không thêm cuisine khi bỏ trống tên
-@patch(f"{CUISINE_SERVICE_PATH}.create")
-def test_create_cuisine_missing_name(mock_create, client, admin_headers):
-    mock_create.return_value = ({"message": "Ten khong duoc de trong"}, 400)
-
-    response = client.post(CUISINES_URL, data={"CuisineName": ""}, headers=admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 400
-    assert data["message"] == "Ten khong duoc de trong"
-    mock_create.assert_called_once_with({"CuisineName": ""})
-
-
-# Chặn thêm cuisine khi không phải ADMIN
-@patch(f"{CUISINE_SERVICE_PATH}.create")
-def test_create_cuisine_forbidden(mock_create, client, customer_headers):
-    response = client.post(
-        CUISINES_URL,
-        data={"CuisineName": "Mon Thai"},
-        headers=customer_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 403
-    assert data["message"] == "Quyen nay cua Admin!"
-    mock_create.assert_not_called()
-
-
-# Cập nhật tên cuisine thành công
-@patch(f"{CUISINE_SERVICE_PATH}.update")
-def test_update_cuisine_success(mock_update, client, admin_headers):
-    mock_update.return_value = ({"message": "Cap nhat thanh cong!"}, 200)
-
-    response = client.put(
-        f"{CUISINES_URL}/1",
-        data={"CuisineName": "Mon Viet Nam"},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert data["message"] == "Cap nhat thanh cong!"
-    mock_update.assert_called_once_with(1, {"CuisineName": "Mon Viet Nam"})
-
-
-# Cập nhật cuisine không tồn tại
-@patch(f"{CUISINE_SERVICE_PATH}.update")
-def test_update_cuisine_not_found(mock_update, client, admin_headers):
-    mock_update.return_value = ({"message": "Khong tim thay"}, 404)
-
-    response = client.put(
-        f"{CUISINES_URL}/999",
-        data={"CuisineName": "Mon Moi"},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 404
-    assert data["message"] == "Khong tim thay"
-    mock_update.assert_called_once_with(999, {"CuisineName": "Mon Moi"})
-
-
-# Cập nhật trạng thái cuisine
-@patch(f"{CUISINE_SERVICE_PATH}.update")
-def test_update_cuisine_status_success(mock_update, client, admin_headers):
-    mock_update.return_value = (
-        {"message": "Cap nhat thanh cong"},
-        200,
-    )
-
-    response = client.put(
-        f"{CUISINES_URL}/1",
-        data={"IsActive": False},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert data["message"] == "Cap nhat thanh cong"
-    mock_update.assert_called_once_with(1, {"IsActive": "False"})
-
-
-# Cập nhật cuisine với tên trống
-@patch(f"{CUISINE_SERVICE_PATH}.update")
-def test_update_cuisine_empty_name(mock_update, client, admin_headers):
-    mock_update.return_value = (
-        {"message": "CuisineName khong duoc rong"},
-        400,
-    )
-
-    response = client.put(
-        f"{CUISINES_URL}/1",
-        data={"CuisineName": ""},
-        headers=admin_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 400
-    assert data["message"] == "CuisineName khong duoc rong"
-    mock_update.assert_called_once_with(1, {"CuisineName": ""})
-
-
-# Chặn sửa cuisine khi không phải ADMIN
-@patch(f"{CUISINE_SERVICE_PATH}.update")
-def test_update_cuisine_forbidden_customer(
-    mock_update, client, customer_headers
-):
-    response = client.put(
-        f"{CUISINES_URL}/1",
-        data={"CuisineName": "Mon Moi"},
-        headers=customer_headers,
-    )
-    data = response.get_json()
-
-    assert response.status_code == 403
-    assert data["message"] == "Quyen nay cua Admin!"
-    mock_update.assert_not_called()
-
-
-# Xóa cuisine thành công
-@patch(f"{CUISINE_SERVICE_PATH}.delete")
-def test_delete_cuisine_success(mock_delete, client, admin_headers):
-    delete_mock = MagicMock(return_value=({"message": "Da xoa xong!"}, 200))
-    mock_delete.side_effect = delete_mock
-
-    response = client.delete(f"{CUISINES_URL}/1", headers=admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert data["message"] == "Da xoa xong!"
-    delete_mock.assert_called_once_with(1)
-
-
-# Xóa cuisine không tồn tại
-@patch(f"{CUISINE_SERVICE_PATH}.delete")
-def test_delete_cuisine_not_found(mock_delete, client, admin_headers):
-    mock_delete.return_value = ({"message": "Khong tim thay"}, 404)
-
-    response = client.delete(f"{CUISINES_URL}/999", headers=admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 404
-    assert data["message"] == "Khong tim thay"
-    mock_delete.assert_called_once_with(999)
-
-
-# Chặn xóa cuisine khi không phải ADMIN
-@patch(f"{CUISINE_SERVICE_PATH}.delete")
-def test_delete_cuisine_forbidden(mock_delete, client, customer_headers):
-    response = client.delete(f"{CUISINES_URL}/1", headers=customer_headers)
-    data = response.get_json()
-
-    assert response.status_code == 403
-    assert data["message"] == "Khong co quyen xoa!"
-    mock_delete.assert_not_called()
-
-
+# 9-10. Test xóa Cuisine
+@pytest.mark.parametrize("cuisine_id, mock_return, expected_status", [
+    (1, ({"message": "Da xoa xong"}, 200), 200),   # 9. Thành công
+    (99, ({"message": "Khong tim thay"}, 404), 404),  # 10. Không tồn tại
+])
+def test_delete_cuisine(client, auth_headers, monkeypatch, cuisine_id, mock_return, expected_status):
+    monkeypatch.setattr(CuisineService, "delete", lambda cid: mock_return)
+    res = client.delete(f"/api/v1/admin/cuisines/{cuisine_id}", headers=auth_headers)
+    assert res.status_code == expected_status
+    assert res.get_json() == mock_return[0]

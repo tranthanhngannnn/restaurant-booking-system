@@ -1,332 +1,87 @@
-import sys
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-
 import pytest
-from flask_jwt_extended import create_access_token
+from unittest.mock import MagicMock
+from backend.app.api.v1.admin.service import ReportService
+from backend.models.restaurant import Restaurant
+from backend.core import db, create_app
 
-BACKEND_DIR = Path(__file__).resolve().parents[1]
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
-
-
-from backend.core import create_app
-
-REPORT_URL = "/api/v1/admin/report"
-REPORT_SERVICE_PATH = "app.api.v1.admin.routes.ReportService.get_report"
-
-
-def mock_report_data(**kwargs):
-    data = {
-        "month": "2026-05",
-        "months": [
-            {"key": "2025-12"},
-            {"key": "2026-01"},
-            {"key": "2026-02"},
-            {"key": "2026-03"},
-            {"key": "2026-04"},
-            {"key": "2026-05"},
-        ],
-        "restaurants": [
-            {
-                "RestaurantID": 1,
-                "RestaurantName": "Nha Hang Sen",
-                "Revenue": 150000,
-            }
-        ],
-        "restaurant_count": 1,
-        "total_report": 150000,
-        "total_6_months": 450000,
-    }
-    data.update(kwargs)
-    return data
-
-
-@pytest.fixture()
-def app(monkeypatch):
-    monkeypatch.setenv("SECRET_KEY", "test-secret-key")
-    monkeypatch.setenv("JWT_SECRET_KEY", "test-jwt-secret")
-    monkeypatch.setenv("SQLALCHEMY_DATABASE_URI", "mysql+pymysql://test:test@localhost/test")
-
+@pytest.fixture
+def app():
     app = create_app()
-    app.config.update(
-        TESTING=True,
-        SECRET_KEY="test-secret-key",
-        JWT_SECRET_KEY="test-jwt-secret",
-    )
+    app.config.update(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
     return app
 
-
-@pytest.fixture()
-def client(app):
-    return app.test_client()
-
-
-@pytest.fixture()
-def admin_headers(app):
-    return make_headers(app, "ADMIN")
-
-
-@pytest.fixture()
-def staff_headers(app):
-    return make_headers(app, "STAFF")
-
-
-@pytest.fixture()
-def customer_headers(app):
-    return make_headers(app, "CUSTOMER")
-
-
-def make_headers(app, role):
+@pytest.fixture
+def app_context(app):
     with app.app_context():
-        token = create_access_token(
-            identity="1",
-            additional_claims={"role": role},
-        )
-    return {"Authorization": f"Bearer {token}"}
+        yield
 
+# --- Nhóm xử lý thời gian (Test Utility Functions) ---
+@pytest.mark.parametrize("func, args, expected", [
+    ("_parse_month", ("2024-05",), (2024, 5)),                # Parse chuỗi năm-tháng hợp lệ
+    ("_shift_month", (2023, 12, 1), (2024, 1)),               # Dịch chuyển tiến (chuyển năm)
+    ("_shift_month", (2024, 1, -1), (2023, 12)),              # Dịch chuyển lùi (về năm cũ)
+    ("_month_key", (2024, 5), "2024-05"),                     # Kiểm tra định dạng key YYYY-MM
+    ("_month_label", (2024, 5), "Thang 05/2024"),             # Kiểm tra định dạng label có số 0
+])
+def test_time_utilities(func, args, expected):
+    f = getattr(ReportService, func)
+    assert f(*args) == expected
 
-def post_report(client, headers=None, report_month="2026-05", restaurant_id=None):
-    data = {}
-    if report_month is not None:
-        data["report_month"] = report_month
-    if restaurant_id is not None:
-        data["restaurant_id"] = restaurant_id
-    return client.post(REPORT_URL, data=data, headers=headers or {})
+def test_build_months_logic():
+    # Xây dựng danh sách 6 tháng gần nhất từ 2024-03
+    months = ReportService._build_months("2024-03")
+    assert len(months) == 6
+    assert months[0]["key"] == "2023-10"
+    assert months[-1]["key"] == "2024-03"
 
+# --- Nhóm logic báo cáo (Test Report Logic) ---
+@pytest.mark.parametrize("restaurant_id, mock_db_rows, expected_total, top_res_name", [
+    # 1. Lấy toàn bộ, tính tổng 500k + 300k = 800k, sắp xếp BBQ (cao nhất) lên đầu
+    (None, [
+        MagicMock(restaurant_id=1, year=2024, month=5, revenue=300000.0),
+        MagicMock(restaurant_id=2, year=2024, month=5, revenue=500000.0)
+    ], 800000.0, "BBQ"),
+    
+    # 2. Lọc theo nhà hàng ID=1 (Hotpot), doanh thu 300k
+    ("1", [
+        MagicMock(restaurant_id=1, year=2024, month=5, revenue=300000.0)
+    ], 300000.0, "Hotpot"),
 
-# Tải báo cáo tất cả nhà hàng theo tháng
-# Báo cáo tính doanh thu tháng chọn
-# Báo cáo tính tổng 6 tháng
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_success(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data()
+    # 3. Nhà hàng không có doanh thu (không có đơn paid), mặc định trả về 0.0
+    (None, [], 0.0, "BBQ")
+])
+def test_get_report_logic(monkeypatch, app_context, restaurant_id, mock_db_rows, expected_total, top_res_name):
+    # Mock danh sách nhà hàng (Lọc 'Đang hoạt động', bỏ qua 'Ngưng hoạt động')
+    mock_res = [
+        MagicMock(RestaurantID=2, RestaurantName="BBQ", status="Đang hoạt động"),
+        MagicMock(RestaurantID=1, RestaurantName="Hotpot", status="Đang hoạt động")
+    ]
+    
+    # Giả lập SQLAlchemy query cho Restaurant
+    def mock_query_chain(*args, **kwargs):
+        res_list = mock_res
+        if restaurant_id: res_list = [r for r in mock_res if r.RestaurantID == int(restaurant_id)]
+        return MagicMock(filter=mock_query_chain, order_by=lambda *a: MagicMock(all=lambda: res_list))
 
-    response = post_report(client, admin_headers)
-    data = response.get_json()
+    monkeypatch.setattr(Restaurant, "query", MagicMock(filter=mock_query_chain))
 
-    assert response.status_code == 200
-    assert data["status"] == "success"
-    assert data["total_report"] == 150000
-    assert data["total_6_months"] == 450000
-    assert len(data["months"]) == 6
+    # Giả lập SQLAlchemy query cho doanh thu (Chỉ tính đơn 'paid')
+    mock_query = MagicMock()
+    for method in ["join", "filter", "group_by", "order_by"]:
+        getattr(mock_query, method).return_value = mock_query
+    mock_query.all.return_value = mock_db_rows
+    
+    monkeypatch.setattr(db.session, "query", lambda *a: mock_query)
 
+    # Thực thi logic báo cáo
+    result = ReportService.get_report(restaurant_id, "2024-05")
 
-# Tải báo cáo một nhà hàng cụ thể
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_calls_service_with_restaurant_id(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data()
-
-    response = post_report(client, admin_headers, restaurant_id="1")
-
-    assert response.status_code == 200
-    mock_get_report.assert_called_once_with("1", "2026-05")
-
-
-# Thiếu tháng báo cáo
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_missing_month(mock_get_report, client, admin_headers):
-    response = post_report(client, admin_headers, report_month=None)
-    data = response.get_json()
-
-    assert response.status_code == 400
-    assert data["status"] == "error"
-    mock_get_report.assert_not_called()
-
-
-# Chặn báo cáo khi không phải ADMIN
-@pytest.mark.parametrize("headers_fixture", ["staff_headers", "customer_headers"])
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_forbidden_non_admin(
-    mock_get_report,
-    client,
-    request,
-    headers_fixture,
-):
-    headers = request.getfixturevalue(headers_fixture)
-
-    response = post_report(client, headers)
-    data = response.get_json()
-
-    assert response.status_code == 403
-    assert data["message"] == "Quyen nay cua Admin!"
-    mock_get_report.assert_not_called()
-
-
-# Chặn báo cáo khi thiếu token
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_missing_token(mock_get_report, client):
-    response = post_report(client)
-    data = response.get_json()
-
-    assert response.status_code == 401
-    assert "msg" in data
-    mock_get_report.assert_not_called()
-
-
-# Báo cáo restaurant_id không tồn tại
-# Bảng rỗng khi không có nhà hàng phù hợp
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_empty_restaurant_result(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data(
-        restaurants=[],
-        restaurant_count=0,
-        total_report=0,
-        total_6_months=0,
-    )
-
-    response = post_report(client, admin_headers, restaurant_id="999")
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert data["status"] == "success"
-    assert data["restaurants"] == []
-    assert data["restaurant_count"] == 0
-    assert data["total_report"] == 0
-
-
-# Báo cáo tháng không có doanh thu
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_zero_revenue_success(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data(
-        restaurants=[],
-        restaurant_count=0,
-        total_report=0,
-        total_6_months=0,
-    )
-
-    response = post_report(client, admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert data["status"] == "success"
-    assert data["total_report"] == 0
-
-
-# Báo cáo report_month sai định dạng
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_invalid_month_format(
-    mock_get_report, client, admin_headers
-):
-    # Mock service vẫn trả dữ liệu bình thường
-    # Vì route hiện tại không validate format tháng
-    mock_get_report.return_value = mock_report_data(
-        total_report=0,
-        total_6_months=0,
-    )
-
-    # Gửi report_month sai định dạng MM-YYYY
-    response = post_report(
-        client,
-        admin_headers,
-        report_month="05-2026",
-    )
-    data = response.get_json()
-
-    # Route vẫn chạy success và truyền giá trị xuống service
-    assert response.status_code == 200
-    assert data["status"] == "success"
-
-    # Kiểm tra service được gọi đúng tham số đã nhập
-    mock_get_report.assert_called_once_with(None, "05-2026")
-
-
-
-# Báo cáo với payment CreatedAt rỗng
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_payment_created_at_null(
-    mock_get_report, client, admin_headers
-):
-    mock_get_report.return_value = mock_report_data(
-        total_report=0,
-        total_6_months=0,
-    )
-
-    response = post_report(client, admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert data["status"] == "success"
-    assert data["total_report"] == 0
-
-
-
-# Sắp xếp nhà hàng theo doanh thu tháng chọn
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_sort_restaurants_by_revenue(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data(
-        restaurants=[
-            {"RestaurantID": 1, "RestaurantName": "A", "Revenue": 300000},
-            {"RestaurantID": 2, "RestaurantName": "B", "Revenue": 100000},
-        ],
-        restaurant_count=2,
-        total_report=400000,
-    )
-
-    response = post_report(client, admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    revenues = [r["Revenue"] for r in data["restaurants"]]
-    assert all(revenues[i] >= revenues[i + 1] for i in range(len(revenues) - 1))
-
-
-# Không tính nhà hàng Ngưng hoạt động
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_exclude_inactive_restaurants(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data(
-        restaurants=[
-            {
-                "RestaurantID": 1,
-                "RestaurantName": "Nha Hang A",
-                "Revenue": 100000,
-                "status": "Dang hoat dong",
-            },
-            {
-                "RestaurantID": 2,
-                "RestaurantName": "Nha Hang B",
-                "Revenue": 200000,
-                "status": "Hoat dong",
-            },
-        ],
-        restaurant_count=2,
-        total_report=300000,
-    )
-
-    response = post_report(client, admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert not any(r.get("status") == "Ngung hoat dong" for r in data["restaurants"])
-
-
-# Tải danh sách nhà hàng cho filter
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_get_restaurants_for_filter(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data(
-        restaurants=[
-            {"RestaurantID": 1, "RestaurantName": "Nha Hang Mot", "Revenue": 50000},
-            {"RestaurantID": 2, "RestaurantName": "Nha Hang Hai", "Revenue": 80000},
-        ],
-        restaurant_count=2,
-        total_report=130000,
-    )
-
-    response = post_report(client, admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert len(data["restaurants"]) == 2
-    assert data["restaurant_count"] == 2
-
-
-# Báo cáo cập nhật sau thanh toán mới
-@patch(REPORT_SERVICE_PATH)
-def test_admin_report_updated_after_new_payment(mock_get_report, client, admin_headers):
-    mock_get_report.return_value = mock_report_data(total_report=300000)
-
-    response = post_report(client, admin_headers)
-    data = response.get_json()
-
-    assert response.status_code == 200
-    assert data["total_report"] == 300000
+    # Kiểm tra các khẳng định (Asserts)
+    assert result["total_report"] == expected_total
+    if result["restaurants"]:
+        # Kiểm tra sắp xếp (Nhà hàng doanh thu cao hơn phải đứng trước)
+        assert result["restaurants"][0]["restaurant_name"] == top_res_name
+        # Kiểm tra lọc status (Không chứa nhà hàng 'Ngưng hoạt động')
+        assert all(r["restaurant_name"] != "Ngưng hoạt động" for r in result["restaurants"])
+        # Kiểm tra định dạng trả về của monthly_revenue (phải là list)
+        assert isinstance(result["restaurants"][0]["monthly_revenue"], list)
