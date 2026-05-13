@@ -106,3 +106,11 @@ function handleLogout() {
 }
 
 window.onload = loadBookings
+
+module.exports = {
+    loadBookings,
+    confirmBooking,
+    rejectBooking,
+    formatDate,
+    formatTime
+};

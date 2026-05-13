@@ -9,9 +9,9 @@ from backend.models.ordersitem import OrderItem
 from backend.core.extensions import db
 from backend.models.user import User
 from backend.app.api.v1.restaurant.service import RestaurantService
+from backend.app.api.v1.customer.service import create_booking
 from .service import *
 from backend.app.api.v1.restaurant.service import update_food
-from datetime import datetime
 
 restaurant_bp = Blueprint('restaurant', __name__)
 
@@ -66,16 +66,16 @@ def get_menu_admin():
         return jsonify({"message": "Chỉ nhân viên mới được xem!"}), 403
 
     current_user_id = get_jwt_identity() #NẾU ĐÚNG ROLE NHÀ HÀNG -> LẤY ID VÀ QUERY MENU
-    user_info = get_jwt() #Tìm thông tin user để suy ra nhà hàng họ đang làm việc
+    user_info = User.query.get(current_user_id) #Tìm thông tin user để suy ra nhà hàng họ đang làm việc
     print("USER:", user_info)
     print("RestaurantID:", getattr(user_info, "RestaurantID", None))
 
     # Kiểm tra xem nhân viên này đã được phân công về nhà hàng nào chưa
-    if not user_info or not user_info.get("restaurant_id"):
+    if not user_info or not user_info.RestaurantID:
         return jsonify({"message": "Nhân viên này chưa được phân công nhà hàng!"}), 400
 
     try:
-        menu_data = get_menu_res_admin(user_info.get("restaurant_id"))
+        menu_data = get_menu_res_admin(user_info.RestaurantID)
         return jsonify(menu_data)
 
     except Exception as e:
@@ -126,10 +126,10 @@ def delete_food_api(id):
 @jwt_required()
 def get_tables_api():
     current_user_id = get_jwt_identity()
-    user_info = get_jwt()
+    user_info = User.query.get(current_user_id)
     # Lấy đúng ID nhà hàng của người đang đăng nhập
     print("USER:", user_info)
-    res_id = user_info.get("restaurant_id")
+    res_id = user_info.RestaurantID
     tables = get_tables(res_id)
     return jsonify(tables)
 
@@ -137,19 +137,19 @@ def get_tables_api():
 @jwt_required()
 def create_table_api():
     current_user_id = get_jwt_identity()
-    user_info = get_jwt()
+    user_info = User.query.get(current_user_id)
 
-    if not user_info or not user_info.get("restaurant_id"):
+    if not user_info or not user_info.RestaurantID:
         return jsonify({
             "error": "User chưa được gán nhà hàng (RestaurantID = NULL)"
         }), 400
 
-    res_id = user_info.get("restaurant_id")
+    res_id = user_info.RestaurantID
     data = request.json
 
     return jsonify(create_table(data, res_id))
 
-@restaurant_bp.route('/delete_table/<int:id>', methods=['POST'])
+@restaurant_bp.route("/bookings", methods=["POST"])
 @jwt_required()
 def delete_table_api(id):
     return jsonify(delete_table(id))
@@ -297,13 +297,13 @@ def toggle_menu(id):
         menu.Visible = False
     else:
         menu.Visible = True
-    
+
     db.session.commit()
-    
+
     # Refresh để lấy giá trị chính xác nhất vừa lưu vào DB
     db.session.refresh(menu)
-    
+
     return jsonify({
-        "message": "updated", 
+        "message": "updated",
         "visible": bool(menu.Visible)
     }), 200

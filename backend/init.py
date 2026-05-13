@@ -20,4 +20,4 @@ app = create_app()
 with app.app_context():
     db.drop_all()
     db.create_all()
-    print("✅ DB OK - tạo toàn bộ bảng thành công!")
+    print(" DB OK - tạo toàn bộ bảng thành công!")

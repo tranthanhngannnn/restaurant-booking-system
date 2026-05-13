@@ -16,3 +16,8 @@ temp-debug-*
 
 .agent/*
 .github/prompts/
+
+# Jest coverage
+coverage/
+# npm log
+npm-debug.log*

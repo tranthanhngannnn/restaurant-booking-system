@@ -1,18 +1,18 @@
+import pytest
 from flask_jwt_extended import create_access_token
-from sqlalchemy.exc import DataError
 
-def get_auth_header(client):
-    app = client.application
-    with app.app_context():
-        token = create_access_token(identity="1")
+# AUTH HELPER
+def auth_headers(client, user_id="1"):
+    with client.application.app_context():
+        token = create_access_token(identity=user_id)
     return {"Authorization": f"Bearer {token}"}
 
 
-#  SUCCESS
-def test_review_success(client, monkeypatch):
-    headers = get_auth_header(client)
+# SUCCESS: CREATE NEW REVIEW
+def test_review_create_success(client, monkeypatch):
+    headers = auth_headers(client)
 
-    # Mock Review chưa tồn tại
+    # fake chưa có review
     class FakeQuery:
         def filter_by(self, **kwargs):
             return self
@@ -35,89 +35,127 @@ def test_review_success(client, monkeypatch):
         "backend.app.api.v1.customer.routes.db.session.add",
         lambda x: None
     )
+
     monkeypatch.setattr(
         "backend.app.api.v1.customer.routes.db.session.commit",
         lambda: None
     )
 
-    res = client.post("/api/v1/customer/review",
+    res = client.post(
+        "/api/v1/customer/review",
         headers=headers,
         json={
             "RestaurantID": 1,
             "ReservationID": 1,
             "Rating": 5,
-            "Comment": "Good"
+            "Comment": "Good service"
         }
     )
 
     assert res.status_code == 200
+    assert "thành công" in res.json["message"]
 
+# SUCCESS: UPDATE REVIEW EXISTING
+def test_review_update_existing(client, monkeypatch):
+    headers = auth_headers(client)
 
-#  INVALID RATING
-def test_review_invalid_rating(client):
-    headers = get_auth_header(client)
+    fake_review = type("R", (), {
+        "Rating": 3,
+        "Comment": "Old comment"
+    })()
 
-    res = client.post("/api/v1/customer/review",
+    class FakeQuery:
+        def filter_by(self, **kwargs):
+            return self
+        def first(self):
+            return fake_review
+
+    class FakeReview:
+        query = FakeQuery()
+
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.Review",
+        FakeReview
+    )
+
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.db.session.commit",
+        lambda: None
+    )
+
+    res = client.post(
+        "/api/v1/customer/review",
         headers=headers,
         json={
+            "RestaurantID": 1,
+            "ReservationID": 1,
+            "Rating": 5,
+            "Comment": "Updated comment"
+        }
+    )
+
+    assert res.status_code == 200
+    assert "thành công" in res.json["message"]
+
+
+# VALIDATION: INVALID RATING
+def test_review_invalid_rating(client):
+    headers = auth_headers(client)
+
+    res = client.post(
+        "/api/v1/customer/review",
+        headers=headers,
+        json={
+            "RestaurantID": 1,
+            "ReservationID": 1,
             "Rating": 10,
-            "RestaurantID": 1
+            "Comment": "Bad rating"
         }
     )
 
     assert res.status_code == 400
 
 
-#  EMPTY COMMENT
-def test_review_empty_comment(client, monkeypatch):
-    headers = get_auth_header(client)
+def test_review_invalid_rating_zero(client):
+    headers = auth_headers(client)
 
-    class FakeQuery:
-        def filter_by(self, **kwargs):
-            return self
-        def first(self):
-            return None
-
-    class FakeReview:
-        query = FakeQuery()
-
-        def __init__(self, **kwargs):
-            for k, v in kwargs.items():
-                setattr(self, k, v)
-
-    monkeypatch.setattr(
-        "backend.app.api.v1.customer.routes.Review",
-        FakeReview
-    )
-
-    monkeypatch.setattr(
-        "backend.app.api.v1.customer.routes.db.session.add",
-        lambda x: None
-    )
-    monkeypatch.setattr(
-        "backend.app.api.v1.customer.routes.db.session.commit",
-        lambda: None
-    )
-
-    res = client.post("/api/v1/customer/review",
+    res = client.post(
+        "/api/v1/customer/review",
         headers=headers,
         json={
             "RestaurantID": 1,
             "ReservationID": 1,
-            "Rating": 5
+            "Rating": 0
         }
     )
 
-    assert res.status_code == 200
+    assert res.status_code == 400
 
 
-#  COMMENT TOO LONG
+def test_review_invalid_rating_string(client):
+    headers = auth_headers(client)
+
+    res = client.post(
+        "/api/v1/customer/review",
+        headers=headers,
+        json={
+            "RestaurantID": 1,
+            "ReservationID": 1,
+            "Rating": "abc"
+        }
+    )
+
+    assert res.status_code == 400
+
+
+# VALIDATION: COMMENT LENGTH
 def test_review_comment_too_long(client):
-    headers = get_auth_header(client)
+    headers = auth_headers(client)
 
-    long_comment = "A" * 501
+    long_comment = "A" * 300  # vượt 255
 
-    res = client.post("/api/v1/customer/review",
+    res = client.post(
+        "/api/v1/customer/review",
         headers=headers,
         json={
             "RestaurantID": 1,
@@ -130,11 +168,12 @@ def test_review_comment_too_long(client):
     assert res.status_code == 400
 
 
-# MISSING RATING
+# VALIDATION: MISSING DATA
 def test_review_missing_rating(client):
-    headers = get_auth_header(client)
+    headers = auth_headers(client)
 
-    res = client.post("/api/v1/customer/review",
+    res = client.post(
+        "/api/v1/customer/review",
         headers=headers,
         json={
             "RestaurantID": 1,
@@ -145,23 +184,62 @@ def test_review_missing_rating(client):
     assert res.status_code == 400
 
 
-# UPDATE REVIEW
-def test_review_update_existing(client, monkeypatch):
-    headers = get_auth_header(client)
+def test_review_missing_reservation(client, monkeypatch):
+    headers = auth_headers(client)
 
-    fake_review = type("", (), {
-        "Rating": 3,
-        "Comment": "Old"
-    })()
+    # giả lập chưa có review
+    class FakeQuery:
+        def filter_by(self, **kwargs):
+            return self
+
+        def first(self):
+            return None
+
+    class FakeReview:
+        query = FakeQuery()
+
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.Review",
+        FakeReview
+    )
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.db.session.add",
+        lambda x: None
+    )
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.db.session.commit",
+        lambda: None
+    )
+    res = client.post(
+        "/api/v1/customer/review",
+        headers=headers,
+        json={
+            "RestaurantID": 1,
+            "Rating": 5
+        }
+    )
+    # nên BE vẫn tạo review thành công
+    assert res.status_code == 200
+
+# EDGE CASE: EMPTY COMMENT (VALID)
+def test_review_empty_comment(client, monkeypatch):
+    headers = auth_headers(client)
 
     class FakeQuery:
         def filter_by(self, **kwargs):
             return self
         def first(self):
-            return fake_review
+            return None
 
     class FakeReview:
         query = FakeQuery()
+
+        def __init__(self, **kwargs):
+            pass
 
     monkeypatch.setattr(
         "backend.app.api.v1.customer.routes.Review",
@@ -169,56 +247,48 @@ def test_review_update_existing(client, monkeypatch):
     )
 
     monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.db.session.add",
+        lambda x: None
+    )
+
+    monkeypatch.setattr(
         "backend.app.api.v1.customer.routes.db.session.commit",
         lambda: None
     )
 
-    res = client.post("/api/v1/customer/review",
+    res = client.post(
+        "/api/v1/customer/review",
         headers=headers,
         json={
             "RestaurantID": 1,
             "ReservationID": 1,
-            "Rating": 5,
-            "Comment": "New"
+            "Rating": 5
         }
     )
 
     assert res.status_code == 200
 
-def test_review_comment_too_long(client):
-    from flask_jwt_extended import create_access_token
 
-    with client.application.app_context():
-        token = create_access_token(identity="1")
-
-    headers = {"Authorization": f"Bearer {token}"}
-
-    data = {
-        "RestaurantID": 1,
-        "ReservationID": 1,
-        "Rating": 5,
-        "Comment": "a" * 256
-    }
-
+# EDGE CASE: UNAUTHORIZED
+def test_review_unauthorized(client):
     res = client.post(
         "/api/v1/customer/review",
-        json=data,
-        headers=headers
+        json={
+            "RestaurantID": 1,
+            "ReservationID": 1,
+            "Rating": 5
+        }
     )
 
-    assert res.status_code == 400
+    assert res.status_code in (401, 422)
 
 
+# EDGE CASE: DATA ERROR FROM DB
 def test_review_data_error(client, monkeypatch):
-    from flask_jwt_extended import create_access_token
-    from sqlalchemy.exc import DataError
-
-    with client.application.app_context():
-        token = create_access_token(identity="1")  # FIX
-
-    headers = {"Authorization": f"Bearer {token}"}
+    headers = auth_headers(client)
 
     def fake_commit():
+        from sqlalchemy.exc import DataError
         raise DataError("test", None, None)
 
     monkeypatch.setattr(
@@ -228,59 +298,13 @@ def test_review_data_error(client, monkeypatch):
 
     res = client.post(
         "/api/v1/customer/review",
+        headers=headers,
         json={
             "RestaurantID": 1,
             "ReservationID": 1,
             "Rating": 5,
             "Comment": "ok"
-        },
-        headers=headers
+        }
     )
 
     assert res.status_code == 400
-
-def test_update_review(client, monkeypatch):
-    from flask_jwt_extended import create_access_token
-
-    with client.application.app_context():
-        token = create_access_token(identity="1")  # FIX
-
-    headers = {"Authorization": f"Bearer {token}"}
-
-    fake_review = type("", (), {
-        "Rating": 4,
-        "Comment": "old"
-    })()
-
-    class FakeQuery:
-        def filter_by(self, **kwargs):
-            return self
-        def first(self):
-            return fake_review
-
-    class FakeReview:
-        query = FakeQuery()
-
-    monkeypatch.setattr(
-        "backend.app.api.v1.customer.routes.Review",
-        FakeReview
-    )
-
-    monkeypatch.setattr(
-        "backend.app.api.v1.customer.routes.db.session.commit",
-        lambda: None
-    )
-
-    res = client.post(
-        "/api/v1/customer/review",
-        json={
-            "RestaurantID": 1,
-            "ReservationID": 1,
-            "Rating": 5,
-            "Comment": "new comment"
-        },
-        headers=headers
-    )
-
-    assert res.status_code == 200
-    assert "Cập nhật" in res.json["message"]

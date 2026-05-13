@@ -1,18 +1,18 @@
 import re
-from  backend.models.restaurant import Restaurant
-from  backend.core.extensions import db
+from backend.models.restaurant import Restaurant
+from backend.core.extensions import db
 from datetime import datetime, timedelta
-from  backend.models.food import Food
-from  backend.models.menu import Menu
-from  backend.models.tables import Tables
-from  backend.models.booking import Reservation
-from  backend.models.orders import Order
-from  backend.models.ordersitem import OrderItem
-from  backend.models.food import Food
+from backend.models.food import Food
+from backend.models.menu import Menu
+from backend.models.tables import Tables
+from backend.models.booking import Reservation
+from backend.models.orders import Order
+from backend.models.ordersitem import OrderItem
+from backend.models.food import Food
 from backend.models.user import User
-from  backend.schemas.menu_schema import MenuSchema
-from  backend.schemas.table_schema import TableSchema
-from  backend.schemas.booking_schema import BookingSchema
+from backend.schemas.menu_schema import MenuSchema
+from backend.schemas.table_schema import TableSchema
+from backend.schemas.booking_schema import BookingSchema
 import os
 from werkzeug.utils import secure_filename
 
@@ -26,14 +26,14 @@ booking_schema = BookingSchema()
 bookings_schema = BookingSchema(many=True)
 
 
-#DÀNH CHO MENU NHÂN VIÊN
+# DÀNH CHO MENU NHÂN VIÊN
 def get_menu_res_admin(res_id):
     try:
-        from image import MENU_DATA #tránh lỗi vòng lặp lúc khởi động
+        from image import MENU_DATA  # tránh lỗi vòng lặp lúc khởi động
     except ImportError:
         from backend.image import MENU_DATA
     menus = Food.query.filter(Food.RestaurantID == res_id).all()
-    #menus = Food.query.filter_by(RestaurantID=res_id).all() #LẤY ĐÚNG MENU CỦA NHÀ HÀNG ĐÓ
+    # menus = Food.query.filter_by(RestaurantID=res_id).all() #LẤY ĐÚNG MENU CỦA NHÀ HÀNG ĐÓ
 
     result = []
     for m in menus:
@@ -56,7 +56,7 @@ def get_menu_res_admin(res_id):
         })
     return result
 
-#DÀNH CHO ORDER MÓN
+# DÀNH CHO ORDER MÓN
 def get_res_menu(restaurant_id):
     menus = Food.query.filter_by(RestaurantID=restaurant_id, Visible=True).all()
 
@@ -148,6 +148,7 @@ def create_table(data, res_id):
         "data": table_schema.dump(table)
     }
 
+
 def delete_table(id):
     table = Tables.query.get(id)
     if not table:
@@ -156,7 +157,6 @@ def delete_table(id):
     db.session.delete(table)
     db.session.commit()
     return {"message": "Xóa bàn thành công"}
-
 
 
 def get_bookings(res_id):
@@ -296,7 +296,6 @@ def delete_food(id):
 
 
 def update_food(id, data):
-
     food = Food.query.get(id)
     if not food:
         return {"error": "Food not found"}
@@ -327,11 +326,11 @@ def update_food(id, data):
 
         # Cập nhật đường dẫn mới
         food.Image_URL = f"/static/images/{filename}"
-        
+
     elif data.get("image") and str(data.get("image")).strip() not in ["", "null", "undefined"]:
         # Chỉ cập nhật nếu gửi URL ảnh trực tiếp và nó hợp lệ
         food.Image_URL = data.get("image")
-    
+
     # Nếu không thỏa các điều kiện trên, food.Image_URL sẽ giữ nguyên giá trị cũ từ DB.
 
     db.session.commit()
@@ -346,6 +345,7 @@ def update_food(id, data):
             "category": food.category.CategoryName
         }
     }
+
 
 class RestaurantService:
     @staticmethod
@@ -485,7 +485,7 @@ def add_order_item(order_id, data):
     if qty <= 0:
         return {"error": "Invalid quantity"}
 
-    # ✅ chỉ check Food nếu có model (tránh fail test)
+    #  chỉ check Food nếu có model (tránh fail test)
     try:
         food = Food.query.get(food_id)
         if food is None:
@@ -498,13 +498,13 @@ def add_order_item(order_id, data):
     if not hasattr(order, "items") or order.items is None:
         order.items = []
 
-    # 🔥 merge quantity
+    #  merge quantity
     for item in order.items:
         if item.food_id == food_id:
             item.quantity += qty
             return {"message": "Item updated"}
 
-    # 🔥 thêm mới
+    #  thêm mới
     new_item = type("OrderItem", (), {})()
     new_item.food_id = food_id
     new_item.quantity = qty

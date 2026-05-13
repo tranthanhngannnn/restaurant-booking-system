@@ -236,3 +236,15 @@ window.onload = () => {
         loadOrderFromServer();
     }
 };
+module.exports = {
+    loadMenu,
+    renderMenu,
+    addItem,
+    renderOrder,
+    changeQty,
+    createOrder,
+    payOrder,
+    loadOrderFromServer,
+    saveToLocalStorage,
+    loadFromLocalStorage
+};

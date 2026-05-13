@@ -9,9 +9,9 @@ echo "Starting Restaurant Booking System..."
 export PYTHONPATH=$PWD
 
 # Check if virtual environment exists
-if [ -d "backend/.venv" ]; then
+if [ -d ".venv" ]; then
     echo "Activating virtual environment..."
-    source backend/.venv/Scripts/activate
+    source .venv/Scripts/activate
 else
     echo "Warning: Virtual environment not found in backend/.venv"
 fi
