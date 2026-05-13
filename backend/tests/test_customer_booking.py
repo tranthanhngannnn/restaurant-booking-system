@@ -248,13 +248,23 @@ def mock_booking_conflict(monkeypatch, has_conflict):
 
 def test_booking_outside_60min_allowed(client, monkeypatch):
     mock_booking_conflict(monkeypatch, has_conflict=False)
+    fixed_now = datetime(2026, 5, 10, 18, 0)
+    class MockDateTime(datetime):
+        @classmethod
+        def now(cls):
+            return fixed_now
+
+    monkeypatch.setattr(
+        "backend.app.api.v1.customer.routes.datetime",
+        MockDateTime
+    )
 
     res = client.post("/api/v1/customer/book", json={
         "name": "A",
         "phone": "0912345678",
         "people": 2,
         "date": "2026-05-10",
-        "time": "19:01",
+        "time": "19:01",  # +61 phút
         "table_id": 1,
         "restaurant_id": 1
     })

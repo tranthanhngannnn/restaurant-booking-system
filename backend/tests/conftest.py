@@ -25,3 +25,30 @@ def auth_header(app):
         return {"Authorization": f"Bearer {token}"}
     return _get
 
+
+
+import uuid
+
+from backend.models.restaurant import Restaurant
+from backend.core.extensions import db
+
+
+def create_test_restaurant():
+
+    unique = str(uuid.uuid4())[:8]
+
+    restaurant = Restaurant(
+        RestaurantName=f"Test Restaurant {unique}",
+        Address="HCM",
+        Phone=f"090{unique[:7]}",
+        Email=f"test{unique}@gmail.com",
+        Opentime="08:00",
+        Closetime="22:00",
+        description="Test restaurant"
+    )
+
+    db.session.add(restaurant)
+    db.session.commit()
+
+    return restaurant
+

@@ -7,6 +7,13 @@ from flask_cors import CORS
 from backend.models.user import User
 from backend.models.review import Review
 from backend.models.booking import Reservation
+from backend.models.restaurant import Restaurant
+from backend.models.tables import Tables
+from backend.models.cuisine import Cuisine
+from backend.models.food import Food
+from backend.models.orders import Order
+from backend.models.ordersitem import OrderItem
+from backend.models.menu import Menu
 from backend.app.api.v1.auth.routes import auth_bp
 from backend.app.api.v1.admin.routes import admin_bp
 from backend.app.api.v1.restaurant.routes import restaurant_bp
@@ -25,7 +32,7 @@ def create_app():
     # Cấu hình Database & Security
     app.config.from_object(Config)
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    #app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.secret_key = "super_secret_key"
@@ -35,7 +42,7 @@ def create_app():
     ma.init_app(app)
     login_manager.init_app(app)
     jwt.init_app(app)
-    CORS(app, supports_credentials=True,origins=["http://127.0.0.1:5500", "http://localhost:5500"])
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')

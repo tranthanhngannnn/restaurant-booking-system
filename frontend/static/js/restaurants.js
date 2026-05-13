@@ -353,3 +353,10 @@ window.onload = async () => {
     await loadDropdowns();
     await fetchRestaurants();
 };
+
+function handleLogout() {
+    if (confirm("Bạn có chắc muốn đăng xuất không?")) {
+        localStorage.removeItem('token');
+        window.location.href = "../auth/login.html";
+    }
+}

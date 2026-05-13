@@ -9,6 +9,7 @@ from backend.models.ordersitem import OrderItem
 from backend.core.extensions import db
 from backend.models.user import User
 from backend.app.api.v1.restaurant.service import RestaurantService
+from backend.app.api.v1.customer.service import create_booking
 from .service import *
 from backend.app.api.v1.restaurant.service import update_food
 restaurant_bp = Blueprint('restaurant', __name__)
@@ -275,8 +276,6 @@ def pay_order(table_id):
         "message": "Thanh toán thành công",
         "table_status": "Available"
     }), 200
-
-
 
 @restaurant_bp.route('/menu/<id>/toggle', methods=['PUT', 'OPTIONS'])
 def toggle_menu(id):

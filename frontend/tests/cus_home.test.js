@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { checkLogin, logout } from "../cus_home";
+import { checkLogin, logout } from "../static/js/cus_home";
 
 global.fetch = jest.fn();
 

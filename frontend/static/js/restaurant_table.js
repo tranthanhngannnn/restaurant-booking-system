@@ -234,3 +234,13 @@ window.onload = async () => {
 window.addEventListener("focus", () => {
     loadTables();
 });
+
+module.exports = {
+    renderTableCard,
+    loadTables,
+    updateTableStatus,
+    cancelBooking,
+    getAuthHeaders,
+    showPageMessage,
+    clearPageMessage
+};
