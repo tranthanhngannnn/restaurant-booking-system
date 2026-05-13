@@ -56,7 +56,6 @@ def get_menu_res_admin(res_id):
         })
     return result
 
-
 # DÀNH CHO ORDER MÓN
 def get_res_menu(restaurant_id):
     menus = Food.query.filter_by(RestaurantID=restaurant_id, Visible=True).all()
@@ -90,6 +89,8 @@ def get_res_menu(restaurant_id):
             "Visible": getattr(m, "Visible", True)
         })
     return result
+
+
 
 
 def get_tables(res_id):
@@ -208,7 +209,6 @@ def reject_booking(id):
         "Status": b.Status
     }
 
-
 def update_table_status_service(id, data):
     table = Tables.query.get(id)
 
@@ -237,7 +237,6 @@ def delete_booking(id):
 def get_booking_by_table_service(id):
     bookings = Reservation.query.filter_by(TableID=id).all()
     return bookings_schema.dump(bookings)
-
 
 def create_food(data, res_id):
     try:
@@ -285,7 +284,6 @@ def create_food(data, res_id):
     except Exception as e:
         db.session.rollback()
         return {"error": str(e)}
-
 
 def delete_food(id):
     food = Food.query.get(id)
@@ -412,7 +410,6 @@ class RestaurantService:
             "restaurant_id": new_res.RestaurantID
         }, 201
 
-
 def toggle_food(id):
     food = Food.query.get(id)
     if not food:
@@ -426,7 +423,6 @@ def toggle_food(id):
         "id": food.FoodID,
         "visible": food.Visible
     }
-
 
 def create_order(data):
     try:
@@ -475,7 +471,6 @@ def create_order(data):
     except Exception as e:
         return {"error": str(e)}
 
-
 def add_order_item(order_id, data):
     order = Order.query.get(order_id)
     if not order:
@@ -518,7 +513,6 @@ def add_order_item(order_id, data):
 
     return {"message": "Item added"}
 
-
 def add_item_existing_order(order, food_id, qty):
     # tìm item đã có trong order
     for item in order.items:
@@ -527,7 +521,6 @@ def add_item_existing_order(order, food_id, qty):
             return {"message": "Item updated"}
 
     return {"error": "Item not found"}
-
 
 def merge_order_quantity(existing_qty, new_qty):
     return existing_qty + new_qty
