@@ -61,7 +61,7 @@ def search_restaurant(address, cuisine):
     return result
 
 
-# ================== MENU ==================
+#  MENU
 def get_menu(restaurant_id):
     foods = Menu.query.filter_by(RestaurantID=restaurant_id).all()
 
@@ -73,7 +73,7 @@ def get_menu(restaurant_id):
     } for f in foods]
 
 
-# ================== CHECK TABLE ==================
+# CHECK TABLE
 def check_table(restaurant_id, date, time, people):
     cancel_expired_bookings()
     people = int(people)
@@ -103,7 +103,7 @@ def check_table(restaurant_id, date, time, people):
     return result
 
 
-# ================== CREATE BOOKING ==================
+#  CREATE BOOKING
 def create_booking(data):
     # 1. Dọn dẹp booking cũ
     cancel_expired_bookings()
@@ -223,7 +223,7 @@ def get_restaurant_by_id(restaurant_id):
     }
 
 
-# ================== PAYMENT ==================
+#  PAYMENT
 def calculate_deposit(people):
     return people * 50000  # 50k/người
 
@@ -255,7 +255,7 @@ def confirm_payment(reservation_id, amount):
     return {"message": "Payment success"}
 
 
-# ================== QR CODE (VIETQR) ==================
+# QR CODE (VIETQR)
 def generate_vietqr(amount, reservation_id):
     bank_id = "970422"  # MB Bank
     account_no = "123456789"
@@ -266,7 +266,7 @@ def generate_vietqr(amount, reservation_id):
     return f"https://img.vietqr.io/image/{bank_id}-{account_no}-compact2.png?amount={amount}&addInfo={description}&accountName={account_name}"
 
 
-# ================== AUTO CANCEL ==================
+#  AUTO CANCEL
 def cancel_expired_bookings():
     now = datetime.now()
     bookings = Reservation.query.filter_by(Status="Pending").all()
@@ -279,7 +279,7 @@ def cancel_expired_bookings():
     db.session.commit()
 
 
-# ================== HISTORY ==================
+#  HISTORY
 def get_history(user_id, keyword):
     if not user_id:
         return []
