@@ -25,6 +25,7 @@
   "devDependencies": {
     "@babel/core": "^7.24.9",
     "@babel/preset-env": "^7.24.9",
+    "@playwright/test": "^1.60.0",
     "babel-jest": "^29.7.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",
@@ -37,6 +38,8 @@
     }
   },
   "babel": {
-    "presets": ["@babel/preset-env"]
+    "presets": [
+      "@babel/preset-env"
+    ]
   }
 }
